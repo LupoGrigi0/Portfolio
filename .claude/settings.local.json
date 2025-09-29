@@ -12,7 +12,10 @@
       "Bash(npm install:*)",
       "mcp__coordination-system-Local-Dev__get_messages",
       "Bash(chmod:*)",
-      "mcp__coordination-system-Local-Dev__update_task"
+      "mcp__coordination-system-Local-Dev__update_task",
+      "mcp__coordination-system-Production__get_messages",
+      "mcp__coordination-system-Production__send_message",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

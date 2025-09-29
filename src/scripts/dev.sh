@@ -19,14 +19,14 @@ echo "📁 Creating necessary directories..."
 mkdir -p content/best-work
 mkdir -p content/sculptures
 mkdir -p content/paintings
-mkdir -p backend/data
-mkdir -p infrastructure/certs
+mkdir -p src/backend/data
+mkdir -p src/infrastructure/certs
 
 # Copy environment file if it doesn't exist
-if [ ! -f backend/.env ]; then
+if [ ! -f src/backend/.env ]; then
     echo "⚙️  Creating environment configuration..."
-    cp backend/.env.example backend/.env
-    echo "✅ Created backend/.env from example. Please review and customize."
+    cp src/backend/.env.example src/backend/.env
+    echo "✅ Created src/backend/.env from example. Please review and customize."
 fi
 
 # Start development environment

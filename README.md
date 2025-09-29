@@ -7,7 +7,7 @@
 ### **One-Command Development Setup**
 ```bash
 # Start complete development environment
-./scripts/dev.sh
+./src/scripts/dev.sh
 ```
 
 **Services will be available at:**
@@ -18,14 +18,14 @@
 ### **Manual Setup**
 ```bash
 # 1. Copy environment configuration
-cp backend/.env.example backend/.env
+cp src/backend/.env.example src/backend/.env
 
 # 2. Start with Docker Compose
 docker-compose up -d
 
 # 3. Or start individual services
-cd frontend && npm run dev
-cd backend && npm run dev
+cd src/frontend && npm run dev
+cd src/backend && npm run dev
 ```
 
 ---
@@ -68,18 +68,20 @@ A revolutionary art portfolio showcasing Lupo's 50,000+ images across 100+ thema
 ### **Module Structure**
 ```
 modern-art-portfolio/
-├── frontend/src/          # Next.js React application
-│   ├── components/        # Modular component architecture
-│   │   ├── Layout/        # Navigation, background, grid
-│   │   ├── Carousel/      # Advanced image carousel
-│   │   ├── Social/        # Reactions, comments, sharing
-│   │   ├── Effects/       # Parallax and visual effects
-│   │   └── CMS/           # Content management
-├── backend/src/           # Node.js Express API
-│   ├── routes/            # API endpoints
-│   ├── services/          # Business logic
-│   └── middleware/        # Auth, rate limiting, CORS
-├── infrastructure/        # Docker and deployment
+├── src/                   # Source code directory
+│   ├── frontend/          # Next.js React application
+│   │   ├── src/components/    # Modular component architecture
+│   │   │   ├── Layout/        # Navigation, background, grid
+│   │   │   ├── Carousel/      # Advanced image carousel
+│   │   │   ├── Social/        # Reactions, comments, sharing
+│   │   │   ├── Effects/       # Parallax and visual effects
+│   │   │   └── CMS/           # Content management
+│   ├── backend/           # Node.js Express API
+│   │   ├── src/routes/        # API endpoints
+│   │   ├── src/services/      # Business logic
+│   │   └── src/middleware/    # Auth, rate limiting, CORS
+│   ├── infrastructure/    # Docker and deployment
+│   └── scripts/           # Development and deployment scripts
 ├── content/               # Portfolio images and metadata
 └── docs/                  # Architecture and API documentation
 ```
@@ -91,32 +93,32 @@ modern-art-portfolio/
 This project uses a **modular specialist approach** where each team member focuses on specific expertise areas:
 
 ### **🎠 Carousel Virtuoso - "Aria"**
-- **Module**: `frontend/src/components/Carousel/`
+- **Module**: `src/frontend/src/components/Carousel/`
 - **Focus**: Smooth transitions, touch gestures, full-screen mode
 - **Performance**: 60fps animations, mixed aspect ratio mastery
 
 ### **🌌 Visual Effects Wizard - "Nova"**
-- **Module**: `frontend/src/components/Effects/`
+- **Module**: `src/frontend/src/components/Effects/`
 - **Focus**: Parallax scrolling, background transitions, cinematic impact
 - **Goal**: "Make them stop scrolling and just stare in wonder"
 
 ### **💬 Community Builder - "Echo"**
-- **Module**: `frontend/src/components/Social/` + `backend/src/routes/social.js`
+- **Module**: `src/frontend/src/components/Social/` + `src/backend/src/routes/social.js`
 - **Focus**: Real-time reactions, social sharing, community engagement
 - **Features**: 8 emoji reactions including inquire/purchase
 
 ### **📁 Content Automation Genius - "Atlas"**
-- **Module**: `backend/src/services/`
+- **Module**: `src/backend/src/services/`
 - **Focus**: File system automation, JSON configuration, image optimization
 - **Scale**: Handle 50k+ images across 100+ directories
 
 ### **🎭 Experience Designer - "Sage"**
-- **Module**: Cross-cutting UX optimization
+- **Module**: Cross-cutting UX optimization across all `src/` directories
 - **Focus**: Mobile excellence, accessibility, performance monitoring
 - **Standard**: "Beautiful is useless if it's not accessible"
 
 ### **🔧 Infrastructure Maestro - "Titan"**
-- **Module**: `infrastructure/` + deployment automation
+- **Module**: `src/infrastructure/` + deployment automation
 - **Focus**: Docker orchestration, monitoring, production deployment
 - **Reliability**: "If it can break, it will - so let's make it unbreakable"
 
@@ -129,13 +131,13 @@ This project uses a **modular specialist approach** where each team member focus
 #### **Development**
 ```bash
 # Complete development environment
-./scripts/dev.sh
+./src/scripts/dev.sh
 
 # Frontend only
-cd frontend && npm run dev
+cd src/frontend && npm run dev
 
 # Backend only
-cd backend && npm run dev
+cd src/backend && npm run dev
 
 # Watch all services
 docker-compose logs -f
@@ -160,25 +162,25 @@ npm run build
 npm test
 
 # Frontend tests
-cd frontend && npm test
+cd src/frontend && npm test
 
 # Backend tests
-cd backend && npm test
+cd src/backend && npm test
 ```
 
 #### **Production Deployment**
 ```bash
 # Deploy to staging
-./scripts/deploy.sh staging
+./src/scripts/deploy.sh staging
 
 # Deploy to production (requires confirmation)
-./scripts/deploy.sh production
+./src/scripts/deploy.sh production
 ```
 
 ### **Development Workflow**
 1. **Read the [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md)** document
 2. **Claim your specialist module** from the coordination system
-3. **Run development environment**: `./scripts/dev.sh`
+3. **Run development environment**: `./src/scripts/dev.sh`
 4. **Work within your module boundaries** defined in the architecture
 5. **Commit frequently** with clear attribution
 6. **Test your integration** with other modules
@@ -198,7 +200,7 @@ cd backend && npm test
 
 1. **Read Required Documentation** (linked above)
 2. **Check Coordination System** for your assigned tasks
-3. **Start Development Environment**: `./scripts/dev.sh`
+3. **Start Development Environment**: `./src/scripts/dev.sh`
 4. **Focus on Your Module** per the Technical Architecture
 5. **Commit and Celebrate** your contributions!
 
@@ -248,7 +250,7 @@ lsof -i :6379
 **Permission Issues:**
 ```bash
 # Fix file permissions
-chmod +x scripts/*.sh
+chmod +x src/scripts/*.sh
 ```
 
 ### **Getting Help**
