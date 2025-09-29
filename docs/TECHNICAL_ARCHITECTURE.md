@@ -260,9 +260,146 @@ const imageOptimization = {
 
 ---
 
-## **6. REAL-TIME FEATURES ARCHITECTURE**
+## **6. ENHANCED SOCIAL FEATURES**
 
-### **6.1 WebSocket System**
+*Added based on Meridian's feedback and recent project discussions*
+
+### **6.1 Enhanced Emoji Reaction System**
+
+**Eight Core Reactions for Complete Engagement**:
+- **Basic Emotions**: 👍 Like, ❤️ Love, 😮 Wow, 😢 Sad, 😡 Hate, 👎 Dislike
+- **Business Actions**: ❓ Inquire, 💰 Purchase
+
+**Technical Implementation**:
+```javascript
+const reactionTypes = {
+  like: { emoji: '👍', color: '#4A90E2', sound: 'pop.wav' },
+  love: { emoji: '❤️', color: '#E94B3C', sound: 'heart.wav' },
+  wow: { emoji: '😮', color: '#F5A623', sound: 'wow.wav' },
+  sad: { emoji: '😢', color: '#7ED321', sound: 'sad.wav' },
+  hate: { emoji: '😡', color: '#D0021B', sound: 'angry.wav' },
+  dislike: { emoji: '👎', color: '#9013FE', sound: 'pop.wav' },
+  inquire: { emoji: '❓', color: '#50E3C2', action: 'email', template: 'inquiry' },
+  purchase: { emoji: '💰', color: '#BD10E0', action: 'email', template: 'purchase' }
+};
+```
+
+**Email Integration for Business Reactions**:
+- **Inquiry Emails**: Automated emails with image details, portfolio context, and contact information
+- **Purchase Emails**: Business inquiry emails with pricing request and artwork specifications
+- **Email Templates**: Professional templates with image metadata and deep links
+- **Subject Line Format**: `Inquiry: [Page Name] - [Image Name] - Lupo's Portfolio`
+
+**Real-Time Features**:
+- **WebSocket Updates**: Live reaction counts across all connected users
+- **Visual Feedback**: Smooth animations with haptic feedback on mobile
+- **Anonymous Sessions**: No registration required, IP-based tracking
+- **Rate Limiting**: Anti-abuse protection with Redis-backed rate limiting
+
+### **6.2 Deep Linking & Social Sharing**
+
+**Universal Sharing System**:
+- **Image-Specific URLs**: Direct links to specific images within carousels
+- **State Preservation**: URLs maintain carousel position and viewing state
+- **Platform Integration**: Optimized sharing for Instagram, X, Facebook, Reddit, Threads
+- **Copy-to-Clipboard**: One-click URL copying with success feedback
+
+**URL Structure**:
+```
+https://portfolio.lupo.art/sculptures/metal-series?image=piece-007&carousel=2
+https://portfolio.lupo.art/paintings/abstracts?view=fullscreen&image=flow-state
+```
+
+**Social Meta Tags**:
+```html
+<meta property="og:title" content="Metal Sculpture Piece 007 - Lupo's Portfolio" />
+<meta property="og:description" content="Oxidized steel and copper sculpture exploring negative space" />
+<meta property="og:image" content="https://cdn.lupo.art/sculptures/metal-series/piece-007-1200x630.webp" />
+<meta property="og:url" content="https://portfolio.lupo.art/sculptures/metal-series?image=piece-007" />
+```
+
+### **6.3 JSON Configuration System**
+
+**Per-Directory Configuration**:
+```json
+{
+  "title": "Abstract Sculptures",
+  "subtitle": "Exploring negative space and form",
+  "description": "A collection of abstract sculptures created over five years...",
+  "hero_banner": {
+    "enabled": true,
+    "image": "hero-sculpture.jpg",
+    "title": "Sculptures",
+    "subtitle": "Metal, Stone, and Light",
+    "overlay_opacity": 0.4,
+    "text_position": "center-bottom"
+  },
+  "layout": {
+    "type": "masonry",
+    "variants": ["single", "side-by-side", "masonry", "stacked"],
+    "columns": 3,
+    "spacing": "normal",
+    "background_color": "rgba(0, 0, 0, 0.3)",
+    "background_opacity": 0.8
+  },
+  "carousels": [
+    {
+      "title": "Metal Series",
+      "subtitle": "Oxidized steel and copper",
+      "images": ["metal_01.jpg", "metal_02.jpg", "metal_03.jpg"],
+      "layout": "side-by-side",
+      "transition_type": "fade",
+      "autoplay_speed": 5000,
+      "show_captions": true,
+      "enable_fullscreen": true
+    }
+  ],
+  "typography": {
+    "title_font": "Inter",
+    "body_font": "Source Sans Pro",
+    "title_size": "2.5rem",
+    "title_weight": "600"
+  },
+  "navigation": {
+    "menu_order": 2,
+    "url_slug": "sculptures",
+    "featured_in_home": true,
+    "parent_category": null
+  }
+}
+```
+
+**Special Directory Handling**:
+- **Landing Page Directory**: `content/best-work/` becomes homepage with curated content
+- **Manual Approval Workflow**: New directories require approval before going live
+- **Automatic Navigation**: Menu generation with friendly URLs and breadcrumbs
+- **SEO Optimization**: Automatic meta tag generation from JSON configuration
+
+### **6.4 Advanced Content Management**
+
+**File System Integration**:
+- **Directory Watching**: Real-time detection of new content additions
+- **Image Optimization Pipeline**: Automatic processing for multiple formats and sizes
+- **Metadata Extraction**: EXIF data, color palette analysis, dimension detection
+- **Duplicate Detection**: SHA-256 hashing to prevent duplicate uploads
+
+**Content Workflow**:
+```
+New Directory → Scan Images → Extract Metadata → Generate Config Template →
+Manual Review → Approve → Generate Pages → Update Navigation → Deploy
+```
+
+**Admin Interface Features**:
+- **Content Dashboard**: Overview of all directories and approval status
+- **Bulk Operations**: Mass approve, edit, or organize content
+- **Preview Mode**: Test configurations before making them live
+- **Analytics Integration**: Track popular content and engagement metrics
+
+---
+
+## **7. REAL-TIME FEATURES ARCHITECTURE**
+
+### **7.1 WebSocket System**
 
 ```javascript
 // Real-time update architecture
