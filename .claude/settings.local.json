@@ -15,7 +15,17 @@
       "mcp__coordination-system-Local-Dev__update_task",
       "mcp__coordination-system-Production__get_messages",
       "mcp__coordination-system-Production__send_message",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "mcp__coordination-system-Production__bootstrap",
+      "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/**)",
+      "Read(//d/Lupo/Source/Portfolio/docs/**)",
+      "mcp__coordination-system-Production__get_tasks",
+      "mcp__coordination-system-Production__get_pending_tasks",
+      "Read(//d/Lupo/Source/Portfolio/**)",
+      "mcp__coordination-system-Production__get_projects",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

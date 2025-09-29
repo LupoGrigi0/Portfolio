@@ -10,7 +10,12 @@
     "lint": "eslint src/**/*.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["portfolio", "art", "express", "typescript"],
+  "keywords": [
+    "portfolio",
+    "art",
+    "express",
+    "typescript"
+  ],
   "author": "Phoenix Foundation Architect",
   "license": "ISC",
   "type": "module",
@@ -27,6 +32,8 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/chokidar": "^1.7.5",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.5.2",
