@@ -1,0 +1,106 @@
+# Modern Art Portfolio - Docker Compose Configuration
+# Foundation Architecture by Phoenix
+# Complete development environment with all services
+
+version: '3.8'
+
+services:
+  # Frontend - Next.js Application
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.frontend
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    depends_on:
+      - backend
+    networks:
+      - portfolio-network
+
+  # Backend - Node.js/Express API
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.backend
+      target: development
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - portfolio-data:/app/data
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - FRONTEND_URL=http://localhost:3000
+      - DATABASE_PATH=/app/data/portfolio.sqlite
+      - REDIS_URL=redis://redis:6379
+      - CONTENT_DIRECTORY=/app/content
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - portfolio-network
+
+  # Redis - Caching and Session Store
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - portfolio-redis:/data
+    command: redis-server --appendonly yes
+    networks:
+      - portfolio-network
+
+  # PostgreSQL - Optional for production scaling
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=portfolio
+      - POSTGRES_USER=portfolio
+      - POSTGRES_PASSWORD=portfolio_dev
+    volumes:
+      - portfolio-postgres:/var/lib/postgresql/data
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - portfolio-network
+
+  # Nginx - Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/certs:/etc/nginx/certs
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - portfolio-network
+    profiles:
+      - production
+
+volumes:
+  portfolio-data:
+    driver: local
+  portfolio-redis:
+    driver: local
+  portfolio-postgres:
+    driver: local
+
+networks:
+  portfolio-network:
+    driver: bridge

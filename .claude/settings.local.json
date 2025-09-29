@@ -5,7 +5,14 @@
       "mcp__coordination-system-Local-Dev__get_pending_tasks",
       "mcp__coordination-system-Local-Dev__send_message",
       "mcp__coordination-system-Local-Dev__claim_task",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "mcp__coordination-system-Local-Dev__get_messages",
+      "Bash(chmod:*)",
+      "mcp__coordination-system-Local-Dev__update_task"
     ],
     "deny": [],
     "ask": []
