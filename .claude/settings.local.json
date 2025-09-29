@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__coordination-system-Local-Dev__bootstrap",
+      "mcp__coordination-system-Local-Dev__get_pending_tasks",
+      "mcp__coordination-system-Local-Dev__send_message",
+      "mcp__coordination-system-Local-Dev__claim_task",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

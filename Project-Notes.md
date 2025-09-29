@@ -1,0 +1,1 @@
+### Lessons learned, technical details, progress. This document get's added to, never deleted or shortened. 
