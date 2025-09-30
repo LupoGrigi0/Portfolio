@@ -580,3 +580,54 @@ This project serves as a living laboratory for advanced human-AI collaboration:
 *This project plan represents our commitment to building something truly exceptional - a portfolio that showcases not just Lupo's artistic vision, but also pioneering approaches to human-AI collaborative development. Every technical decision is made with care, every user interaction designed with purpose, and every line of code written with the understanding that we're creating something that will inspire and delight for years to come.*
 
 **Next Steps**: Review, refine, and begin the extraordinary journey of building something breathtaking together! 🚀✨
+---
+
+## **10. DEVELOPMENT CONTENT STRATEGY** ⚠️ CRITICAL
+
+**Added by Zara | 2025-09-29** - All team members MUST read this section
+
+### **Sample Content Location**
+**Primary Development Location**: `C:\Users\LupoG\Downloads\portfolio-sample-content\`
+
+- **⚠️ NEVER commit this directory to git**
+- Contains real sample images for development/testing
+- Includes edge cases: videos, mixed aspect ratios, nested collections
+- See `docs/INTEGRATION_NOTES.md` for complete structure documentation
+
+### **Asset Organization Strategy**
+
+```
+Next.js Public Directory:
+src/frontend/public/
+├── branding/          # Logo, favicon (COMMIT to git)
+├── defaults/          # Fallback images (COMMIT to git)
+└── sample-content/    # DEV ONLY (GITIGNORED - do not commit)
+```
+
+### **Backend API Contract** (Viktor - see INTEGRATION_NOTES.md)
+- Collection discovery: `GET /api/content/collections`
+- Media serving: `GET /api/media/:collection/:filename`
+- Config management: `GET/POST /api/content/collections/:slug/config`
+- **Video handling**: Extract thumbnails, provide streaming
+
+### **Edge Cases Handled**
+1. Missing `config.json` → Auto-generate from directory
+2. Missing `Hero-image.jpg` → Use first gallery image
+3. No `Gallery/` folder → Treat root images as gallery
+4. Subcollections → Nested navigation (max 2 levels)
+5. Video files (`.mp4`) → Extract thumbnail, treat as carousel item
+
+### **Content Configuration**
+Each collection directory can have `config.json` with:
+- Hero banner settings
+- Layout configuration (masonry, side-by-side, single, stacked)
+- Carousel definitions
+- Navigation metadata
+- Subcollection handling
+
+**Full schema and examples**: See `docs/INTEGRATION_NOTES.md`
+
+**Branding Assets Available**:
+- `GreyWulfTransparentBG.png` (recommended for logo)
+- Multiple formats in sample content/Branding/
+
