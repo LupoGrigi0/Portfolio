@@ -68,6 +68,95 @@ Signed-off-by: Phoenix Foundation Architect <phoenix@lupo-portfolio.dev>"
 
 ---
 
+## **Development Workflow & Tools**
+
+### Backend Development Server
+
+**Auto-Restart Development Environment**:
+
+The backend uses `tsx` with watch mode for automatic TypeScript compilation and server restart:
+
+```bash
+cd src/backend
+npm run dev  # Starts tsx watch mode
+```
+
+**Why tsx instead of ts-node?**
+- **Better ESM support** - Handles ES modules with TypeScript seamlessly
+- **Faster restart** - Hot reload without full recompilation
+- **Native watch mode** - Built-in file watching, no need for nodemon
+- **Cross-platform** - Consistent behavior on Windows/Linux/macOS
+
+### Graceful Shutdown for Development
+
+**Problem**: During development, you often need to restart the backend server to pick up configuration changes or clear state.
+
+**Solution**: Development-only graceful shutdown endpoint
+
+```typescript
+POST http://localhost:4000/api/admin/shutdown
+```
+
+**How it works**:
+1. Endpoint checks `process.env.NODE_ENV !== 'production'`
+2. Sends success response to client
+3. Waits 500ms for response to send
+4. Calls `process.exit(0)` to terminate cleanly
+5. `tsx watch` detects the exit and automatically restarts the server
+
+**Usage Example**:
+```bash
+# Terminal 1: Start backend with auto-restart
+cd src/backend
+npm run dev
+
+# Terminal 2: Trigger restart when needed
+curl -X POST http://localhost:4000/api/admin/shutdown
+
+# Server will shut down gracefully and tsx watch restarts it
+```
+
+**Security**:
+- Only available in development (`NODE_ENV !== 'production'`)
+- Returns 403 Forbidden in production
+- Never exposes this endpoint in production builds
+
+### Multi-Port CORS Configuration
+
+**Development Scenario**: Multiple team members running frontend instances on different ports simultaneously.
+
+**Configuration** (`src/backend/src/index.ts`):
+```typescript
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3002',  // Alternative frontend port
+  'http://localhost:3003',  // Additional testing port
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, curl, mobile apps)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+```
+
+**Benefits**:
+- **Parallel development** - Multiple frontend instances can run simultaneously
+- **Testing flexibility** - Test different frontend configurations against same backend
+- **API testing tools** - Postman/curl/Insomnia work without origin headers
+
+**Adding ports**: Edit the `allowedOrigins` array in `src/backend/src/index.ts`
+
+---
+
 ## **Architecture Decision Records**
 
 ### Technology Stack Decisions:

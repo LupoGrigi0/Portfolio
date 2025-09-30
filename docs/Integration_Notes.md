@@ -106,6 +106,61 @@ public/user-content/
 
 ## Backend API Requirements for Viktor
 
+### Development Configuration
+
+#### Multi-Port CORS Support
+
+The backend supports multiple frontend development ports to allow parallel development:
+
+**Configured Origins**:
+- `http://localhost:3000` (primary frontend)
+- `http://localhost:3002` (alternative/testing)
+- `http://localhost:3003` (additional testing)
+
+**Adding Additional Ports**:
+
+Edit `src/backend/src/index.ts`:
+```typescript
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  'http://localhost:3004',  // Add new port here
+];
+```
+
+**Note**: Requests with no origin (Postman, curl, mobile apps) are automatically allowed.
+
+#### Development Tools
+
+**Graceful Shutdown Endpoint** (Development Only):
+```typescript
+POST /api/admin/shutdown
+Response: {
+  success: true,
+  message: "Server shutting down..."
+}
+```
+
+**Usage**:
+- Only available when `NODE_ENV !== 'production'`
+- Cleanly terminates the server process
+- Combined with `tsx watch`, enables automatic restart
+- Returns 403 Forbidden in production mode
+
+**Development Workflow**:
+```bash
+# Start server with auto-restart
+npm run dev  # Uses tsx watch
+
+# Trigger restart from another terminal
+curl -X POST http://localhost:4000/api/admin/shutdown
+
+# Server will shut down gracefully and tsx watch will restart it
+```
+
+**Security**: This endpoint checks `process.env.NODE_ENV !== 'production'` before allowing shutdown.
+
 ### Content Service Endpoints Needed
 
 #### 1. Collection Discovery
