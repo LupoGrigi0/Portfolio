@@ -18,7 +18,7 @@ export default function Home() {
         <ContentBlock className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center text-white">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 tracking-tight">
-              Lupo's Art Portfolio
+              Lupo&apos;s Art Portfolio
             </h1>
             <p className="text-xl sm:text-2xl text-white/80 max-w-2xl mx-auto">
               A breathtaking showcase of 50,000+ images with cinematic effects

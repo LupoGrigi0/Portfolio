@@ -36,7 +36,8 @@ export default function RootLayout({
             logoSrc="/branding/logo.png"
             menuItems={[
               { label: 'Home', href: '/' },
-              { label: 'Gallery Demo', href: '/gallery', featured: true },
+              { label: 'Collections', href: '/collections', featured: true },
+              { label: 'Gallery Demo', href: '/gallery' },
             ]}
           />
           <main className="pt-16 min-h-screen">

@@ -39,13 +39,38 @@ export default function CarouselNavigation({
   onToggleAutoplay
 }: CarouselNavigationProps) {
 
+  const handlePrevious = () => {
+    console.log('[CarouselNavigation] Previous button clicked');
+    onPrevious();
+  };
+
+  const handleNext = () => {
+    console.log('[CarouselNavigation] Next button clicked');
+    onNext();
+  };
+
+  const handleGoTo = (index: number) => {
+    console.log('[CarouselNavigation] Dot indicator clicked', { index });
+    onGoTo(index);
+  };
+
+  const handleToggleFullscreen = () => {
+    console.log('[CarouselNavigation] Fullscreen toggle clicked', { currentState: isFullscreen });
+    onToggleFullscreen?.();
+  };
+
+  const handleToggleAutoplay = () => {
+    console.log('[CarouselNavigation] Autoplay toggle clicked', { isPaused });
+    onToggleAutoplay?.();
+  };
+
   return (
     <>
       {/* Previous/Next Arrow Buttons */}
       <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
         {/* Previous Button */}
         <button
-          onClick={onPrevious}
+          onClick={handlePrevious}
           className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
           aria-label="Previous image"
         >
@@ -66,7 +91,7 @@ export default function CarouselNavigation({
 
         {/* Next Button */}
         <button
-          onClick={onNext}
+          onClick={handleNext}
           className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
           aria-label="Next image"
         >
@@ -92,7 +117,7 @@ export default function CarouselNavigation({
           {Array.from({ length: totalImages }).map((_, index) => (
             <button
               key={index}
-              onClick={() => onGoTo(index)}
+              onClick={() => handleGoTo(index)}
               className={`w-2 h-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50 ${
                 index === currentIndex
                   ? 'bg-white w-8'
@@ -110,7 +135,7 @@ export default function CarouselNavigation({
         {/* Autoplay Toggle */}
         {onToggleAutoplay && (
           <button
-            onClick={onToggleAutoplay}
+            onClick={handleToggleAutoplay}
             className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2.5 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
             aria-label={isPaused ? 'Resume autoplay' : 'Pause autoplay'}
           >
@@ -137,7 +162,7 @@ export default function CarouselNavigation({
         {/* Fullscreen Toggle */}
         {onToggleFullscreen && (
           <button
-            onClick={onToggleFullscreen}
+            onClick={handleToggleFullscreen}
             className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2.5 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
             aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >

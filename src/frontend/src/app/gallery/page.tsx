@@ -137,7 +137,7 @@ export default function GalleryDemo() {
         {/* Info */}
         <ContentBlock className="text-center">
           <p className="text-white/60 text-sm">
-            This is a demo using placeholder images. In production, images will be served from Viktor's content API.
+            This is a demo using placeholder images. In production, images will be served from Viktor&apos;s content API.
           </p>
         </ContentBlock>
       </Grid>

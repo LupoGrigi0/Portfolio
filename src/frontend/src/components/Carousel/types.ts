@@ -53,3 +53,34 @@ export interface CarouselControls {
   pause: () => void;
   resume: () => void;
 }
+
+/**
+ * Transition System Types
+ *
+ * These interfaces define the contract for carousel transitions.
+ * Each transition is a self-contained module that returns CSS properties.
+ */
+
+export interface TransitionParams {
+  isActive: boolean;
+  direction: 'forward' | 'backward' | null;
+  transitionDuration: number;
+}
+
+export interface TransitionHandler {
+  /**
+   * Returns CSS properties for the transition effect
+   * @param params - Transition state parameters
+   * @returns React CSSProperties object
+   */
+  getStyle: (params: TransitionParams) => React.CSSProperties;
+
+  /**
+   * Optional: Transition-specific metadata
+   */
+  metadata?: {
+    name: string;
+    description: string;
+    author?: string;
+  };
+}

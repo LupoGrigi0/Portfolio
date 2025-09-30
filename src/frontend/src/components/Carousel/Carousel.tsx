@@ -20,7 +20,7 @@
 import { useEffect } from 'react';
 import type { CarouselProps } from './types';
 import { useCarouselState } from './hooks/useCarouselState';
-import { useBackground } from '@/components/Layout/Background';
+// import { useBackground } from '@/components/Layout/Background'; // Removed - background handled separately
 import CarouselImageRenderer from './CarouselImageRenderer';
 import CarouselNavigation from './CarouselNavigation';
 
@@ -38,7 +38,16 @@ export default function Carousel({
   className = ''
 }: CarouselProps) {
 
-  const { setBackground } = useBackground();
+  console.log('[Carousel] Initializing', {
+    imageCount: images.length,
+    transitionType,
+    transitionDuration,
+    autoplaySpeed,
+    layout
+  });
+
+  // Background integration removed - handled separately by parallax scrolling
+  // const { setBackground } = useBackground();
 
   const [state, controls] = useCarouselState({
     imageCount: images.length,
@@ -49,17 +58,24 @@ export default function Carousel({
   });
 
   const currentImage = images[state.currentIndex];
-  const { currentIndex, isTransitioning, isFullscreen } = state;
+  const { currentIndex, isFullscreen, direction } = state;
 
-  // Update background when carousel image changes
-  useEffect(() => {
-    if (currentImage?.src) {
-      setBackground(currentImage.src);
-    }
-  }, [currentImage, setBackground]);
+  // Background integration removed - handled separately by parallax scrolling
+  // useEffect(() => {
+  //   if (currentImage?.src) {
+  //     console.log('[Carousel] Updating background', {
+  //       imageId: currentImage.id,
+  //       imageSrc: currentImage.src,
+  //       currentIndex
+  //     });
+  //     setBackground(currentImage.src);
+  //   }
+  // }, [currentImage, setBackground, currentIndex]);
 
   // Prevent scrolling when in fullscreen mode
   useEffect(() => {
+    console.log('[Carousel] Fullscreen mode changed', { isFullscreen });
+
     if (isFullscreen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -72,6 +88,7 @@ export default function Carousel({
   }, [isFullscreen]);
 
   if (!images || images.length === 0) {
+    console.warn('[Carousel] No images provided');
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-black/20 rounded-lg">
         <p className="text-white/60">No images available</p>
@@ -81,13 +98,13 @@ export default function Carousel({
 
   return (
     <div
-      className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : ''} ${className}`}
+      className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'h-[600px] z-10'} ${className}`}
       role="region"
       aria-label="Image carousel"
       aria-live="polite"
     >
       {/* Main Carousel Container */}
-      <div className={`relative ${isFullscreen ? 'h-screen' : 'h-full'}`}>
+      <div className={`relative w-full ${isFullscreen ? 'h-screen' : 'h-full'}`}>
         {/* Image Display */}
         <div className="relative w-full h-full overflow-hidden">
           {images.map((image, index) => (
@@ -97,6 +114,7 @@ export default function Carousel({
               isActive={index === currentIndex}
               transitionDuration={transitionDuration}
               transitionType={transitionType}
+              direction={direction}
               showCaption={showCaptions && isFullscreen}
             />
           ))}

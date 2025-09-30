@@ -11,6 +11,7 @@
 'use client';
 
 import { Carousel } from '@/components/Carousel';
+import { ReferenceCarousel } from '@/components/ReferenceCarousel';
 import { ResponsiveContainer, Grid, ContentBlock } from '@/components/Layout';
 import type { CarouselImage } from '@/components/Carousel/types';
 
@@ -88,22 +89,36 @@ export default function CarouselDemo() {
           </div>
         </ContentBlock>
 
-        {/* Carousel Component */}
-        <ContentBlock>
-          <div className="min-h-[60vh] flex items-center">
-            <Carousel
-              images={carouselImages}
-              transitionType="fade"
-              transitionDuration={800}
-              autoplaySpeed={5000}
-              showCaptions={true}
-              enableFullscreen={true}
-              showNavigation={true}
-              showIndicators={true}
-              onImageChange={handleImageChange}
+        {/* Side-by-Side Comparison */}
+        <Grid variant="side-by-side" spacing="normal">
+          <ContentBlock>
+            <h2 className="text-2xl font-bold text-white mb-4">🔧 Custom Carousel (Under Development)</h2>
+            <div className="min-h-[60vh] flex items-center">
+              <Carousel
+                images={carouselImages}
+                transitionType="fade"
+                transitionDuration={800}
+                autoplaySpeed={5000}
+                showCaptions={true}
+                enableFullscreen={true}
+                showNavigation={true}
+                showIndicators={true}
+                onImageChange={handleImageChange}
+              />
+            </div>
+          </ContentBlock>
+
+          <ContentBlock>
+            <h2 className="text-2xl font-bold text-white mb-4">✅ Reference Carousel (Working Example)</h2>
+            <ReferenceCarousel
+              images={carouselImages.map(img => ({
+                id: img.id,
+                src: img.src,
+                alt: img.alt
+              }))}
             />
-          </div>
-        </ContentBlock>
+          </ContentBlock>
+        </Grid>
 
         {/* Features Grid */}
         <Grid variant="side-by-side" spacing="normal">

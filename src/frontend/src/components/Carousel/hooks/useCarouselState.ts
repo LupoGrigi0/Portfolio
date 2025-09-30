@@ -53,6 +53,12 @@ export function useCarouselState({
 
     const direction = index > state.currentIndex ? 'forward' : 'backward';
 
+    console.log('[useCarouselState] Navigating to index', {
+      from: state.currentIndex,
+      to: index,
+      direction
+    });
+
     setState(prev => ({
       ...prev,
       isTransitioning: true,
@@ -97,14 +103,19 @@ export function useCarouselState({
 
   // Toggle fullscreen mode
   const toggleFullscreen = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      isFullscreen: !prev.isFullscreen
-    }));
+    setState(prev => {
+      const newFullscreen = !prev.isFullscreen;
+      console.log('[useCarouselState] Toggle fullscreen', { isFullscreen: newFullscreen });
+      return {
+        ...prev,
+        isFullscreen: newFullscreen
+      };
+    });
   }, []);
 
   // Pause autoplay
   const pause = useCallback(() => {
+    console.log('[useCarouselState] Autoplay paused');
     setState(prev => ({ ...prev, isPaused: true }));
     if (autoplayTimerRef.current) {
       clearTimeout(autoplayTimerRef.current);
@@ -114,6 +125,7 @@ export function useCarouselState({
 
   // Resume autoplay
   const resume = useCallback(() => {
+    console.log('[useCarouselState] Autoplay resumed');
     setState(prev => ({ ...prev, isPaused: false }));
   }, []);
 
@@ -147,20 +159,24 @@ export function useCarouselState({
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
+          console.log('[useCarouselState] Keyboard: Previous');
           previous();
           break;
         case 'ArrowRight':
           e.preventDefault();
+          console.log('[useCarouselState] Keyboard: Next');
           next();
           break;
         case 'Escape':
           if (state.isFullscreen) {
             e.preventDefault();
+            console.log('[useCarouselState] Keyboard: Exit fullscreen');
             toggleFullscreen();
           }
           break;
         case ' ':
           e.preventDefault();
+          console.log('[useCarouselState] Keyboard: Toggle autoplay');
           toggleAutoplay();
           break;
       }

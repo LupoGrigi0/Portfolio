@@ -82,7 +82,7 @@ export default function Background({
             priority
             className="object-cover"
             sizes="100vw"
-            quality={85}
+            quality={90}
           />
         </div>
       )}
@@ -103,7 +103,7 @@ export default function Background({
             priority
             className="object-cover"
             sizes="100vw"
-            quality={85}
+            quality={90}
           />
         </div>
       )}
