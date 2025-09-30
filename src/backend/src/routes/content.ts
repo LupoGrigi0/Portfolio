@@ -14,6 +14,137 @@ const logger = createLogger('backend-content.log');
 const router = Router();
 const db = new DatabaseManager();
 
+// Initialize database on first use
+let dbInitialized = false;
+async function ensureDbInitialized() {
+  if (!dbInitialized) {
+    await db.initialize();
+    dbInitialized = true;
+  }
+}
+
+/**
+ * GET /api/content/collections
+ * Get all collections (directories) for frontend integration
+ * Alias for /directories with Zara's preferred response format
+ */
+router.get('/collections', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await ensureDbInitialized();
+    await logger.info('ContentRoutes', 'GET /collections');
+
+    const { status } = req.query;
+    const filter: any = {};
+
+    if (status) filter.status = status as string;
+
+    const directories = await db.getDirectories(filter);
+
+    // Format as collections per Zara's spec
+    const collections = directories.map((dir: any) => {
+      const tags = JSON.parse(dir.tags || '[]');
+      const config = JSON.parse(dir.config || '{}');
+
+      return {
+        id: dir.id,
+        name: dir.title,
+        slug: dir.slug,
+        heroImage: dir.cover_image,
+        hasConfig: Object.keys(config).length > 0,
+        imageCount: dir.image_count || 0,
+        videoCount: 0, // TODO: Track video count separately
+        subcollections: [], // TODO: Implement hierarchical collections
+        description: dir.description,
+        featured: Boolean(dir.featured),
+        tags,
+        config,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        collections,
+      },
+    });
+  } catch (error) {
+    await logger.error('ContentRoutes', 'GET /collections failed', { error });
+    next(error);
+  }
+});
+
+/**
+ * GET /api/content/collections/:slug
+ * Get specific collection with full details
+ * Alias for /directories/:slug with collection format
+ */
+router.get('/collections/:slug', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await ensureDbInitialized();
+    const { slug } = req.params;
+    await logger.info('ContentRoutes', 'GET /collections/:slug', { slug });
+
+    const directory = await db.getDirectoryBySlug(slug);
+
+    if (!directory) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found',
+        code: 'COLLECTION_NOT_FOUND',
+      });
+    }
+
+    // Get images for this collection
+    const images = await db.getImagesByDirectory((directory as any).id);
+
+    // Format as collection
+    const config = JSON.parse((directory as any).config || '{}');
+    const tags = JSON.parse((directory as any).tags || '[]');
+
+    const collection = {
+      id: (directory as any).id,
+      name: (directory as any).title,
+      slug: (directory as any).slug,
+      heroImage: (directory as any).cover_image,
+      description: (directory as any).description,
+      config,
+      featured: Boolean((directory as any).featured),
+      tags,
+      gallery: images.map((img: any) => ({
+        id: img.id,
+        filename: img.filename,
+        title: img.title,
+        caption: img.caption,
+        type: img.format === 'mp4' ? 'video' : 'image',
+        urls: {
+          thumbnail: img.thumbnail_url,
+          small: img.small_url,
+          medium: img.medium_url,
+          large: img.large_url,
+          original: img.original_url,
+        },
+        dimensions: {
+          width: img.width,
+          height: img.height,
+          aspectRatio: img.aspect_ratio,
+        },
+        status: img.status,
+      })),
+      subcollections: [], // TODO: Implement hierarchical structure
+    };
+
+    res.json({
+      success: true,
+      data: {
+        collection,
+      },
+    });
+  } catch (error) {
+    await logger.error('ContentRoutes', 'GET /collections/:slug failed', { error });
+    next(error);
+  }
+});
+
 /**
  * GET /api/content/directories
  * Get all portfolio directories

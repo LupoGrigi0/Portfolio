@@ -131,6 +131,19 @@ export class DatabaseManager {
     );
   }
 
+  async updateDirectoryMetadata(directoryId: string, metadata: any) {
+    const db = this.getDb();
+    // Get current config
+    const dir = db.prepare('SELECT config FROM directories WHERE id = ?').get(directoryId) as any;
+    const currentConfig = dir ? JSON.parse(dir.config || '{}') : {};
+
+    // Merge new metadata with existing config
+    const updatedConfig = { ...currentConfig, ...metadata };
+
+    const stmt = db.prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    return stmt.run(JSON.stringify(updatedConfig), directoryId);
+  }
+
   // Image operations
   async getImagesByDirectory(directoryId: string, limit = 50, offset = 0) {
     const db = this.getDb();
@@ -144,6 +157,48 @@ export class DatabaseManager {
   async getImageById(id: string) {
     const db = this.getDb();
     return db.prepare('SELECT * FROM images WHERE id = ?').get(id);
+  }
+
+  async getImageByPath(path: string) {
+    const db = this.getDb();
+    // Store path in exif_data JSON for now, or could add dedicated column
+    return db.prepare("SELECT * FROM images WHERE json_extract(exif_data, '$.path') = ?").get(path);
+  }
+
+  async updateImage(id: string, data: any) {
+    const db = this.getDb();
+    const stmt = db.prepare(`
+      UPDATE images SET
+        filename = ?, title = ?, caption = ?, directory_id = ?,
+        thumbnail_url = ?, small_url = ?, medium_url = ?, large_url = ?, original_url = ?,
+        width = ?, height = ?, aspect_ratio = ?, file_size = ?, format = ?,
+        color_palette = ?, average_color = ?, status = ?, alt_text = ?, exif_data = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+
+    return stmt.run(
+      data.filename,
+      data.title,
+      data.caption || null,
+      data.directoryId,
+      data.thumbnailUrl || null,
+      data.smallUrl || null,
+      data.mediumUrl || null,
+      data.largeUrl || null,
+      data.originalUrl || null,
+      data.width || null,
+      data.height || null,
+      data.aspectRatio || null,
+      data.fileSize || null,
+      data.format || null,
+      JSON.stringify(data.colorPalette || []),
+      data.averageColor || null,
+      data.status || 'processing',
+      data.altText || null,
+      JSON.stringify(data.exifData || {}),
+      id
+    );
   }
 
   async createImage(data: any) {

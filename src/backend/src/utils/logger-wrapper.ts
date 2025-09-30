@@ -6,8 +6,19 @@
  * TypeScript wrapper around the project's logger.js
  */
 
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { pathToFileURL } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Dynamically resolve logger.js path (works in both dev and production)
+const loggerPath = join(__dirname, '../../../../../../src/logger.js');
+const loggerURL = pathToFileURL(loggerPath).href;
+
 // @ts-ignore - JavaScript module
-import { createLogger as createLoggerJS } from '../../../../../src/logger.js';
+const { createLogger: createLoggerJS } = await import(loggerURL);
 
 export interface Logger {
   info(message: string, ...args: any[]): Promise<void>;
