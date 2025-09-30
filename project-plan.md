@@ -587,12 +587,14 @@ This project serves as a living laboratory for advanced human-AI collaboration:
 **Added by Zara | 2025-09-29** - All team members MUST read this section
 
 ### **Sample Content Location**
-**Primary Development Location**: `C:\Users\LupoG\Downloads\portfolio-sample-content\`
+**Primary Development Location**: `E:\mnt\lupoportfolio\content\`
 
 - **⚠️ NEVER commit this directory to git**
 - Contains real sample images for development/testing
 - Includes edge cases: videos, mixed aspect ratios, nested collections
+- Mirrors Digital Ocean production structure (`/mnt/lupoportfolio/content/`)
 - See `docs/INTEGRATION_NOTES.md` for complete structure documentation
+- **Previous location** (DEPRECATED): `C:\Users\LupoG\Downloads\portfolio-sample-content\`
 
 ### **Asset Organization Strategy**
 

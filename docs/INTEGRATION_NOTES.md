@@ -7,11 +7,13 @@
 ## Content Strategy & File Organization
 
 ### Development Sample Content Location
-**Primary Location**: `C:\Users\LupoG\Downloads\portfolio-sample-content\`
+**Primary Location**: `E:\mnt\lupoportfolio\content\`
 
-This directory serves as the central repository for development sample content and should be referenced by all team members during development.
+This directory mirrors the Digital Ocean production structure (`/mnt/lupoportfolio/content/`) and serves as the central repository for development sample content. All team members should reference this location during development.
 
 **⚠️ IMPORTANT**: This directory is NOT tracked in git and should never be committed to the repository.
+
+**Previous Location** (DEPRECATED): `C:\Users\LupoG\Downloads\portfolio-sample-content\` - Content has been migrated to the new unified location.
 
 ### Sample Content Structure
 
@@ -94,14 +96,22 @@ src/frontend/
 
 Add to `.gitignore`:
 ```
+# Environment files with local paths
+.env.local
+.env.development.local
+
 # Sample/dev content - never commit
 public/sample-content/
 **/sample-content/
-C:/Users/*/Downloads/portfolio-sample-content/
+E:/mnt/lupoportfolio/content/
 
 # User-uploaded content in production
 public/uploads/
 public/user-content/
+
+# Logs
+E:/mnt/lupoportfolio/logs/
+**/logs/
 ```
 
 ## Backend API Requirements for Viktor

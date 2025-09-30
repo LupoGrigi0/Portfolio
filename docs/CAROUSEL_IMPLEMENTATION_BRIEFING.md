@@ -314,12 +314,14 @@ If config.json is missing or incomplete:
 
 ## Sample Content for Testing
 
-Use the sample content from `C:\Users\LupoG\Downloads\portfolio-sample-content\`:
+Use the sample content from `E:\mnt\lupoportfolio\content\`:
 
 1. **Simple test**: `couples/` - Basic gallery structure
 2. **Complex test**: `Cafe/` - Subcollections and nested folders
 3. **Edge case test**: `mixed-collection/` - Videos, mixed ratios, chaos
 4. **Branding test**: Use `Branding/GreyWulfTransparentBG.png` as placeholder
+
+**Note**: This location mirrors the Digital Ocean production structure for consistent development/production parity.
 
 ## API Contract (Backend Requirements)
 
