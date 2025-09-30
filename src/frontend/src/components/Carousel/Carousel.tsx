@@ -21,7 +21,7 @@ import { useEffect } from 'react';
 import type { CarouselProps } from './types';
 import { useCarouselState } from './hooks/useCarouselState';
 import { useBackground } from '@/components/Layout/Background';
-import CarouselImage from './CarouselImage';
+import CarouselImageRenderer from './CarouselImageRenderer';
 import CarouselNavigation from './CarouselNavigation';
 
 export default function Carousel({
@@ -91,11 +91,10 @@ export default function Carousel({
         {/* Image Display */}
         <div className="relative w-full h-full overflow-hidden">
           {images.map((image, index) => (
-            <CarouselImage
+            <CarouselImageRenderer
               key={image.id}
               image={image}
               isActive={index === currentIndex}
-              isTransitioning={isTransitioning}
               transitionDuration={transitionDuration}
               transitionType={transitionType}
               showCaption={showCaptions && isFullscreen}

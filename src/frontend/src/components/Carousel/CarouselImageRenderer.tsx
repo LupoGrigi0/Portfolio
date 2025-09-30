@@ -13,23 +13,21 @@
 import Image from 'next/image';
 import type { CarouselImage as CarouselImageType, TransitionType } from './types';
 
-interface CarouselImageProps {
+interface CarouselImageRendererProps {
   image: CarouselImageType;
   isActive: boolean;
-  isTransitioning: boolean;
   transitionDuration: number;
   transitionType: TransitionType;
   showCaption?: boolean;
 }
 
-export default function CarouselImage({
+export default function CarouselImageRenderer({
   image,
   isActive,
-  isTransitioning,
   transitionDuration,
   transitionType,
   showCaption = false
-}: CarouselImageProps) {
+}: CarouselImageRendererProps) {
 
   // Calculate opacity for fade transition
   const opacity = isActive ? 1 : 0;

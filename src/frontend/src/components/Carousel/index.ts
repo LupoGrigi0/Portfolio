@@ -9,13 +9,13 @@
  */
 
 export { default as Carousel } from './Carousel';
-export { default as CarouselImage } from './CarouselImage';
+export { default as CarouselImageRenderer } from './CarouselImageRenderer';
 export { default as CarouselNavigation } from './CarouselNavigation';
 export { useCarouselState } from './hooks/useCarouselState';
 
 export type {
   CarouselProps,
-  CarouselImage as CarouselImageType,
+  CarouselImage,
   TransitionType,
   CarouselLayout
 } from './types';

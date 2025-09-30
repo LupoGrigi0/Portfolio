@@ -12,7 +12,7 @@
 
 import { Carousel } from '@/components/Carousel';
 import { ResponsiveContainer, Grid, ContentBlock } from '@/components/Layout';
-import type { CarouselImage } from '@/components/Carousel';
+import type { CarouselImage } from '@/components/Carousel/types';
 
 // Sample images for carousel demo
 const carouselImages: CarouselImage[] = [
@@ -75,7 +75,7 @@ export default function CarouselDemo() {
 
   return (
     <ResponsiveContainer>
-      <Grid variant="single" spacing="large">
+      <Grid variant="single" spacing="loose">
         {/* Hero Section */}
         <ContentBlock className="min-h-[30vh] flex items-center justify-center">
           <div className="text-center text-white">

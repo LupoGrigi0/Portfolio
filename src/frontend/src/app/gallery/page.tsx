@@ -68,7 +68,7 @@ export default function GalleryDemo() {
 
   return (
     <ResponsiveContainer>
-      <Grid variant="single" spacing="large">
+      <Grid variant="single" spacing="loose">
         {/* Hero Section */}
         <ContentBlock className="min-h-[50vh] flex items-center justify-center">
           <div className="text-center text-white">
