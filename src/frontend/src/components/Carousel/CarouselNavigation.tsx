@@ -67,7 +67,7 @@ export default function CarouselNavigation({
   return (
     <>
       {/* Previous/Next Arrow Buttons */}
-      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none z-20">
         {/* Previous Button */}
         <button
           onClick={handlePrevious}
@@ -113,7 +113,7 @@ export default function CarouselNavigation({
 
       {/* Dot Indicators */}
       {showIndicators && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-black/50 px-3 py-2 rounded-full">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-black/50 px-3 py-2 rounded-full z-20">
           {Array.from({ length: totalImages }).map((_, index) => (
             <button
               key={index}
@@ -131,7 +131,7 @@ export default function CarouselNavigation({
       )}
 
       {/* Fullscreen & Autoplay Controls (Top Right) */}
-      <div className="absolute top-4 right-4 flex gap-2">
+      <div className="absolute top-4 right-4 flex gap-2 z-20">
         {/* Autoplay Toggle */}
         {onToggleAutoplay && (
           <button

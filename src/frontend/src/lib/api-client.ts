@@ -77,8 +77,15 @@ export async function getCollections(): Promise<Collection[]> {
       throw new Error(`Failed to fetch collections: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.collections || [];
+    const result = await response.json();
+
+    // Viktor's response format: { success: true, data: { collections: [...] } }
+    if (result.success && result.data?.collections) {
+      return result.data.collections;
+    }
+
+    // Fallback for direct format
+    return result.collections || [];
   } catch (error) {
     console.error('[API Client] Error fetching collections:', error);
     return [];
@@ -100,8 +107,15 @@ export async function getCollection(slug: string): Promise<Collection | null> {
       throw new Error(`Failed to fetch collection: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    return data.collection || null;
+    const result = await response.json();
+
+    // Viktor's response format: { success: true, data: { collection: {...} } }
+    if (result.success && result.data?.collection) {
+      return result.data.collection;
+    }
+
+    // Fallback for direct format
+    return result.collection || null;
   } catch (error) {
     console.error('[API Client] Error fetching collection:', error);
     return null;

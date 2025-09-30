@@ -34,7 +34,9 @@
       "Read(//c/Users/LupoG/Downloads/**)",
       "Bash(curl:*)",
       "Bash(powershell:*)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "mcp__coordination-system-Production__create_project",
+      "mcp__coordination-system-Production__create_task"
     ],
     "deny": [],
     "ask": []
