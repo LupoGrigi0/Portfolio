@@ -68,9 +68,15 @@ export default function Home() {
           </Grid>
         </ContentBlock>
 
-        {/* Info Section */}
+        {/* Call to Action */}
         <ContentBlock className="text-center">
-          <p className="text-white/60 text-sm">
+          <a
+            href="/gallery"
+            className="inline-block bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-300 backdrop-blur-sm border border-white/20"
+          >
+            View Gallery Demo →
+          </a>
+          <p className="text-white/60 text-sm mt-6">
             Layout foundation built by Zara • UI/UX & React Components Specialist
           </p>
         </ContentBlock>

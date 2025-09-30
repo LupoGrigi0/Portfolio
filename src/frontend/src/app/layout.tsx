@@ -32,7 +32,13 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <BackgroundProvider>
-          <Navigation />
+          <Navigation
+            logoSrc="/branding/logo.png"
+            menuItems={[
+              { label: 'Home', href: '/' },
+              { label: 'Gallery Demo', href: '/gallery', featured: true },
+            ]}
+          />
           <main className="pt-16 min-h-screen">
             {children}
           </main>

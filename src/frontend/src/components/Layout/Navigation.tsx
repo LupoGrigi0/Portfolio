@@ -74,27 +74,8 @@ export default function Navigation({ logoSrc, menuItems = [] }: NavigationProps)
       {/* Navigation Bar */}
       <div className="bg-black/30 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo / Home Link */}
-            <Link
-              href="/"
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-              aria-label="Go to homepage"
-            >
-              {logoSrc ? (
-                <img
-                  src={logoSrc}
-                  alt="Portfolio logo"
-                  className="h-10 w-auto"
-                />
-              ) : (
-                <div className="text-white text-xl font-semibold tracking-tight">
-                  Portfolio
-                </div>
-              )}
-            </Link>
-
-            {/* Hamburger Menu Button */}
+          <div className="flex items-center justify-start h-16 gap-4">
+            {/* Hamburger Menu Button - Now on the left */}
             <button
               onClick={toggleMenu}
               className="relative w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
@@ -120,6 +101,25 @@ export default function Navigation({ logoSrc, menuItems = [] }: NavigationProps)
                 />
               </div>
             </button>
+
+            {/* Logo / Home Link */}
+            <Link
+              href="/"
+              className="flex items-center hover:opacity-80 transition-opacity"
+              aria-label="Go to homepage"
+            >
+              {logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt="Lupo Grigio Portfolio"
+                  className="h-10 w-auto"
+                />
+              ) : (
+                <div className="text-white text-xl font-semibold tracking-tight">
+                  Lupo Grigio
+                </div>
+              )}
+            </Link>
           </div>
         </div>
       </div>
