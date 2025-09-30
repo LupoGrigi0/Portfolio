@@ -436,22 +436,39 @@ cd D:\Lupo\Source\Portfolio\worktrees\integration
 
 #### Environment Variables
 
+**Development Strategy**: Use `E:\mnt\lupoportfolio` to mirror production structure
+
 **Frontend (.env.local)**:
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_WS_URL=ws://localhost:4000
+LOG_PATH=E:/mnt/lupoportfolio/logs
+NODE_ENV=development
 ```
 
 **Backend (.env)**:
 ```bash
 PORT=4000
 FRONTEND_URL=http://localhost:3000
-DATABASE_PATH=./data/portfolio.sqlite
+DATABASE_PATH=E:/mnt/lupoportfolio/data/portfolio.sqlite
 REDIS_URL=redis://localhost:6379
-CONTENT_PATH=C:/Users/LupoG/Downloads/portfolio-sample-content
-LOG_PATH=./logs
+CONTENT_PATH=E:/mnt/lupoportfolio/content
+LOG_PATH=E:/mnt/lupoportfolio/logs
 NODE_ENV=development
 ```
+
+**Setup Development Volume Proxy**:
+```bash
+# Create local structure mirroring Digital Ocean volume
+mkdir -p E:\mnt\lupoportfolio\logs
+mkdir -p E:\mnt\lupoportfolio\data
+mkdir -p E:\mnt\lupoportfolio\content
+
+# Move sample content to unified location
+# (Coordinate with Zara for content migration)
+```
+
+**Production Volume Mount**: `/mnt/lupoportfolio` (Digital Ocean volume)
 
 ### Worktree Integration & Merge Protocol
 
@@ -570,6 +587,99 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Test accessibility compliance
 - Test production-like environment
 
+### Logging Architecture
+
+#### Logger.js Usage
+
+**Location**: `D:\Lupo\Source\Portfolio\src\logger.js` (project root)
+
+**All team members must use this logger** for debugging and monitoring.
+
+**Frontend Usage** (Zara, Kai, etc.):
+```javascript
+import { createLogger } from '@/../../src/logger.js';
+const logger = createLogger('frontend-carousel.log');
+
+await logger.info('Carousel initialized', { images: imageCount });
+await logger.error('Image load failed', { imageId, error });
+await logger.debug('Touch event', { x, y, velocity });
+```
+
+**Backend Usage** (Viktor, etc.):
+```javascript
+import { createLogger } from '../utils/logger-wrapper.js';
+const logger = createLogger('backend-content.log');
+
+await logger.info('ContentScanner', 'Scanning directory', { path });
+await logger.error('DatabaseManager', 'Query failed', { error });
+```
+
+#### Log File Organization
+
+**Development** (`E:\mnt\lupoportfolio\logs\`):
+```
+E:\mnt\lupoportfolio\logs\
+├── frontend-carousel.log      # Kai's carousel debugging
+├── frontend-layout.log         # Zara's layout components
+├── frontend-social.log         # Luna's social features
+├── backend-content.log         # Viktor's content API
+├── backend-database.log        # Viktor's database operations
+├── backend-social.log          # Luna's backend social
+└── integration.log             # Nova's integration tests
+```
+
+**Production** (`/mnt/lupoportfolio/logs/`):
+```
+/mnt/lupoportfolio/logs/
+├── frontend.log                # Next.js application logs
+├── backend.log                 # Express application logs
+├── backend-content.log         # Content scanning/serving
+├── backend-database.log        # Database operations
+├── nginx-access.log            # Nginx access logs
+├── nginx-error.log             # Nginx error logs
+└── redis.log                   # Redis logs (if needed)
+```
+
+#### Viewing Logs During Development
+
+```bash
+# Watch all logs in real-time
+tail -f E:\mnt\lupoportfolio\logs\*.log
+
+# Watch specific module
+tail -f E:\mnt\lupoportfolio\logs\frontend-carousel.log
+
+# Search for errors across all logs
+grep -r "ERROR" E:\mnt\lupoportfolio\logs\
+
+# Watch backend and frontend together
+tail -f E:\mnt\lupoportfolio\logs\frontend*.log E:\mnt\lupoportfolio\logs\backend*.log
+```
+
+#### Log Rotation (Production)
+
+Add to docker-compose.prod.yml:
+```yaml
+services:
+  backend:
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+#### Key Logging Principles
+
+1. **Always use logger.js** - Never use `console.log()` in production code
+2. **Name your logs** - Use descriptive names: `createLogger('module-feature.log')`
+3. **Include context** - Always pass relevant objects: `logger.info('Action', { userId, itemId })`
+4. **Log levels**:
+   - `info`: Normal operations (API calls, state changes)
+   - `error`: Failures and exceptions
+   - `warn`: Potential issues
+   - `debug`: Detailed debugging info (verbose)
+
 ### Current Integration Gaps & TODOs
 
 #### Frontend → Backend Integration
@@ -663,13 +773,13 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_PATH=/data/portfolio.sqlite
+      - DATABASE_PATH=/mnt/lupoportfolio/data/portfolio.sqlite
       - REDIS_URL=redis://redis:6379
-      - CONTENT_PATH=/content
+      - CONTENT_PATH=/mnt/lupoportfolio/content
+      - LOG_PATH=/mnt/lupoportfolio/logs
     volumes:
-      - portfolio-data:/data
-      - portfolio-content:/content
-      - portfolio-logs:/logs
+      # Mount Digital Ocean volume directly
+      - /mnt/lupoportfolio:/mnt/lupoportfolio
     restart: unless-stopped
     depends_on:
       - redis
@@ -706,9 +816,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  portfolio-data:
-  portfolio-content:
-  portfolio-logs:
+  # Redis data uses Docker volume, everything else on /mnt/lupoportfolio
   redis-data:
 ```
 
