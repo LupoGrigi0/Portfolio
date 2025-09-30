@@ -15,7 +15,12 @@
       "mcp__coordination-system-Local-Dev__update_task",
       "mcp__coordination-system-Production__get_messages",
       "mcp__coordination-system-Production__send_message",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "mcp__coordination-system-Production__create_task",
+      "Bash(git worktree:*)",
+      "mcp__coordination-system-Production__bootstrap",
+      "Read(//d/Lupo/Source/frontend-core/**)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []
