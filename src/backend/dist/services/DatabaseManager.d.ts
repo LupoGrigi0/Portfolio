@@ -28,8 +28,11 @@ export declare class DatabaseManager {
     }): Promise<unknown[]>;
     getDirectoryBySlug(slug: string): Promise<unknown>;
     createDirectory(data: any): Promise<Database.RunResult>;
+    updateDirectoryMetadata(directoryId: string, metadata: any): Promise<Database.RunResult>;
     getImagesByDirectory(directoryId: string, limit?: number, offset?: number): Promise<unknown[]>;
     getImageById(id: string): Promise<unknown>;
+    getImageByPath(path: string): Promise<unknown>;
+    updateImage(id: string, data: any): Promise<Database.RunResult>;
     createImage(data: any): Promise<Database.RunResult>;
     addReaction(imageId: string, reactionType: string, ipHash: string, sessionId?: string): Promise<Database.RunResult>;
     getReactionCounts(imageId: string): Promise<any>;

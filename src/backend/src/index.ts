@@ -16,7 +16,7 @@ import { WebSocketServer } from 'ws';
 // Route imports
 import contentRoutes from './routes/content.js';
 import socialRoutes from './routes/social.js';
-import adminRoutes from './routes/admin.js';
+import adminRoutes, { setContentScanner } from './routes/admin.js';
 import healthRoutes from './routes/health.js';
 
 // Service imports
@@ -62,6 +62,7 @@ app.use(helmet({
 // CORS configuration - support multiple frontend ports
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:3002',
   'http://localhost:3003'
 ];
@@ -92,25 +93,6 @@ app.use('/api/content', contentRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/health', healthRoutes);
-
-// Content scanning endpoint
-app.post('/api/admin/scan', async (req, res) => {
-  try {
-    await logger.info('Content scan triggered via API');
-    const result = await contentScanner.scanAll();
-    res.json({
-      success: true,
-      data: result
-    });
-  } catch (error) {
-    await logger.error('Content scan failed', { error });
-    res.status(500).json({
-      success: false,
-      error: 'Content scan failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
 
 // Graceful shutdown endpoint (development only)
 app.post('/api/admin/shutdown', async (req, res) => {
@@ -161,6 +143,7 @@ async function startServer() {
       imageSizes,
       supportedFormats
     );
+    setContentScanner(contentScanner);
     console.log('✅ Content scanner initialized');
 
     // Start directory watcher

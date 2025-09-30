@@ -25,7 +25,17 @@
       "mcp__coordination-system-Production__get_projects",
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(//e/mnt/lupoportfolio/content/**)",
+      "Bash(timeout:*)",
+      "Bash(curl -X POST http://localhost:4000/api/admin/scan -H \"Content-Type: application/json\")",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

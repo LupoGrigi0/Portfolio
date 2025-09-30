@@ -94,6 +94,16 @@ export class DatabaseManager {
     `);
         return stmt.run(data.id, data.title, data.subtitle || null, data.description || null, data.slug, data.coverImage || null, data.imageCount || 0, data.lastModified || new Date().toISOString(), data.featured ? 1 : 0, data.menuOrder || 0, data.status || 'draft', data.parentCategory || null, JSON.stringify(data.tags || []), JSON.stringify(data.config || {}));
     }
+    async updateDirectoryMetadata(directoryId, metadata) {
+        const db = this.getDb();
+        // Get current config
+        const dir = db.prepare('SELECT config FROM directories WHERE id = ?').get(directoryId);
+        const currentConfig = dir ? JSON.parse(dir.config || '{}') : {};
+        // Merge new metadata with existing config
+        const updatedConfig = { ...currentConfig, ...metadata };
+        const stmt = db.prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        return stmt.run(JSON.stringify(updatedConfig), directoryId);
+    }
     // Image operations
     async getImagesByDirectory(directoryId, limit = 50, offset = 0) {
         const db = this.getDb();
@@ -104,6 +114,24 @@ export class DatabaseManager {
     async getImageById(id) {
         const db = this.getDb();
         return db.prepare('SELECT * FROM images WHERE id = ?').get(id);
+    }
+    async getImageByPath(path) {
+        const db = this.getDb();
+        // Store path in exif_data JSON for now, or could add dedicated column
+        return db.prepare("SELECT * FROM images WHERE json_extract(exif_data, '$.path') = ?").get(path);
+    }
+    async updateImage(id, data) {
+        const db = this.getDb();
+        const stmt = db.prepare(`
+      UPDATE images SET
+        filename = ?, title = ?, caption = ?, directory_id = ?,
+        thumbnail_url = ?, small_url = ?, medium_url = ?, large_url = ?, original_url = ?,
+        width = ?, height = ?, aspect_ratio = ?, file_size = ?, format = ?,
+        color_palette = ?, average_color = ?, status = ?, alt_text = ?, exif_data = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+        return stmt.run(data.filename, data.title, data.caption || null, data.directoryId, data.thumbnailUrl || null, data.smallUrl || null, data.mediumUrl || null, data.largeUrl || null, data.originalUrl || null, data.width || null, data.height || null, data.aspectRatio || null, data.fileSize || null, data.format || null, JSON.stringify(data.colorPalette || []), data.averageColor || null, data.status || 'processing', data.altText || null, JSON.stringify(data.exifData || {}), id);
     }
     async createImage(data) {
         const db = this.getDb();

@@ -76,13 +76,20 @@ router.get('/collections', async (req: Request, res: Response, next: NextFunctio
 /**
  * GET /api/content/collections/:slug
  * Get specific collection with full details
+ * Supports pagination: ?page=1&limit=20
  * Alias for /directories/:slug with collection format
  */
 router.get('/collections/:slug', async (req: Request, res: Response, next: NextFunction) => {
   try {
     await ensureDbInitialized();
     const { slug } = req.params;
-    await logger.info('ContentRoutes', 'GET /collections/:slug', { slug });
+
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
+    const offset = (page - 1) * limit;
+
+    await logger.info('ContentRoutes', 'GET /collections/:slug', { slug, page, limit });
 
     const directory = await db.getDirectoryBySlug(slug);
 
@@ -94,8 +101,17 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
       });
     }
 
-    // Get images for this collection
-    const images = await db.getImagesByDirectory((directory as any).id);
+    // Get total count of images
+    const allImages = await db.getImagesByDirectory((directory as any).id);
+    const totalImages = allImages.length;
+
+    // Get paginated images
+    const paginatedImages = allImages.slice(offset, offset + limit);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalImages / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     // Format as collection
     const config = JSON.parse((directory as any).config || '{}');
@@ -110,7 +126,7 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
       config,
       featured: Boolean((directory as any).featured),
       tags,
-      gallery: images.map((img: any) => ({
+      gallery: paginatedImages.map((img: any) => ({
         id: img.id,
         filename: img.filename,
         title: img.title,
@@ -130,6 +146,14 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
         },
         status: img.status,
       })),
+      pagination: {
+        page,
+        limit,
+        total: totalImages,
+        totalPages,
+        hasNext,
+        hasPrev,
+      },
       subcollections: [], // TODO: Implement hierarchical structure
     };
 
@@ -141,6 +165,86 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
     });
   } catch (error) {
     await logger.error('ContentRoutes', 'GET /collections/:slug failed', { error });
+    next(error);
+  }
+});
+
+/**
+ * GET /api/content/collections/:slug/images
+ * Get paginated images for a collection (lighter response for lazy loading)
+ */
+router.get('/collections/:slug/images', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await ensureDbInitialized();
+    const { slug } = req.params;
+
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
+    const offset = (page - 1) * limit;
+
+    await logger.info('ContentRoutes', 'GET /collections/:slug/images', { slug, page, limit });
+
+    const directory = await db.getDirectoryBySlug(slug);
+
+    if (!directory) {
+      return res.status(404).json({
+        success: false,
+        message: 'Collection not found',
+        code: 'COLLECTION_NOT_FOUND',
+      });
+    }
+
+    // Get total count of images
+    const allImages = await db.getImagesByDirectory((directory as any).id);
+    const totalImages = allImages.length;
+
+    // Get paginated images
+    const paginatedImages = allImages.slice(offset, offset + limit);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalImages / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
+
+    // Format images (lighter response - no collection metadata)
+    const formattedImages = paginatedImages.map((img: any) => ({
+      id: img.id,
+      filename: img.filename,
+      title: img.title,
+      caption: img.caption,
+      type: img.format === 'mp4' ? 'video' : 'image',
+      urls: {
+        thumbnail: img.thumbnail_url,
+        small: img.small_url,
+        medium: img.medium_url,
+        large: img.large_url,
+        original: img.original_url,
+      },
+      dimensions: {
+        width: img.width,
+        height: img.height,
+        aspectRatio: img.aspect_ratio,
+      },
+      status: img.status,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        images: formattedImages,
+        pagination: {
+          page,
+          limit,
+          total: totalImages,
+          totalPages,
+          hasNext,
+          hasPrev,
+        },
+      },
+    });
+  } catch (error) {
+    await logger.error('ContentRoutes', 'GET /collections/:slug/images failed', { error });
     next(error);
   }
 });
