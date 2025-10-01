@@ -47,8 +47,8 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 /**
- * GET /api/media/:slug/:subdirectory/:filename
- * Serves image/video files from subdirectories
+ * GET /api/media/:slug/...
+ * Serves image/video files from subdirectories (arbitrary depth)
  *
  * Query Parameters:
  *   - size: thumbnail|small|medium|large|xlarge|4k|original (default: original)
@@ -56,14 +56,15 @@ const MIME_TYPES: Record<string, string> = {
  * Examples:
  *   GET /api/media/couples/gallery/image.jpg?size=medium
  *   GET /api/media/cafe/Coffee/image.jpg
+ *   GET /api/media/couples/gallery/Dancing Gynoids/image.jpg
  */
-router.get('/:slug/:subdirectory/:filename', async (req: Request, res: Response, next: NextFunction) => {
+router.get(/^\/([^\/]+)\/(.+)$/, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { slug, subdirectory, filename: baseFilename } = req.params;
-    const filename = `${subdirectory}/${baseFilename}`; // Reconstruct full path with subdirectory
+    const slug = req.params[0]; // First capture group: collection slug
+    const filename = req.params[1]; // Second capture group: full path including subdirs
     const size = (req.query.size as string) || 'original';
 
-    await logger.info('MediaRoutes', 'GET /media/:slug/:filename(*)', { slug, filename, size });
+    await logger.info('MediaRoutes', 'GET /media/:slug/...', { slug, filename, size });
 
     // Validate size parameter
     if (!(size in SIZE_MAPPINGS)) {
