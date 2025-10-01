@@ -120,20 +120,21 @@ export default function CarouselDemo() {
           </ContentBlock>
         </Grid>
 
-        {/* Features Grid */}
-        <Grid variant="side-by-side" spacing="normal">
+        {/* Navigation Features */}
+        <Grid variant="masonry" columns={3} spacing="normal">
+
           <ContentBlock>
             <h2 className="text-2xl font-bold text-white mb-3">
-              🎯 Smooth Transitions
+              🖱️ Click Navigation
             </h2>
             <p className="text-white/80 leading-relaxed mb-3">
-              Fade transitions between images with configurable duration.
-              Notice how the page background smoothly updates to match the current carousel image.
+              Click left or right side of the image to navigate. Watch for cursor hints!
             </p>
             <ul className="text-white/70 text-sm space-y-1">
-              <li>• 60fps performance</li>
-              <li>• Optimized for 4K+ images</li>
-              <li>• Progressive loading</li>
+              <li>• Click left 50% → Previous image</li>
+              <li>• Click right 50% → Next image</li>
+              <li>• Works on mobile (touch) and desktop</li>
+              <li>• Cursor shows ← or → hint on hover</li>
             </ul>
           </ContentBlock>
 
@@ -148,19 +149,18 @@ export default function CarouselDemo() {
               <li>• <kbd className="px-1.5 py-0.5 bg-black/40 rounded text-xs">←</kbd> <kbd className="px-1.5 py-0.5 bg-black/40 rounded text-xs">→</kbd> Navigate images</li>
               <li>• <kbd className="px-1.5 py-0.5 bg-black/40 rounded text-xs">Space</kbd> Pause/resume autoplay</li>
               <li>• <kbd className="px-1.5 py-0.5 bg-black/40 rounded text-xs">ESC</kbd> Exit fullscreen</li>
-              <li>• <kbd className="px-1.5 py-0.5 bg-black/40 rounded text-xs">F</kbd> Toggle fullscreen (button)</li>
             </ul>
           </ContentBlock>
         </Grid>
 
-        {/* More Features */}
+        {/* Additional Features */}
         <Grid variant="masonry" columns={3} spacing="normal">
           <ContentBlock>
             <h3 className="text-xl font-bold text-white mb-2">
-              📱 Touch Gestures
+              🎯 Smooth Transitions
             </h3>
             <p className="text-white/70 text-sm">
-              Swipe left/right on mobile devices. Touch-optimized for smooth interaction.
+              Fade transitions at 60fps, optimized for 4K+ images with progressive loading.
             </p>
           </ContentBlock>
 
@@ -169,7 +169,7 @@ export default function CarouselDemo() {
               🖼️ Fullscreen Mode
             </h3>
             <p className="text-white/70 text-sm">
-              Click the fullscreen button for an immersive viewing experience with captions.
+              Click the fullscreen button for an immersive viewing experience with captions and image counter.
             </p>
           </ContentBlock>
 
@@ -186,10 +186,10 @@ export default function CarouselDemo() {
         {/* Info */}
         <ContentBlock className="text-center">
           <p className="text-white/60 text-sm mb-2">
-            This is Phase 1 MVP: Basic display, navigation, and fade transitions.
+            ✨ New: Click navigation added! Click left/right side of images to navigate.
           </p>
           <p className="text-white/50 text-xs">
-            Coming soon: Touch gestures, parallax effects, video support, and advanced transitions
+            Coming soon: Touch swipe gestures, parallax effects, video support, and advanced transitions
           </p>
         </ContentBlock>
       </Grid>

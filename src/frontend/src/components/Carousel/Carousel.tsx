@@ -57,7 +57,6 @@ export default function Carousel({
     images
   });
 
-  const currentImage = images[state.currentIndex];
   const { currentIndex, isFullscreen, direction } = state;
 
   // Background integration removed - handled separately by parallax scrolling
@@ -116,6 +115,8 @@ export default function Carousel({
               transitionType={transitionType}
               direction={direction}
               showCaption={showCaptions && isFullscreen}
+              onPrevious={controls.previous}
+              onNext={controls.next}
             />
           ))}
         </div>

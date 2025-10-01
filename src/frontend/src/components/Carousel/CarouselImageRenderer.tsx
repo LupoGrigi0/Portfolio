@@ -26,6 +26,8 @@ interface CarouselImageRendererProps {
   transitionType: TransitionType;
   direction: 'forward' | 'backward' | null;
   showCaption?: boolean;
+  onPrevious?: () => void;
+  onNext?: () => void;
 }
 
 export default function CarouselImageRenderer({
@@ -34,7 +36,9 @@ export default function CarouselImageRenderer({
   transitionDuration,
   transitionType,
   direction,
-  showCaption = false
+  showCaption = false,
+  onPrevious,
+  onNext
 }: CarouselImageRendererProps) {
 
   // Get the appropriate transition handler from the registry
@@ -55,31 +59,79 @@ export default function CarouselImageRenderer({
     transitionName: transitionHandler.metadata?.name
   });
 
+  /**
+   * Handle click/touch on image to navigate
+   * Left 50% = previous, Right 50% = next
+   *
+   * @author Kai v3 (Carousel & Animation Specialist)
+   */
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only respond if this is the active image and we have navigation callbacks
+    if (!isActive || (!onPrevious && !onNext)) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const clickPercentage = (clickX / width) * 100;
+
+    console.log('[CarouselImageRenderer] Image clicked', {
+      imageId: image.id,
+      clickX,
+      width,
+      clickPercentage: clickPercentage.toFixed(1) + '%',
+      zone: clickPercentage < 50 ? 'left (previous)' : 'right (next)'
+    });
+
+    // Left 50% = previous, Right 50% = next
+    if (clickPercentage < 50 && onPrevious) {
+      onPrevious();
+    } else if (clickPercentage >= 50 && onNext) {
+      onNext();
+    }
+  };
+
   return (
     <div
-      className="absolute inset-0"
+      className="absolute inset-0 group"
       style={transitionStyle}
       aria-hidden={!isActive}
     >
-      <Image
-        src={image.src}
-        alt={image.alt}
-        fill
-        className="object-contain p-4"
-        priority={isActive}
-        sizes="100vw"
-        quality={90}
-      />
-      {showCaption && (image.caption || image.title) && (
-        <div className="absolute bottom-8 left-8 right-8 bg-black/70 backdrop-blur-sm rounded-lg p-4 text-white z-10">
-          {image.title && (
-            <h3 className="text-lg font-semibold mb-1">{image.title}</h3>
+      {/* Navigation zones - invisible overlay with cursor hints */}
+      {isActive && (onPrevious || onNext) && (
+        <div className="absolute inset-0 z-[5] flex" onClick={handleImageClick}>
+          {/* Left 50% - Previous zone */}
+          {onPrevious && (
+            <div className="w-1/2 h-full cursor-w-resize" aria-label="Previous image" />
           )}
-          {image.caption && (
-            <p className="text-sm text-white/80">{image.caption}</p>
+          {/* Right 50% - Next zone */}
+          {onNext && (
+            <div className="w-1/2 h-full cursor-e-resize" aria-label="Next image" />
           )}
         </div>
       )}
+
+      {/* Image container */}
+      <div className="absolute inset-0">
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          className="object-contain p-4"
+          priority={isActive}
+          sizes="100vw"
+          quality={90}
+        />
+        {showCaption && (image.caption || image.title) && (
+          <div className="absolute bottom-8 left-8 right-8 bg-black/70 backdrop-blur-sm rounded-lg p-4 text-white z-10">
+            {image.title && (
+              <h3 className="text-lg font-semibold mb-1">{image.title}</h3>
+            )}
+            {image.caption && (
+              <p className="text-sm text-white/80">{image.caption}</p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
