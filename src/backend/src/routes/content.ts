@@ -67,10 +67,14 @@ function transformImageUrl(absolutePath: string | null, slug: string): string {
         .replace(/_\d+w/, '') // Remove _640w, _1200w, etc.
         .replace(/\.webp$/, '.jpg'); // Assume original was .jpg
 
+      // Extract subdirectory path (skip slug, exclude .thumbnails and filename)
+      // E.g., "Cafe/Coffee/.thumbnails/image.webp" → subdirectory = "Coffee"
+      const subdirectoryParts = parts.slice(1, parts.indexOf('.thumbnails'));
+      const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
+
       // Construct API URL with size parameter
-      // Handle gallery subdirectories
-      if (parts.includes('gallery')) {
-        return `/api/media/${slug}/gallery/${originalName}?size=${size}`;
+      if (subdirectory) {
+        return `/api/media/${slug}/${subdirectory}/${originalName}?size=${size}`;
       }
 
       return `/api/media/${slug}/${originalName}?size=${size}`;
@@ -79,9 +83,14 @@ function transformImageUrl(absolutePath: string | null, slug: string): string {
       // Original file - no thumbnail
       const filename = parts[parts.length - 1];
 
-      // Handle gallery subdirectories
-      if (parts.includes('gallery')) {
-        return `/api/media/${slug}/gallery/${filename}`;
+      // Extract subdirectory path (skip slug and filename)
+      // E.g., "Cafe/Coffee/image.jpg" → subdirectory = "Coffee"
+      const subdirectoryParts = parts.slice(1, -1);
+      const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
+
+      // Construct API URL
+      if (subdirectory) {
+        return `/api/media/${slug}/${subdirectory}/${filename}`;
       }
 
       return `/api/media/${slug}/${filename}`;
