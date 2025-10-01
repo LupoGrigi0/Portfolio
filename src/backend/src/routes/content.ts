@@ -9,10 +9,94 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { DatabaseManager } from '../services/DatabaseManager.js';
 import { createLogger } from '../utils/logger-wrapper.js';
+import path from 'path';
 
 const logger = createLogger('backend-content.log');
 const router = Router();
 const db = new DatabaseManager();
+
+// Content directory for URL transformation
+const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
+
+/**
+ * Transform absolute file paths to relative API URLs
+ * Author: Viktor v2 (Backend API & Database Specialist)
+ *
+ * Converts: "E:\mnt\lupoportfolio\content\couples\.thumbnails\Hero-image_640w.webp"
+ * To: "/api/media/couples/Hero-image.jpg?size=thumbnail"
+ */
+function transformImageUrl(absolutePath: string | null, slug: string): string {
+  if (!absolutePath) return '';
+
+  try {
+    // Normalize path separators
+    const normalizedPath = absolutePath.replace(/\\/g, '/');
+    const normalizedContentDir = CONTENT_DIR.replace(/\\/g, '/');
+
+    // Extract relative path from content directory
+    let relativePath = normalizedPath;
+    if (normalizedPath.startsWith(normalizedContentDir)) {
+      relativePath = normalizedPath.substring(normalizedContentDir.length);
+      // Remove leading slash if present
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+    }
+
+    // Parse the path to determine if it's a thumbnail or original
+    const parts = relativePath.split('/');
+
+    // Check if path contains .thumbnails directory
+    const isThumbnail = parts.includes('.thumbnails');
+
+    if (isThumbnail) {
+      // Extract filename from thumbnail path
+      const filename = parts[parts.length - 1]; // e.g., "Hero-image_640w.webp"
+
+      // Detect size from filename suffix
+      let size = 'thumbnail'; // default
+      if (filename.includes('_828w')) size = 'small';
+      else if (filename.includes('_1200w')) size = 'medium';
+      else if (filename.includes('_1920w')) size = 'large';
+      else if (filename.includes('_2048w')) size = 'xlarge';
+      else if (filename.includes('_3840w')) size = '4k';
+      else if (filename.includes('_640w')) size = 'thumbnail';
+
+      // Remove size suffix and .webp extension to get original filename
+      const originalName = filename
+        .replace(/_\d+w/, '') // Remove _640w, _1200w, etc.
+        .replace(/\.webp$/, '.jpg'); // Assume original was .jpg
+
+      // Construct API URL with size parameter
+      // Handle gallery subdirectories
+      if (parts.includes('gallery')) {
+        return `/api/media/${slug}/gallery/${originalName}?size=${size}`;
+      }
+
+      return `/api/media/${slug}/${originalName}?size=${size}`;
+
+    } else {
+      // Original file - no thumbnail
+      const filename = parts[parts.length - 1];
+
+      // Handle gallery subdirectories
+      if (parts.includes('gallery')) {
+        return `/api/media/${slug}/gallery/${filename}`;
+      }
+
+      return `/api/media/${slug}/${filename}`;
+    }
+
+  } catch (error) {
+    logger.error('URL Transformation Error', 'Failed to transform image URL', {
+      absolutePath,
+      slug,
+      error
+    });
+    // Return empty string on error rather than exposing file paths
+    return '';
+  }
+}
 
 // Initialize database on first use
 let dbInitialized = false;
@@ -137,11 +221,11 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
         caption: img.caption,
         type: img.format === 'mp4' ? 'video' : 'image',
         urls: {
-          thumbnail: img.thumbnail_url,
-          small: img.small_url,
-          medium: img.medium_url,
-          large: img.large_url,
-          original: img.original_url,
+          thumbnail: transformImageUrl(img.thumbnail_url, slug),
+          small: transformImageUrl(img.small_url, slug),
+          medium: transformImageUrl(img.medium_url, slug),
+          large: transformImageUrl(img.large_url, slug),
+          original: transformImageUrl(img.original_url, slug),
         },
         dimensions: {
           width: img.width,
@@ -223,11 +307,11 @@ router.get('/collections/:slug/images', async (req: Request, res: Response, next
       caption: img.caption,
       type: img.format === 'mp4' ? 'video' : 'image',
       urls: {
-        thumbnail: img.thumbnail_url,
-        small: img.small_url,
-        medium: img.medium_url,
-        large: img.large_url,
-        original: img.original_url,
+        thumbnail: transformImageUrl(img.thumbnail_url, slug),
+        small: transformImageUrl(img.small_url, slug),
+        medium: transformImageUrl(img.medium_url, slug),
+        large: transformImageUrl(img.large_url, slug),
+        original: transformImageUrl(img.original_url, slug),
       },
       dimensions: {
         width: img.width,

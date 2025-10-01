@@ -104,6 +104,9 @@ export class ContentScanner {
         }
       }
 
+      // Update directory image counts after scan completes
+      await this.updateDirectoryImageCounts();
+
       await this.logger.info('Content scan complete', result);
       return result;
 
@@ -114,9 +117,37 @@ export class ContentScanner {
   }
 
   /**
-   * Scan a specific directory and its subdirectories
+   * Update image_count for all directories based on actual image count in database
    */
-  async scanDirectory(dirPath: string): Promise<ScanResult> {
+  private async updateDirectoryImageCounts(): Promise<void> {
+    try {
+      const directories = await this.db.getDirectories({}) as any[];
+
+      for (const dir of directories) {
+        const images = await this.db.getImagesByDirectory(dir.id);
+        const imageCount = images.length;
+
+        await this.db.updateDirectoryImageCount(dir.id, imageCount);
+
+        await this.logger.debug('Updated directory counts', {
+          directoryId: dir.id,
+          slug: dir.slug,
+          imageCount
+        });
+      }
+
+      await this.logger.info('Directory image counts updated');
+    } catch (error) {
+      await this.logger.error('Failed to update directory image counts', { error });
+    }
+  }
+
+  /**
+   * Scan a specific directory and its subdirectories
+   * @param dirPath - Path to directory to scan
+   * @param parentDirectoryId - Optional parent directory ID for subdirectories
+   */
+  async scanDirectory(dirPath: string, parentDirectoryId?: string): Promise<ScanResult> {
     const result: ScanResult = {
       imagesProcessed: 0,
       thumbnailsGenerated: 0,
@@ -128,23 +159,47 @@ export class ContentScanner {
     try {
       // Check for config.json
       const configPath = path.join(dirPath, 'config.json');
-      let config: DirectoryConfig;
+      let config: DirectoryConfig | null = null;
+      let hasConfig = false;
 
       try {
         const configData = await fs.readFile(configPath, 'utf-8');
         config = JSON.parse(configData);
+        hasConfig = true;
         result.configsApplied++;
         await this.logger.info('Found config.json', { dirPath });
       } catch {
-        // No config.json, will auto-generate
-        config = await this.generateDirectoryConfig(dirPath);
-        await this.logger.info('Auto-generated directory config', { dirPath });
+        // No config.json found
       }
 
-      // Ensure directory exists in database
-      const slug = config.slug;
-      const dirId = await this.ensureDirectory(dirPath, config, slug);
-      result.directoriesCreated++;
+      // Determine directory ID to use for images
+      let dirId: string;
+
+      if (parentDirectoryId) {
+        // This is a subdirectory - use parent's directory ID unless it has its own config
+        if (hasConfig && config) {
+          // Subdirectory with config.json gets its own directory entry
+          const slug = config.slug;
+          dirId = await this.ensureDirectory(dirPath, config, slug);
+          result.directoriesCreated++;
+          await this.logger.info('Subdirectory has config, creating separate directory entry', { dirPath });
+        } else {
+          // Subdirectory without config - link images to parent directory
+          dirId = parentDirectoryId;
+          await this.logger.info('Subdirectory without config, using parent directory ID', {
+            dirPath,
+            parentDirectoryId
+          });
+        }
+      } else {
+        // Top-level directory - always create directory entry
+        if (!config) {
+          config = await this.generateDirectoryConfig(dirPath);
+        }
+        const slug = config.slug;
+        dirId = await this.ensureDirectory(dirPath, config, slug);
+        result.directoriesCreated++;
+      }
 
       // Process all files in directory
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
@@ -152,9 +207,14 @@ export class ContentScanner {
       for (const entry of entries) {
         const fullPath = path.join(dirPath, entry.name);
 
+        // Skip hidden directories (like .thumbnails)
+        if (entry.isDirectory() && entry.name.startsWith('.')) {
+          continue;
+        }
+
         if (entry.isDirectory()) {
-          // Recursively process subdirectories
-          const subResult = await this.scanDirectory(fullPath);
+          // Recursively process subdirectories, passing current dirId as parent
+          const subResult = await this.scanDirectory(fullPath, dirId);
           result.imagesProcessed += subResult.imagesProcessed;
           result.thumbnailsGenerated += subResult.thumbnailsGenerated;
           result.directoriesCreated += subResult.directoriesCreated;

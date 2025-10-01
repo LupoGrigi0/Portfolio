@@ -18,6 +18,7 @@ import contentRoutes from './routes/content.js';
 import socialRoutes from './routes/social.js';
 import adminRoutes, { setContentScanner } from './routes/admin.js';
 import healthRoutes from './routes/health.js';
+import mediaRoutes from './routes/media.js';
 
 // Service imports
 import { DatabaseManager } from './services/DatabaseManager.js';
@@ -93,6 +94,7 @@ app.use('/api/content', contentRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Graceful shutdown endpoint (development only)
 app.post('/api/admin/shutdown', async (req, res) => {

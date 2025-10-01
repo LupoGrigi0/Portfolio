@@ -144,6 +144,17 @@ export class DatabaseManager {
     return stmt.run(JSON.stringify(updatedConfig), directoryId);
   }
 
+  async updateDirectoryImageCount(directoryId: string, imageCount: number) {
+    const db = this.getDb();
+    const stmt = db.prepare(`
+      UPDATE directories
+      SET image_count = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    return stmt.run(imageCount, directoryId);
+  }
+
   // Image operations
   async getImagesByDirectory(directoryId: string, limit = 50, offset = 0) {
     const db = this.getDb();
