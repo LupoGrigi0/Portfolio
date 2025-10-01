@@ -85,11 +85,10 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
     const { slug } = req.params;
 
     // Pagination parameters
-    const page = parseInt(req.query.page as string) || 1;
+    const requestedPage = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
-    const offset = (page - 1) * limit;
 
-    await logger.info('ContentRoutes', 'GET /collections/:slug', { slug, page, limit });
+    await logger.info('ContentRoutes', 'GET /collections/:slug', { slug, page: requestedPage, limit });
 
     const directory = await db.getDirectoryBySlug(slug);
 
@@ -105,11 +104,16 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
     const allImages = await db.getImagesByDirectory((directory as any).id);
     const totalImages = allImages.length;
 
+    // Calculate pagination metadata
+    const totalPages = Math.max(1, Math.ceil(totalImages / limit));
+
+    // Clamp page to valid range (1 to totalPages)
+    const page = Math.max(1, Math.min(requestedPage, totalPages));
+    const offset = (page - 1) * limit;
+
     // Get paginated images
     const paginatedImages = allImages.slice(offset, offset + limit);
 
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(totalImages / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
@@ -179,11 +183,10 @@ router.get('/collections/:slug/images', async (req: Request, res: Response, next
     const { slug } = req.params;
 
     // Pagination parameters
-    const page = parseInt(req.query.page as string) || 1;
+    const requestedPage = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
-    const offset = (page - 1) * limit;
 
-    await logger.info('ContentRoutes', 'GET /collections/:slug/images', { slug, page, limit });
+    await logger.info('ContentRoutes', 'GET /collections/:slug/images', { slug, page: requestedPage, limit });
 
     const directory = await db.getDirectoryBySlug(slug);
 
@@ -199,11 +202,16 @@ router.get('/collections/:slug/images', async (req: Request, res: Response, next
     const allImages = await db.getImagesByDirectory((directory as any).id);
     const totalImages = allImages.length;
 
+    // Calculate pagination metadata
+    const totalPages = Math.max(1, Math.ceil(totalImages / limit));
+
+    // Clamp page to valid range (1 to totalPages)
+    const page = Math.max(1, Math.min(requestedPage, totalPages));
+    const offset = (page - 1) * limit;
+
     // Get paginated images
     const paginatedImages = allImages.slice(offset, offset + limit);
 
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(totalImages / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
