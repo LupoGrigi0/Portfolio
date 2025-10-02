@@ -14,7 +14,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { TransitionType, AutoplaySpeedPreset } from './types';
+import type { TransitionType, AutoplaySpeedPreset, FullscreenMode } from './types';
 import { AUTOPLAY_SPEEDS } from './constants';
 import { getTransitionMetadata } from './transitions';
 
@@ -22,9 +22,11 @@ interface CarouselConfigPanelProps {
   currentTransition: TransitionType;
   currentSpeed: AutoplaySpeedPreset;
   customSpeedMs?: number;
+  fullscreenMode?: FullscreenMode;
   onTransitionChange: (transition: TransitionType) => void;
   onSpeedChange: (speed: AutoplaySpeedPreset) => void;
   onCustomSpeedChange?: (ms: number) => void;
+  onFullscreenModeChange?: (mode: FullscreenMode) => void;
   className?: string;
 }
 
@@ -32,9 +34,11 @@ export default function CarouselConfigPanel({
   currentTransition,
   currentSpeed,
   customSpeedMs = 2000,
+  fullscreenMode = 'browser',
   onTransitionChange,
   onSpeedChange,
   onCustomSpeedChange,
+  onFullscreenModeChange,
   className = ''
 }: CarouselConfigPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -166,6 +170,48 @@ export default function CarouselConfigPanel({
               </div>
             )}
           </div>
+
+          {/* Fullscreen Mode Selector */}
+          {onFullscreenModeChange && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/80">Fullscreen Mode</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => onFullscreenModeChange('browser')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    fullscreenMode === 'browser'
+                      ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                  }`}
+                  title="Browser fullscreen (fixed inset-0, nav bar visible)"
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="font-bold">Browser</span>
+                    <span className="text-[10px] opacity-70">Fixed inset</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => onFullscreenModeChange('native')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    fullscreenMode === 'native'
+                      ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                  }`}
+                  title="Native fullscreen (true browser fullscreen API)"
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="font-bold">Native</span>
+                    <span className="text-[10px] opacity-70">True fullscreen</span>
+                  </div>
+                </button>
+              </div>
+              <p className="text-xs text-white/50 italic">
+                {fullscreenMode === 'browser'
+                  ? 'Browser mode fills window (nav bar visible)'
+                  : 'Native mode uses Fullscreen API (entire screen)'}
+              </p>
+            </div>
+          )}
 
           {/* Info Note */}
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">

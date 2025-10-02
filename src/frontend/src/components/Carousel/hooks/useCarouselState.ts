@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { CarouselState, CarouselControls, CarouselImage, AutoplaySpeedPreset } from '../types';
+import type { CarouselState, CarouselControls, CarouselImage, AutoplaySpeedPreset, FullscreenMode } from '../types';
 import { AUTOPLAY_SPEEDS } from '../constants';
 
 interface UseCarouselStateOptions {
@@ -18,6 +18,7 @@ interface UseCarouselStateOptions {
   autoplaySpeed?: number;
   autoPauseDuration?: number;
   transitionDuration?: number;
+  fullscreenMode?: FullscreenMode;
   onImageChange?: (index: number, image: CarouselImage) => void;
   images?: CarouselImage[];
 }
@@ -27,6 +28,7 @@ export function useCarouselState({
   autoplaySpeed = 0,
   autoPauseDuration = 5000,
   transitionDuration = 600,
+  fullscreenMode = 'browser',
   onImageChange,
   images = []
 }: UseCarouselStateOptions): [CarouselState, CarouselControls] {
@@ -142,16 +144,68 @@ export function useCarouselState({
   }, [state.currentIndex, imageCount, goTo]);
 
   // Toggle fullscreen mode
-  const toggleFullscreen = useCallback(() => {
-    setState(prev => {
-      const newFullscreen = !prev.isFullscreen;
-      console.log('[useCarouselState] Toggle fullscreen', { isFullscreen: newFullscreen });
-      return {
-        ...prev,
-        isFullscreen: newFullscreen
-      };
-    });
-  }, []);
+  const toggleFullscreen = useCallback(async () => {
+    if (fullscreenMode === 'native') {
+      // Native fullscreen API
+      try {
+        if (!document.fullscreenElement) {
+          // Request fullscreen
+          const elem = document.documentElement;
+
+          // Try different vendor prefixes
+          if (elem.requestFullscreen) {
+            await elem.requestFullscreen();
+          } else if ((elem as any).webkitRequestFullscreen) {
+            await (elem as any).webkitRequestFullscreen();
+          } else if ((elem as any).mozRequestFullScreen) {
+            await (elem as any).mozRequestFullScreen();
+          } else if ((elem as any).msRequestFullscreen) {
+            await (elem as any).msRequestFullscreen();
+          } else {
+            console.warn('[useCarouselState] Fullscreen API not supported');
+            // Fallback to browser mode
+            setState(prev => ({
+              ...prev,
+              isFullscreen: !prev.isFullscreen
+            }));
+            return;
+          }
+
+          console.log('[useCarouselState] Native fullscreen requested');
+        } else {
+          // Exit fullscreen
+          if (document.exitFullscreen) {
+            await document.exitFullscreen();
+          } else if ((document as any).webkitExitFullscreen) {
+            await (document as any).webkitExitFullscreen();
+          } else if ((document as any).mozCancelFullScreen) {
+            await (document as any).mozCancelFullScreen();
+          } else if ((document as any).msExitFullscreen) {
+            await (document as any).msExitFullscreen();
+          }
+
+          console.log('[useCarouselState] Native fullscreen exited');
+        }
+      } catch (error) {
+        console.error('[useCarouselState] Fullscreen error:', error);
+        // Fallback to browser mode
+        setState(prev => ({
+          ...prev,
+          isFullscreen: !prev.isFullscreen
+        }));
+      }
+    } else {
+      // Browser fullscreen (existing behavior)
+      setState(prev => {
+        const newFullscreen = !prev.isFullscreen;
+        console.log('[useCarouselState] Toggle browser fullscreen', { isFullscreen: newFullscreen });
+        return {
+          ...prev,
+          isFullscreen: newFullscreen
+        };
+      });
+    }
+  }, [fullscreenMode]);
 
   // Pause autoplay
   const pause = useCallback(() => {
@@ -224,6 +278,33 @@ export function useCarouselState({
     }
   }, [autoplaySpeed, state.isPaused, state.isAutoPaused, state.isTransitioning, state.currentIndex, state.currentSpeed, imageCount, goTo]);
 
+  // Listen for native fullscreen changes
+  useEffect(() => {
+    if (fullscreenMode === 'native') {
+      const handleFullscreenChange = () => {
+        const isFullscreen = !!document.fullscreenElement;
+        console.log('[useCarouselState] Native fullscreen change detected', { isFullscreen });
+        setState(prev => ({
+          ...prev,
+          isFullscreen
+        }));
+      };
+
+      // Add event listeners for different browsers
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+      return () => {
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      };
+    }
+  }, [fullscreenMode]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -239,9 +320,11 @@ export function useCarouselState({
           next();
           break;
         case 'Escape':
-          if (state.isFullscreen) {
+          // For native fullscreen, ESC key is handled by browser automatically
+          // For browser fullscreen, we handle it manually
+          if (state.isFullscreen && fullscreenMode === 'browser') {
             e.preventDefault();
-            console.log('[useCarouselState] Keyboard: Exit fullscreen');
+            console.log('[useCarouselState] Keyboard: Exit browser fullscreen');
             toggleFullscreen();
           }
           break;
@@ -255,7 +338,7 @@ export function useCarouselState({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [next, previous, toggleFullscreen, toggleAutoplay, state.isFullscreen]);
+  }, [next, previous, toggleFullscreen, toggleAutoplay, state.isFullscreen, fullscreenMode]);
 
   const controls: CarouselControls = {
     next,

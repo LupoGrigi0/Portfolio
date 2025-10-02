@@ -89,7 +89,10 @@ export default function CarouselNavigation({
       slow: '1x',
       medium: '2x',
       fast: '3x',
-      veryFast: '4x'
+      veryFast: '4x',
+      ultraFast: '5x',
+      blazing: '6x',
+      custom: 'Custom'
     };
     return labels[speed];
   };

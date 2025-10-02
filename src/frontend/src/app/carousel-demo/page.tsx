@@ -16,7 +16,7 @@ import { Carousel } from '@/components/Carousel';
 import CarouselConfigPanel from '@/components/Carousel/CarouselConfigPanel';
 import { ReferenceCarousel } from '@/components/ReferenceCarousel';
 import { ResponsiveContainer, Grid, ContentBlock } from '@/components/Layout';
-import type { CarouselImage, TransitionType, AutoplaySpeedPreset } from '@/components/Carousel/types';
+import type { CarouselImage, TransitionType, AutoplaySpeedPreset, FullscreenMode } from '@/components/Carousel/types';
 
 // Sample images for carousel demo
 const carouselImages: CarouselImage[] = [
@@ -77,6 +77,7 @@ export default function CarouselDemo() {
   const [transitionType, setTransitionType] = useState<TransitionType>('fade');
   const [speedPreset, setSpeedPreset] = useState<AutoplaySpeedPreset>('medium');
   const [customSpeedMs, setCustomSpeedMs] = useState(2000);
+  const [fullscreenMode, setFullscreenMode] = useState<FullscreenMode>('browser');
 
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
@@ -205,9 +206,11 @@ export default function CarouselDemo() {
             currentTransition={transitionType}
             currentSpeed={speedPreset}
             customSpeedMs={customSpeedMs}
+            fullscreenMode={fullscreenMode}
             onTransitionChange={setTransitionType}
             onSpeedChange={setSpeedPreset}
             onCustomSpeedChange={setCustomSpeedMs}
+            onFullscreenModeChange={setFullscreenMode}
             className="mb-6"
           />
 
@@ -221,6 +224,7 @@ export default function CarouselDemo() {
               autoPauseDuration={5000}
               showCaptions={true}
               enableFullscreen={true}
+              fullscreenMode={fullscreenMode}
               showNavigation={true}
               showIndicators={true}
               onImageChange={handleImageChange}
@@ -296,6 +300,7 @@ export default function CarouselDemo() {
                   autoPauseDuration={5000}
                   showCaptions={true}
                   enableFullscreen={true}
+                  fullscreenMode={fullscreenMode}
                   showNavigation={true}
                   showIndicators={true}
                   onImageChange={handleImageChange}

@@ -18,5 +18,6 @@ export const AUTOPLAY_SPEEDS: Record<AutoplaySpeedPreset, number> = {
   fast: 3000,         // 3 seconds
   veryFast: 1500,     // 1.5 seconds
   ultraFast: 800,     // 0.8 seconds
-  blazing: 400        // 0.4 seconds (for flipbook effect)
+  blazing: 400,       // 0.4 seconds (for flipbook effect)
+  custom: 2000        // 2 seconds (default, overridden by autoplaySpeed prop)
 };

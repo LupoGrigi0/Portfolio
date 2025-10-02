@@ -33,6 +33,7 @@ export default function Carousel({
   autoPauseDuration = 5000,
   showCaptions = true,
   enableFullscreen = true,
+  fullscreenMode = 'browser',
   showNavigation = true,
   showIndicators = true,
   showArrows = true,
@@ -48,7 +49,8 @@ export default function Carousel({
     transitionDuration,
     autoplaySpeed,
     autoPauseDuration,
-    layout
+    layout,
+    fullscreenMode
   });
 
   // Background integration removed - handled separately by parallax scrolling
@@ -59,6 +61,7 @@ export default function Carousel({
     autoplaySpeed,
     autoPauseDuration,
     transitionDuration,
+    fullscreenMode,
     onImageChange,
     images
   });
@@ -79,9 +82,11 @@ export default function Carousel({
 
   // Prevent scrolling when in fullscreen mode
   useEffect(() => {
-    console.log('[Carousel] Fullscreen mode changed', { isFullscreen });
+    console.log('[Carousel] Fullscreen mode changed', { isFullscreen, fullscreenMode });
 
-    if (isFullscreen) {
+    if (isFullscreen && fullscreenMode === 'browser') {
+      // Only prevent scrolling for browser fullscreen
+      // Native fullscreen handles this automatically
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -90,7 +95,7 @@ export default function Carousel({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, fullscreenMode]);
 
   if (!images || images.length === 0) {
     console.warn('[Carousel] No images provided');

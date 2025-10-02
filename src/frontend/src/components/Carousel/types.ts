@@ -10,6 +10,7 @@
 
 export type TransitionType = 'fade' | 'slide' | 'zoom' | 'flip';
 export type CarouselLayout = 'single' | 'side-by-side' | 'stacked';
+export type FullscreenMode = 'browser' | 'native';
 
 /**
  * Autoplay speed presets for user-adjustable playback
@@ -37,6 +38,7 @@ export interface CarouselProps {
   autoPauseDuration?: number; // Duration to pause autoplay after manual navigation (ms), 0 = disabled
   showCaptions?: boolean;
   enableFullscreen?: boolean;
+  fullscreenMode?: FullscreenMode; // 'browser' = fixed inset-0, 'native' = true fullscreen API (default: 'browser')
   showNavigation?: boolean;
   showIndicators?: boolean;
   showArrows?: boolean; // Show/hide navigation arrows (default: true)
