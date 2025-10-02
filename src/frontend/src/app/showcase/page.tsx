@@ -36,13 +36,16 @@ export default function ShowcasePage() {
         c.imageCount && c.imageCount > 0
       );
 
-      // Fetch full collection data (including gallery) for each collection
-      const collectionsWithGallery = await Promise.all(
-        collectionsWithImages.map(async (col) => {
-          const fullCollection = await getCollection(col.slug);
-          return fullCollection || col;
-        })
-      );
+      // Fetch full collection data (including gallery) sequentially to avoid rate limits
+      const collectionsWithGallery = [];
+      for (const col of collectionsWithImages) {
+        const fullCollection = await getCollection(col.slug);
+        if (fullCollection) {
+          collectionsWithGallery.push(fullCollection);
+        }
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
       setCollections(collectionsWithGallery);
 

@@ -45,12 +45,16 @@ export default function ParallaxDemoPage() {
 
       const collectionsWithImages = data.filter(c => c.imageCount && c.imageCount > 0);
 
-      const collectionsWithGallery = await Promise.all(
-        collectionsWithImages.map(async (col) => {
-          const fullCollection = await getCollection(col.slug);
-          return fullCollection || col;
-        })
-      );
+      // Fetch collections sequentially with delay to avoid rate limits
+      const collectionsWithGallery = [];
+      for (const col of collectionsWithImages.slice(0, 5)) { // Limit to 5 for demo
+        const fullCollection = await getCollection(col.slug);
+        if (fullCollection) {
+          collectionsWithGallery.push(fullCollection);
+        }
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
       setCollections(collectionsWithGallery);
 

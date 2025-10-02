@@ -24,10 +24,11 @@ export const SlideUpTransition: TransitionHandler = {
     const getTransform = () => {
       if (isActive) return 'translateY(0)';
 
-      // Inactive images exit in OPPOSITE direction of travel
-      // Forward (next) → old image exits up (-100% Y)
-      // Backward (prev) → old image exits down (100% Y)
-      return direction === 'forward' ? 'translateY(-100%)' : 'translateY(100%)';
+      // Inactive images positioned for upward slide effect
+      // Forward (next) → new image enters from bottom, inactive positioned down (+100% Y)
+      // Backward (prev) → new image enters from top, inactive positioned up (-100% Y)
+      // Null direction: default to bottom
+      return direction === 'forward' ? 'translateY(100%)' : 'translateY(-100%)';
     };
 
     return {
