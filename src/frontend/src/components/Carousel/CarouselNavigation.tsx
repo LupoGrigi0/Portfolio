@@ -14,6 +14,9 @@
 
 'use client';
 
+import type { AutoplaySpeedPreset } from './types';
+import { AUTOPLAY_SPEEDS } from './constants';
+
 interface CarouselNavigationProps {
   currentIndex: number;
   totalImages: number;
@@ -28,6 +31,8 @@ interface CarouselNavigationProps {
   onToggleFullscreen?: () => void;
   isPaused?: boolean;
   onToggleAutoplay?: () => void;
+  currentSpeed?: AutoplaySpeedPreset;
+  onCycleSpeed?: () => void;
 }
 
 export default function CarouselNavigation({
@@ -43,7 +48,9 @@ export default function CarouselNavigation({
   isFullscreen = false,
   onToggleFullscreen,
   isPaused = false,
-  onToggleAutoplay
+  onToggleAutoplay,
+  currentSpeed = 'medium',
+  onCycleSpeed
 }: CarouselNavigationProps) {
 
   const handlePrevious = () => {
@@ -69,6 +76,22 @@ export default function CarouselNavigation({
   const handleToggleAutoplay = () => {
     console.log('[CarouselNavigation] Autoplay toggle clicked', { isPaused });
     onToggleAutoplay?.();
+  };
+
+  const handleCycleSpeed = () => {
+    console.log('[CarouselNavigation] Speed cycle clicked', { currentSpeed });
+    onCycleSpeed?.();
+  };
+
+  // Format speed for display
+  const getSpeedLabel = (speed: AutoplaySpeedPreset): string => {
+    const labels: Record<AutoplaySpeedPreset, string> = {
+      slow: '1x',
+      medium: '2x',
+      fast: '3x',
+      veryFast: '4x'
+    };
+    return labels[speed];
   };
 
   return (
@@ -165,6 +188,18 @@ export default function CarouselNavigation({
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             )}
+          </button>
+        )}
+
+        {/* Speed Control */}
+        {onCycleSpeed && (
+          <button
+            onClick={handleCycleSpeed}
+            className="bg-black/50 hover:bg-black/70 text-white rounded-full px-3 py-2.5 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50 min-w-[50px]"
+            aria-label={`Autoplay speed: ${currentSpeed} (${AUTOPLAY_SPEEDS[currentSpeed]}ms). Click to cycle.`}
+            title={`Speed: ${currentSpeed} (${(AUTOPLAY_SPEEDS[currentSpeed] / 1000).toFixed(1)}s per image)`}
+          >
+            <span className="text-xs font-bold">{getSpeedLabel(currentSpeed)}</span>
           </button>
         )}
 

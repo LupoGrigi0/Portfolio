@@ -63,7 +63,7 @@ export default function Carousel({
     images
   });
 
-  const { currentIndex, isFullscreen, direction, isPaused, isAutoPaused } = state;
+  const { currentIndex, isFullscreen, direction, isPaused, isAutoPaused, currentSpeed } = state;
 
   // Background integration removed - handled separately by parallax scrolling
   // useEffect(() => {
@@ -143,6 +143,8 @@ export default function Carousel({
             onToggleFullscreen={enableFullscreen ? controls.toggleFullscreen : undefined}
             isPaused={isPaused || isAutoPaused}
             onToggleAutoplay={autoplaySpeed > 0 ? controls.toggleAutoplay : undefined}
+            currentSpeed={currentSpeed}
+            onCycleSpeed={autoplaySpeed > 0 ? controls.cycleSpeed : undefined}
           />
         )}
 

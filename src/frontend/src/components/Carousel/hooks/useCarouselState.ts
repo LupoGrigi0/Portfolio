@@ -6,11 +6,12 @@
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
- * @updated 2025-10-01 - Added auto-pause on manual interaction (Kai v3)
+ * @updated 2025-10-01 - Added auto-pause and dynamic speed control (Kai v3)
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { CarouselState, CarouselControls, CarouselImage } from '../types';
+import type { CarouselState, CarouselControls, CarouselImage, AutoplaySpeedPreset } from '../types';
+import { AUTOPLAY_SPEEDS } from '../constants';
 
 interface UseCarouselStateOptions {
   imageCount: number;
@@ -36,7 +37,8 @@ export function useCarouselState({
     direction: null,
     isFullscreen: false,
     isPaused: false,
-    isAutoPaused: false
+    isAutoPaused: false,
+    currentSpeed: 'medium' // Default speed preset
   });
 
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -184,14 +186,32 @@ export function useCarouselState({
     }
   }, [state.isPaused, pause, resume]);
 
+  // Set specific autoplay speed preset
+  const setSpeed = useCallback((speed: AutoplaySpeedPreset) => {
+    console.log('[useCarouselState] Speed changed', { from: state.currentSpeed, to: speed, duration: AUTOPLAY_SPEEDS[speed] });
+    setState(prev => ({ ...prev, currentSpeed: speed }));
+  }, [state.currentSpeed]);
+
+  // Cycle through speed presets
+  const cycleSpeed = useCallback(() => {
+    const speeds: AutoplaySpeedPreset[] = ['slow', 'medium', 'fast', 'veryFast'];
+    const currentIndex = speeds.indexOf(state.currentSpeed);
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    const nextSpeed = speeds[nextIndex];
+    setSpeed(nextSpeed);
+  }, [state.currentSpeed, setSpeed]);
+
   // Autoplay timer (only runs when not paused and not auto-paused)
+  // Uses current speed preset for dynamic speed adjustment
   useEffect(() => {
     if (autoplaySpeed > 0 && !state.isPaused && !state.isAutoPaused && !state.isTransitioning) {
+      const currentSpeedMs = AUTOPLAY_SPEEDS[state.currentSpeed];
+
       autoplayTimerRef.current = setTimeout(() => {
         // Call goTo directly with fromAutoplay flag to avoid triggering auto-pause
         const nextIndex = (state.currentIndex + 1) % imageCount;
         goTo(nextIndex, true);
-      }, autoplaySpeed);
+      }, currentSpeedMs);
 
       return () => {
         if (autoplayTimerRef.current) {
@@ -199,7 +219,7 @@ export function useCarouselState({
         }
       };
     }
-  }, [autoplaySpeed, state.isPaused, state.isAutoPaused, state.isTransitioning, state.currentIndex, imageCount, goTo]);
+  }, [autoplaySpeed, state.isPaused, state.isAutoPaused, state.isTransitioning, state.currentIndex, state.currentSpeed, imageCount, goTo]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -241,7 +261,9 @@ export function useCarouselState({
     toggleFullscreen,
     toggleAutoplay,
     pause,
-    resume
+    resume,
+    cycleSpeed,
+    setSpeed
   };
 
   return [state, controls];

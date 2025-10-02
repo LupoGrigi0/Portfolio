@@ -5,10 +5,16 @@
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
+ * @updated 2025-10-01 - Added autoplay speed presets (Kai v3)
  */
 
 export type TransitionType = 'fade' | 'slide' | 'zoom' | 'flip';
 export type CarouselLayout = 'single' | 'side-by-side' | 'stacked';
+
+/**
+ * Autoplay speed presets for user-adjustable playback
+ */
+export type AutoplaySpeedPreset = 'slow' | 'medium' | 'fast' | 'veryFast';
 
 export interface CarouselImage {
   id: string;
@@ -47,6 +53,7 @@ export interface CarouselState {
   isFullscreen: boolean;
   isPaused: boolean;
   isAutoPaused: boolean; // Temporarily paused due to manual interaction
+  currentSpeed: AutoplaySpeedPreset; // Current autoplay speed preset
 }
 
 export interface CarouselControls {
@@ -57,6 +64,8 @@ export interface CarouselControls {
   toggleAutoplay: () => void;
   pause: () => void;
   resume: () => void;
+  cycleSpeed: () => void; // Cycle through speed presets (slow -> medium -> fast -> veryFast -> slow)
+  setSpeed: (speed: AutoplaySpeedPreset) => void; // Set specific speed preset
 }
 
 /**
