@@ -30,6 +30,7 @@ export default function Carousel({
   transitionType = 'fade',
   transitionDuration = 600,
   autoplaySpeed = 0,
+  speedPreset,
   autoPauseDuration = 5000,
   showCaptions = true,
   enableFullscreen = true,
@@ -40,6 +41,7 @@ export default function Carousel({
   showPauseButton = true,
   showFullscreenButton = true,
   onImageChange,
+  onSpeedChange,
   className = ''
 }: CarouselProps) {
 
@@ -59,10 +61,12 @@ export default function Carousel({
   const [state, controls] = useCarouselState({
     imageCount: images.length,
     autoplaySpeed,
+    speedPreset,
     autoPauseDuration,
     transitionDuration,
     fullscreenMode,
     onImageChange,
+    onSpeedChange,
     images
   });
 

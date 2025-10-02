@@ -15,7 +15,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ResponsiveContainer, Grid, ContentBlock, useBackground } from '@/components/Layout';
 import ReferenceCarousel from '@/components/ReferenceCarousel/ReferenceCarousel';
-import { getCollection, getMediaUrl, type Collection, type MediaItem } from '@/lib/api-client';
+import { getCollection, getAbsoluteMediaUrl, type Collection, type MediaItem } from '@/lib/api-client';
 
 export default function CollectionDetailPage() {
   const params = useParams();
@@ -44,7 +44,7 @@ export default function CollectionDetailPage() {
       if (data.heroImage) {
         setBackground(data.heroImage);
       } else if (data.gallery && data.gallery.length > 0) {
-        const firstImage = getMediaUrl(slug, data.gallery[0].filename, { size: 'medium' });
+        const firstImage = getAbsoluteMediaUrl(data.gallery[0].urls.medium);
         setBackground(firstImage);
       }
 
@@ -90,12 +90,23 @@ export default function CollectionDetailPage() {
     );
   }
 
-  // Prepare images for carousel
-  const carouselImages = (collection.gallery || []).map((item: MediaItem) => ({
-    id: item.id,
-    src: getMediaUrl(slug, item.filename, { size: 'full' }),
-    alt: item.altText || item.filename,
-  }));
+  // Prepare images for carousel using Viktor's pre-built URLs
+  // Filter out videos and items without valid image URLs
+  const carouselImages = (collection.gallery || [])
+    .filter((item: MediaItem) => {
+      // Skip videos - carousel only supports images
+      if (item.type === 'video') return false;
+
+      // Skip items without valid large image URL
+      if (!item.urls.large || item.urls.large === '') return false;
+
+      return true;
+    })
+    .map((item: MediaItem) => ({
+      id: item.id,
+      src: getAbsoluteMediaUrl(item.urls.large), // Use large size for carousel
+      alt: item.altText || item.title || item.filename,
+    }));
 
   return (
     <ResponsiveContainer>

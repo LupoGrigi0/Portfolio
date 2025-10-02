@@ -36,7 +36,14 @@
       "Bash(powershell:*)",
       "Bash(npx kill-port:*)",
       "mcp__coordination-system-Production__create_project",
-      "mcp__coordination-system-Production__create_task"
+      "mcp__coordination-system-Production__create_task",
+      "mcp__coordination-system-Production__update_task",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "mcp__coordination-system-Production__claim_task",
+      "Bash(lsof:*)",
+      "Bash(git reset:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

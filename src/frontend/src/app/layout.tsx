@@ -36,6 +36,7 @@ export default function RootLayout({
             logoSrc="/branding/logo.png"
             menuItems={[
               { label: 'Home', href: '/' },
+              { label: 'Showcase', href: '/showcase', featured: true },
               { label: 'Collections', href: '/collections', featured: true },
               { label: 'Gallery Demo', href: '/gallery' },
             ]}

@@ -16,20 +16,24 @@ import { AUTOPLAY_SPEEDS } from '../constants';
 interface UseCarouselStateOptions {
   imageCount: number;
   autoplaySpeed?: number;
+  speedPreset?: AutoplaySpeedPreset;
   autoPauseDuration?: number;
   transitionDuration?: number;
   fullscreenMode?: FullscreenMode;
   onImageChange?: (index: number, image: CarouselImage) => void;
+  onSpeedChange?: (speed: AutoplaySpeedPreset) => void;
   images?: CarouselImage[];
 }
 
 export function useCarouselState({
   imageCount,
   autoplaySpeed = 0,
+  speedPreset,
   autoPauseDuration = 5000,
   transitionDuration = 600,
   fullscreenMode = 'browser',
   onImageChange,
+  onSpeedChange,
   images = []
 }: UseCarouselStateOptions): [CarouselState, CarouselControls] {
 
@@ -244,11 +248,12 @@ export function useCarouselState({
   const setSpeed = useCallback((speed: AutoplaySpeedPreset) => {
     console.log('[useCarouselState] Speed changed', { from: state.currentSpeed, to: speed, duration: AUTOPLAY_SPEEDS[speed] });
     setState(prev => ({ ...prev, currentSpeed: speed }));
-  }, [state.currentSpeed]);
+    onSpeedChange?.(speed); // Notify parent component
+  }, [state.currentSpeed, onSpeedChange]);
 
   // Cycle through speed presets
   const cycleSpeed = useCallback(() => {
-    const speeds: AutoplaySpeedPreset[] = ['slow', 'medium', 'fast', 'veryFast'];
+    const speeds: AutoplaySpeedPreset[] = ['slow', 'medium', 'fast', 'veryFast', 'ultraFast', 'blazing'];
     const currentIndex = speeds.indexOf(state.currentSpeed);
     const nextIndex = (currentIndex + 1) % speeds.length;
     const nextSpeed = speeds[nextIndex];
@@ -304,6 +309,14 @@ export function useCarouselState({
       };
     }
   }, [fullscreenMode]);
+
+  // Sync speedPreset prop with internal state (for controlled speed from external config panels)
+  useEffect(() => {
+    if (speedPreset && speedPreset !== state.currentSpeed) {
+      console.log('[useCarouselState] Syncing speed preset from prop', { from: state.currentSpeed, to: speedPreset });
+      setState(prev => ({ ...prev, currentSpeed: speedPreset }));
+    }
+  }, [speedPreset, state.currentSpeed]);
 
   // Keyboard navigation
   useEffect(() => {

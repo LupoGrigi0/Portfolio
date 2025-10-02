@@ -220,7 +220,9 @@ export default function CarouselDemo() {
               images={carouselImages}
               transitionType={transitionType}
               transitionDuration={800}
-              autoplaySpeed={speedPreset === 'custom' ? customSpeedMs : 5000}
+              autoplaySpeed={customSpeedMs}
+              speedPreset={speedPreset}
+              onSpeedChange={setSpeedPreset}
               autoPauseDuration={5000}
               showCaptions={true}
               enableFullscreen={true}
@@ -253,17 +255,20 @@ export default function CarouselDemo() {
 
             {/* Collection Selector */}
             <div className="flex gap-2">
-              {['couples', 'mixed'].map((collection) => (
+              {[
+                { slug: 'couples', label: 'Couples' },
+                { slug: 'mixed-collection', label: 'Mixed' }
+              ].map(({ slug, label }) => (
                 <button
-                  key={collection}
-                  onClick={() => setCollectionName(collection)}
+                  key={slug}
+                  onClick={() => setCollectionName(slug)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    collectionName === collection
+                    collectionName === slug
                       ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                   }`}
                 >
-                  {collection.charAt(0).toUpperCase() + collection.slice(1)}
+                  {label}
                 </button>
               ))}
             </div>
@@ -296,7 +301,9 @@ export default function CarouselDemo() {
                   images={liveImages}
                   transitionType={transitionType}
                   transitionDuration={800}
-                  autoplaySpeed={speedPreset === 'custom' ? customSpeedMs : 5000}
+                  autoplaySpeed={customSpeedMs}
+                  speedPreset={speedPreset}
+                  onSpeedChange={setSpeedPreset}
                   autoPauseDuration={5000}
                   showCaptions={true}
                   enableFullscreen={true}

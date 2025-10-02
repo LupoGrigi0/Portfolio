@@ -14,16 +14,22 @@ export interface MediaItem {
   id: string;
   type: 'image' | 'video';
   filename: string;
-  path: string;
-  thumbnailPath?: string;
-  metadata: {
+  title?: string;
+  caption?: string;
+  urls: {
+    thumbnail: string;
+    small: string;
+    medium: string;
+    large: string;
+    original: string;
+  };
+  dimensions: {
     width: number;
     height: number;
     aspectRatio: number;
-    fileSize: number;
   };
+  status: string;
   altText?: string;
-  caption?: string;
 }
 
 export interface Collection {
@@ -123,8 +129,22 @@ export async function getCollection(slug: string): Promise<Collection | null> {
 }
 
 /**
- * Get media URL for an image/video
+ * Convert relative API URL to absolute URL
+ * Viktor's backend returns relative URLs like "/api/media/..."
+ * Frontend needs absolute URLs like "http://localhost:4000/api/media/..."
+ */
+export function getAbsoluteMediaUrl(relativeUrl: string): string {
+  if (relativeUrl.startsWith('http')) {
+    return relativeUrl; // Already absolute
+  }
+  return `${API_BASE_URL}${relativeUrl}`;
+}
+
+/**
+ * Get media URL for an image/video (DEPRECATED - use item.urls from API)
  * Supports size and format query parameters
+ *
+ * @deprecated Use MediaItem.urls directly from API response
  */
 export function getMediaUrl(
   collectionSlug: string,

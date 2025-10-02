@@ -35,6 +35,7 @@ export interface CarouselProps {
   transitionType?: TransitionType;
   transitionDuration?: number;
   autoplaySpeed?: number;
+  speedPreset?: AutoplaySpeedPreset; // Controlled speed preset (syncs with external config panels)
   autoPauseDuration?: number; // Duration to pause autoplay after manual navigation (ms), 0 = disabled
   showCaptions?: boolean;
   enableFullscreen?: boolean;
@@ -45,6 +46,7 @@ export interface CarouselProps {
   showPauseButton?: boolean; // Show/hide pause button (default: true)
   showFullscreenButton?: boolean; // Show/hide fullscreen button (default: true)
   onImageChange?: (index: number, image: CarouselImage) => void;
+  onSpeedChange?: (speed: AutoplaySpeedPreset) => void; // Callback when speed changes (via cycle button or setSpeed)
   className?: string;
 }
 
