@@ -6,16 +6,17 @@
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
- * @updated 2025-10-01 - Added live API data carousel (Kai v3)
+ * @updated 2025-10-01 - Added config panel and transition testing (Kai v3)
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Carousel } from '@/components/Carousel';
+import CarouselConfigPanel from '@/components/Carousel/CarouselConfigPanel';
 import { ReferenceCarousel } from '@/components/ReferenceCarousel';
 import { ResponsiveContainer, Grid, ContentBlock } from '@/components/Layout';
-import type { CarouselImage } from '@/components/Carousel/types';
+import type { CarouselImage, TransitionType, AutoplaySpeedPreset } from '@/components/Carousel/types';
 
 // Sample images for carousel demo
 const carouselImages: CarouselImage[] = [
@@ -72,6 +73,10 @@ const carouselImages: CarouselImage[] = [
 ];
 
 export default function CarouselDemo() {
+  // Configuration state
+  const [transitionType, setTransitionType] = useState<TransitionType>('fade');
+  const [speedPreset, setSpeedPreset] = useState<AutoplaySpeedPreset>('medium');
+
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -181,45 +186,55 @@ export default function CarouselDemo() {
         <ContentBlock className="min-h-[30vh] flex items-center justify-center">
           <div className="text-center text-white">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 tracking-tight">
-              Carousel Demo
+              Carousel Testing Lab
             </h1>
             <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto">
-              High-performance image carousel with smooth transitions
+              Interactive carousel with live configuration controls
             </p>
           </div>
         </ContentBlock>
 
-        {/* Side-by-Side Comparison */}
-        <Grid variant="side-by-side" spacing="normal">
-          <ContentBlock>
-            <h2 className="text-2xl font-bold text-white mb-4">🔧 Custom Carousel (Under Development)</h2>
-            <div className="min-h-[60vh] flex items-center">
-              <Carousel
-                images={carouselImages}
-                transitionType="fade"
-                transitionDuration={800}
-                autoplaySpeed={5000}
-                autoPauseDuration={5000}
-                showCaptions={true}
-                enableFullscreen={true}
-                showNavigation={true}
-                showIndicators={true}
-                onImageChange={handleImageChange}
-              />
-            </div>
-          </ContentBlock>
+        {/* Main Carousel with Config Panel */}
+        <ContentBlock>
+          <h2 className="text-2xl font-bold text-white mb-4">🎠 Custom Carousel</h2>
 
-          <ContentBlock>
-            <h2 className="text-2xl font-bold text-white mb-4">✅ Reference Carousel (Working Example)</h2>
-            <ReferenceCarousel
-              images={carouselImages.map(img => ({
-                id: img.id,
-                src: img.src,
-                alt: img.alt
-              }))}
+          {/* Configuration Panel */}
+          <CarouselConfigPanel
+            currentTransition={transitionType}
+            currentSpeed={speedPreset}
+            onTransitionChange={setTransitionType}
+            onSpeedChange={setSpeedPreset}
+            className="mb-6"
+          />
+
+          {/* Carousel */}
+          <div className="min-h-[60vh] flex items-center">
+            <Carousel
+              images={carouselImages}
+              transitionType={transitionType}
+              transitionDuration={800}
+              autoplaySpeed={5000}
+              autoPauseDuration={5000}
+              showCaptions={true}
+              enableFullscreen={true}
+              showNavigation={true}
+              showIndicators={true}
+              onImageChange={handleImageChange}
             />
-          </ContentBlock>
-        </Grid>
+          </div>
+        </ContentBlock>
+
+        {/* Reference Carousel */}
+        <ContentBlock>
+          <h2 className="text-2xl font-bold text-white mb-4">✅ Reference Implementation</h2>
+          <ReferenceCarousel
+            images={carouselImages.map(img => ({
+              id: img.id,
+              src: img.src,
+              alt: img.alt
+            }))}
+          />
+        </ContentBlock>
 
         {/* Live API Data Carousel */}
         <ContentBlock>
@@ -251,7 +266,7 @@ export default function CarouselDemo() {
               <div className="min-h-[60vh] flex items-center">
                 <Carousel
                   images={liveImages}
-                  transitionType="fade"
+                  transitionType={transitionType}
                   transitionDuration={800}
                   autoplaySpeed={5000}
                   autoPauseDuration={5000}
