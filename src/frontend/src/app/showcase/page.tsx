@@ -17,7 +17,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { ResponsiveContainer, Grid, ContentBlock, useBackground } from "@/components/Layout";
 import ReferenceCarousel from '@/components/ReferenceCarousel/ReferenceCarousel';
-import { getCollections, getAbsoluteMediaUrl, type Collection, type MediaItem } from '@/lib/api-client';
+import { getCollections, getCollection, getAbsoluteMediaUrl, type Collection, type MediaItem } from '@/lib/api-client';
 
 export default function ShowcasePage() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -36,11 +36,19 @@ export default function ShowcasePage() {
         c.imageCount && c.imageCount > 0
       );
 
-      setCollections(collectionsWithImages);
+      // Fetch full collection data (including gallery) for each collection
+      const collectionsWithGallery = await Promise.all(
+        collectionsWithImages.map(async (col) => {
+          const fullCollection = await getCollection(col.slug);
+          return fullCollection || col;
+        })
+      );
+
+      setCollections(collectionsWithGallery);
 
       // Set initial background to first collection's hero
-      if (collectionsWithImages.length > 0 && collectionsWithImages[0].heroImage) {
-        setBackground(collectionsWithImages[0].heroImage);
+      if (collectionsWithGallery.length > 0 && collectionsWithGallery[0].heroImage) {
+        setBackground(collectionsWithGallery[0].heroImage);
       }
 
       setLoading(false);
