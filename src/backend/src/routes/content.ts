@@ -229,6 +229,8 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
       slug: (directory as any).slug,
       heroImage: (directory as any).cover_image,
       description: (directory as any).description,
+      imageCount: totalImages,
+      videoCount: 0, // TODO: Track video count separately
       config,
       featured: Boolean((directory as any).featured),
       tags,
