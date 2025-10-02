@@ -9,6 +9,7 @@
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
+ * @updated 2025-10-01 - Relocated pause/fullscreen controls to bottom (Kai v3)
  */
 
 'use client';
@@ -138,8 +139,8 @@ export default function CarouselNavigation({
         </div>
       )}
 
-      {/* Fullscreen & Autoplay Controls (Top Right) */}
-      <div className="absolute top-4 right-4 flex gap-2 z-20">
+      {/* Fullscreen & Autoplay Controls (Bottom Right) */}
+      <div className="absolute bottom-4 right-4 flex gap-2 z-20">
         {/* Autoplay Toggle */}
         {showPauseButton && onToggleAutoplay && (
           <button
@@ -209,7 +210,7 @@ export default function CarouselNavigation({
 
       {/* Keyboard Hints (Only in fullscreen) */}
       {isFullscreen && (
-        <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 text-white/60 text-xs bg-black/30 px-3 py-1 rounded">
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-white/60 text-xs bg-black/30 px-3 py-1 rounded">
           Use ← → arrow keys to navigate • ESC to exit • Space to pause
         </div>
       )}
