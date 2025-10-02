@@ -38,6 +38,7 @@ const SIZE_MAPPINGS: Record<string, string> = {
 const MIME_TYPES: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.jfif': 'image/jpeg', // JFIF is a JPEG variant
   '.png': 'image/png',
   '.webp': 'image/webp',
   '.avif': 'image/avif',
