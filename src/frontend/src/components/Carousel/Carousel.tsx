@@ -30,6 +30,7 @@ export default function Carousel({
   transitionType = 'fade',
   transitionDuration = 600,
   autoplaySpeed = 0,
+  autoPauseDuration = 5000,
   showCaptions = true,
   enableFullscreen = true,
   showNavigation = true,
@@ -43,6 +44,7 @@ export default function Carousel({
     transitionType,
     transitionDuration,
     autoplaySpeed,
+    autoPauseDuration,
     layout
   });
 
@@ -52,12 +54,13 @@ export default function Carousel({
   const [state, controls] = useCarouselState({
     imageCount: images.length,
     autoplaySpeed,
+    autoPauseDuration,
     transitionDuration,
     onImageChange,
     images
   });
 
-  const { currentIndex, isFullscreen, direction } = state;
+  const { currentIndex, isFullscreen, direction, isPaused, isAutoPaused } = state;
 
   // Background integration removed - handled separately by parallax scrolling
   // useEffect(() => {
@@ -132,7 +135,7 @@ export default function Carousel({
             showIndicators={showIndicators}
             isFullscreen={isFullscreen}
             onToggleFullscreen={enableFullscreen ? controls.toggleFullscreen : undefined}
-            isPaused={state.isPaused}
+            isPaused={isPaused || isAutoPaused}
             onToggleAutoplay={autoplaySpeed > 0 ? controls.toggleAutoplay : undefined}
           />
         )}

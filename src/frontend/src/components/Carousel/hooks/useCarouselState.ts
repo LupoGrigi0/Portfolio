@@ -6,6 +6,7 @@
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
+ * @updated 2025-10-01 - Added auto-pause on manual interaction (Kai v3)
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -14,6 +15,7 @@ import type { CarouselState, CarouselControls, CarouselImage } from '../types';
 interface UseCarouselStateOptions {
   imageCount: number;
   autoplaySpeed?: number;
+  autoPauseDuration?: number;
   transitionDuration?: number;
   onImageChange?: (index: number, image: CarouselImage) => void;
   images?: CarouselImage[];
@@ -22,6 +24,7 @@ interface UseCarouselStateOptions {
 export function useCarouselState({
   imageCount,
   autoplaySpeed = 0,
+  autoPauseDuration = 5000,
   transitionDuration = 600,
   onImageChange,
   images = []
@@ -32,22 +35,51 @@ export function useCarouselState({
     isTransitioning: false,
     direction: null,
     isFullscreen: false,
-    isPaused: false
+    isPaused: false,
+    isAutoPaused: false
   });
 
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const transitionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoPauseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clear timers on unmount
   useEffect(() => {
     return () => {
       if (autoplayTimerRef.current) clearTimeout(autoplayTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
+      if (autoPauseTimerRef.current) clearTimeout(autoPauseTimerRef.current);
     };
   }, []);
 
+  /**
+   * Trigger auto-pause after manual interaction
+   * Temporarily pauses autoplay to prevent "fighting the carousel"
+   *
+   * @author Kai v3
+   */
+  const triggerAutoPause = useCallback(() => {
+    if (autoPauseDuration === 0 || autoplaySpeed === 0) return;
+
+    console.log('[useCarouselState] Auto-pause triggered', { duration: autoPauseDuration });
+
+    // Clear existing auto-pause timer
+    if (autoPauseTimerRef.current) {
+      clearTimeout(autoPauseTimerRef.current);
+    }
+
+    // Set auto-paused state
+    setState(prev => ({ ...prev, isAutoPaused: true }));
+
+    // Resume autoplay after duration
+    autoPauseTimerRef.current = setTimeout(() => {
+      console.log('[useCarouselState] Auto-pause ended, resuming autoplay');
+      setState(prev => ({ ...prev, isAutoPaused: false }));
+    }, autoPauseDuration);
+  }, [autoPauseDuration, autoplaySpeed]);
+
   // Navigate to specific index
-  const goTo = useCallback((index: number) => {
+  const goTo = useCallback((index: number, fromAutoplay = false) => {
     if (state.isTransitioning || index === state.currentIndex) return;
     if (index < 0 || index >= imageCount) return;
 
@@ -56,8 +88,14 @@ export function useCarouselState({
     console.log('[useCarouselState] Navigating to index', {
       from: state.currentIndex,
       to: index,
-      direction
+      direction,
+      fromAutoplay
     });
+
+    // Trigger auto-pause if this is manual navigation
+    if (!fromAutoplay) {
+      triggerAutoPause();
+    }
 
     setState(prev => ({
       ...prev,
@@ -85,7 +123,7 @@ export function useCarouselState({
       }
     }, transitionDuration);
 
-  }, [state.isTransitioning, state.currentIndex, imageCount, transitionDuration, onImageChange, images]);
+  }, [state.isTransitioning, state.currentIndex, imageCount, transitionDuration, onImageChange, images, triggerAutoPause]);
 
   // Navigate to next image
   const next = useCallback(() => {
@@ -116,17 +154,25 @@ export function useCarouselState({
   // Pause autoplay
   const pause = useCallback(() => {
     console.log('[useCarouselState] Autoplay paused');
-    setState(prev => ({ ...prev, isPaused: true }));
+    setState(prev => ({ ...prev, isPaused: true, isAutoPaused: false }));
     if (autoplayTimerRef.current) {
       clearTimeout(autoplayTimerRef.current);
       autoplayTimerRef.current = null;
+    }
+    if (autoPauseTimerRef.current) {
+      clearTimeout(autoPauseTimerRef.current);
+      autoPauseTimerRef.current = null;
     }
   }, []);
 
   // Resume autoplay
   const resume = useCallback(() => {
     console.log('[useCarouselState] Autoplay resumed');
-    setState(prev => ({ ...prev, isPaused: false }));
+    setState(prev => ({ ...prev, isPaused: false, isAutoPaused: false }));
+    if (autoPauseTimerRef.current) {
+      clearTimeout(autoPauseTimerRef.current);
+      autoPauseTimerRef.current = null;
+    }
   }, []);
 
   // Toggle autoplay
@@ -138,11 +184,13 @@ export function useCarouselState({
     }
   }, [state.isPaused, pause, resume]);
 
-  // Autoplay timer
+  // Autoplay timer (only runs when not paused and not auto-paused)
   useEffect(() => {
-    if (autoplaySpeed > 0 && !state.isPaused && !state.isTransitioning) {
+    if (autoplaySpeed > 0 && !state.isPaused && !state.isAutoPaused && !state.isTransitioning) {
       autoplayTimerRef.current = setTimeout(() => {
-        next();
+        // Call goTo directly with fromAutoplay flag to avoid triggering auto-pause
+        const nextIndex = (state.currentIndex + 1) % imageCount;
+        goTo(nextIndex, true);
       }, autoplaySpeed);
 
       return () => {
@@ -151,7 +199,7 @@ export function useCarouselState({
         }
       };
     }
-  }, [autoplaySpeed, state.isPaused, state.isTransitioning, state.currentIndex, next]);
+  }, [autoplaySpeed, state.isPaused, state.isAutoPaused, state.isTransitioning, state.currentIndex, imageCount, goTo]);
 
   // Keyboard navigation
   useEffect(() => {

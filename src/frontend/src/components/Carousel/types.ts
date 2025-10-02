@@ -28,6 +28,7 @@ export interface CarouselProps {
   transitionType?: TransitionType;
   transitionDuration?: number;
   autoplaySpeed?: number;
+  autoPauseDuration?: number; // Duration to pause autoplay after manual navigation (ms), 0 = disabled
   showCaptions?: boolean;
   enableFullscreen?: boolean;
   showNavigation?: boolean;
@@ -42,6 +43,7 @@ export interface CarouselState {
   direction: 'forward' | 'backward' | null;
   isFullscreen: boolean;
   isPaused: boolean;
+  isAutoPaused: boolean; // Temporarily paused due to manual interaction
 }
 
 export interface CarouselControls {

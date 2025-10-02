@@ -99,6 +99,7 @@ export default function CarouselDemo() {
                 transitionType="fade"
                 transitionDuration={800}
                 autoplaySpeed={5000}
+                autoPauseDuration={5000}
                 showCaptions={true}
                 enableFullscreen={true}
                 showNavigation={true}
@@ -175,10 +176,10 @@ export default function CarouselDemo() {
 
           <ContentBlock>
             <h3 className="text-xl font-bold text-white mb-2">
-              🎬 Auto-Advance
+              🎬 Smart Auto-Advance
             </h3>
             <p className="text-white/70 text-sm">
-              Automatic progression with configurable timing. Pause anytime with the play/pause button.
+              Autoplay with smart pause: automatically pauses for 5s when you manually navigate. No more fighting the carousel!
             </p>
           </ContentBlock>
         </Grid>
@@ -186,7 +187,7 @@ export default function CarouselDemo() {
         {/* Info */}
         <ContentBlock className="text-center">
           <p className="text-white/60 text-sm mb-2">
-            ✨ New: Click navigation added! Click left/right side of images to navigate.
+            ✨ New: Click navigation + Auto-pause on interaction! Try clicking around while autoplay is running.
           </p>
           <p className="text-white/50 text-xs">
             Coming soon: Touch swipe gestures, parallax effects, video support, and advanced transitions
