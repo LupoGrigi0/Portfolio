@@ -1,11 +1,12 @@
 /**
- * Showcase Page - Multiple Carousels with Scrolling Parallax
+ * Parallax Demo Page - Multi-Layer Scrolling Showcase
  *
- * Demonstrates multiple carousels on a single page with:
- * - Hero section with title, subtitle, and background
- * - Multiple carousel sections (one per collection)
- * - Scroll-triggered background changes
- * - Beautiful spacing and typography
+ * Demonstrates the 3-tier parallax system with:
+ * - Background layer scrolling at 30% speed
+ * - Midground layer scrolling at 60% speed
+ * - Foreground layer scrolling at 100% speed
+ * - Multiple carousel sections
+ * - Dynamic layer changes on scroll
  *
  * @author Zara (UI/UX & React Components Specialist)
  * @created 2025-10-02
@@ -15,28 +16,35 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { ResponsiveContainer, Grid, ContentBlock, useParallaxBackground, type ParallaxLayer } from "@/components/Layout";
+import {
+  ResponsiveContainer,
+  Grid,
+  ContentBlock,
+  useParallaxBackground,
+  createParallaxLayersFromConfig,
+  type ParallaxLayer
+} from '@/components/Layout';
 import ReferenceCarousel from '@/components/ReferenceCarousel/ReferenceCarousel';
-import { getCollections, getCollection, getAbsoluteMediaUrl, type Collection, type MediaItem } from '@/lib/api-client';
+import {
+  getCollections,
+  getCollection,
+  getAbsoluteMediaUrl,
+  type Collection,
+  type MediaItem
+} from '@/lib/api-client';
 
-export default function ShowcasePage() {
+export default function ParallaxDemoPage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const { setLayers } = useParallaxBackground();
-
-  // Refs for scroll-triggered background changes
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
     async function loadCollections() {
       const data = await getCollections();
 
-      // Filter to only show collections with images
-      const collectionsWithImages = data.filter(c =>
-        c.imageCount && c.imageCount > 0
-      );
+      const collectionsWithImages = data.filter(c => c.imageCount && c.imageCount > 0);
 
-      // Fetch full collection data (including gallery) for each collection
       const collectionsWithGallery = await Promise.all(
         collectionsWithImages.map(async (col) => {
           const fullCollection = await getCollection(col.slug);
@@ -46,17 +54,41 @@ export default function ShowcasePage() {
 
       setCollections(collectionsWithGallery);
 
-      // Set initial background to first collection's hero
-      if (collectionsWithGallery.length > 0 && collectionsWithGallery[0].heroImage) {
-        const layers: ParallaxLayer[] = [{
-          id: 'showcase-bg',
-          type: 'background',
-          imageUrl: getAbsoluteMediaUrl(collectionsWithGallery[0].heroImage),
-          speed: 0,
-          opacity: 1,
-          zIndex: 1
-        }];
-        setLayers(layers);
+      // Set initial parallax layers from first collection
+      if (collectionsWithGallery.length > 0) {
+        const firstCol = collectionsWithGallery[0];
+        if (firstCol.heroImage) {
+          // Create 3-layer parallax effect
+          const layers: ParallaxLayer[] = [
+            {
+              id: 'bg-1',
+              type: 'background',
+              imageUrl: getAbsoluteMediaUrl(firstCol.heroImage),
+              speed: 0.3,
+              opacity: 0.6,
+              zIndex: 1,
+              blur: 2
+            },
+            {
+              id: 'mg-1',
+              type: 'midground',
+              imageUrl: getAbsoluteMediaUrl(firstCol.heroImage),
+              speed: 0.6,
+              opacity: 0.8,
+              zIndex: 2,
+              blur: 1
+            },
+            {
+              id: 'fg-1',
+              type: 'foreground',
+              imageUrl: getAbsoluteMediaUrl(firstCol.heroImage),
+              speed: 1.0,
+              opacity: 1.0,
+              zIndex: 3
+            }
+          ];
+          setLayers(layers);
+        }
       }
 
       setLoading(false);
@@ -65,12 +97,11 @@ export default function ShowcasePage() {
     loadCollections();
   }, [setLayers]);
 
-  // Scroll-triggered background changes
+  // Scroll-triggered parallax layer changes
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + window.innerHeight / 2;
 
-      // Find which section is in view
       for (const [collectionId, ref] of Object.entries(sectionRefs.current)) {
         if (ref) {
           const rect = ref.getBoundingClientRect();
@@ -80,14 +111,35 @@ export default function ShowcasePage() {
           if (scrollPosition >= elementTop && scrollPosition <= elementBottom) {
             const collection = collections.find(c => c.id === collectionId);
             if (collection?.heroImage) {
-              const layers: ParallaxLayer[] = [{
-                id: `showcase-${collectionId}`,
-                type: 'background',
-                imageUrl: getAbsoluteMediaUrl(collection.heroImage),
-                speed: 0,
-                opacity: 1,
-                zIndex: 1
-              }];
+              // Update all 3 layers with new image
+              const layers: ParallaxLayer[] = [
+                {
+                  id: `bg-${collectionId}`,
+                  type: 'background',
+                  imageUrl: getAbsoluteMediaUrl(collection.heroImage),
+                  speed: 0.3,
+                  opacity: 0.6,
+                  zIndex: 1,
+                  blur: 2
+                },
+                {
+                  id: `mg-${collectionId}`,
+                  type: 'midground',
+                  imageUrl: getAbsoluteMediaUrl(collection.heroImage),
+                  speed: 0.6,
+                  opacity: 0.8,
+                  zIndex: 2,
+                  blur: 1
+                },
+                {
+                  id: `fg-${collectionId}`,
+                  type: 'foreground',
+                  imageUrl: getAbsoluteMediaUrl(collection.heroImage),
+                  speed: 1.0,
+                  opacity: 1.0,
+                  zIndex: 3
+                }
+              ];
               setLayers(layers);
             }
             break;
@@ -107,7 +159,7 @@ export default function ShowcasePage() {
           <ContentBlock className="min-h-[80vh] flex items-center justify-center">
             <div className="text-center text-white">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4" />
-              <p className="text-lg">Loading showcase...</p>
+              <p className="text-lg">Loading parallax demo...</p>
             </div>
           </ContentBlock>
         </Grid>
@@ -121,14 +173,26 @@ export default function ShowcasePage() {
         {/* Hero Section */}
         <ContentBlock className="min-h-screen flex flex-col items-center justify-center text-center">
           <h1 className="text-6xl sm:text-7xl lg:text-9xl font-bold text-white mb-6 tracking-tight">
-            Portfolio
+            Parallax Demo
           </h1>
           <p className="text-2xl sm:text-3xl lg:text-4xl text-white/90 max-w-4xl mb-8">
-            A Cinematic Journey Through Art
+            3-Layer Cinematic Scrolling
           </p>
-          <p className="text-lg text-white/70 max-w-2xl">
-            Scroll to explore {collections.length} collections • {collections.reduce((sum, c) => sum + (c.imageCount || 0), 0)} images
+          <p className="text-lg text-white/70 max-w-2xl mb-8">
+            Background @ 30% • Midground @ 60% • Foreground @ 100%
           </p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 max-w-2xl border border-white/20">
+            <p className="text-white/90 mb-4">
+              <strong>How it works:</strong>
+            </p>
+            <ul className="text-white/70 text-left space-y-2">
+              <li>• Background layer moves at 30% scroll speed (appears distant)</li>
+              <li>• Midground layer moves at 60% scroll speed (medium depth)</li>
+              <li>• Foreground layer moves at 100% scroll speed (closest)</li>
+              <li>• Creates illusion of depth as you scroll</li>
+              <li>• Blur effect adds depth of field</li>
+            </ul>
+          </div>
           <div className="mt-12 animate-bounce">
             <svg className="w-8 h-8 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
@@ -136,14 +200,13 @@ export default function ShowcasePage() {
           </div>
         </ContentBlock>
 
-        {/* Collection Carousels */}
+        {/* Collection Carousels with Parallax */}
         {collections.map((collection) => {
-          // Prepare carousel images (filter out videos and invalid items)
           const carouselImages = (collection.gallery || [])
             .filter((item: MediaItem) =>
               item.type === 'image' && item.urls.large && item.urls.large !== ''
             )
-            .slice(0, 20) // Limit to first 20 images per carousel
+            .slice(0, 20)
             .map((item: MediaItem) => ({
               id: item.id,
               src: getAbsoluteMediaUrl(item.urls.large),
@@ -158,7 +221,6 @@ export default function ShowcasePage() {
               ref={(el) => { sectionRefs.current[collection.id] = el; }}
               className="min-h-screen flex flex-col justify-center"
             >
-              {/* Collection Header */}
               <ContentBlock className="text-center mb-8">
                 <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
                   {collection.config?.title || collection.name}
@@ -170,29 +232,15 @@ export default function ShowcasePage() {
                   </p>
                 )}
 
-                {collection.config?.description && (
-                  <p className="text-white/70 max-w-3xl mx-auto leading-relaxed mb-8">
-                    {collection.config.description}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-center gap-4 text-sm text-white/60">
-                  <span>{collection.imageCount} images</span>
-                  {collection.config?.tags && collection.config.tags.length > 0 && (
-                    <>
-                      <span>•</span>
-                      <span>{collection.config.tags.join(', ')}</span>
-                    </>
-                  )}
+                <div className="text-sm text-white/60 mb-4">
+                  Watch the background layers shift as you scroll through this section
                 </div>
               </ContentBlock>
 
-              {/* Carousel */}
               <ContentBlock>
                 <ReferenceCarousel images={carouselImages} />
               </ContentBlock>
 
-              {/* Collection Footer */}
               <ContentBlock className="text-center mt-8">
                 <Link
                   href={`/collections/${collection.slug}`}
@@ -214,17 +262,30 @@ export default function ShowcasePage() {
         {/* Footer */}
         <ContentBlock className="text-center py-20">
           <h3 className="text-3xl font-bold text-white mb-4">
-            Experience More
+            Performance Stats
           </h3>
-          <p className="text-white/70 mb-8">
-            Explore individual collections for the full experience
-          </p>
-          <Link
-            href="/collections"
-            className="inline-block bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-300 backdrop-blur-sm border border-white/20"
-          >
-            View All Collections →
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <div className="text-4xl font-bold text-white mb-2">60fps</div>
+              <div className="text-white/70">Smooth Scrolling</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <div className="text-4xl font-bold text-white mb-2">GPU</div>
+              <div className="text-white/70">Hardware Accelerated</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <div className="text-4xl font-bold text-white mb-2">3</div>
+              <div className="text-white/70">Depth Layers</div>
+            </div>
+          </div>
+          <div className="mt-8">
+            <Link
+              href="/showcase"
+              className="inline-block bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-300 backdrop-blur-sm border border-white/20"
+            >
+              ← Back to Showcase
+            </Link>
+          </div>
         </ContentBlock>
       </Grid>
     </ResponsiveContainer>

@@ -79,6 +79,14 @@ export default function CarouselDemo() {
   const [customSpeedMs, setCustomSpeedMs] = useState(2000);
   const [fullscreenMode, setFullscreenMode] = useState<FullscreenMode>('browser');
 
+  // Auto-hide controls state
+  const [autoHideControls, setAutoHideControls] = useState(true);
+  const [fadeStartDelay, setFadeStartDelay] = useState(2000);
+  const [fadeCompleteDelay, setFadeCompleteDelay] = useState(4000);
+
+  // Social reactions state (enabled by default in demo)
+  const [showReactions, setShowReactions] = useState(true);
+
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -182,6 +190,10 @@ export default function CarouselDemo() {
     console.log(`Carousel changed to image ${index + 1}:`, image.title);
   };
 
+  const handleReaction = (emoji: string, imageId: string) => {
+    console.log(`[CarouselDemo] User reacted with ${emoji} to image ${imageId}`);
+  };
+
   return (
     <ResponsiveContainer>
       <Grid variant="single" spacing="loose">
@@ -211,6 +223,14 @@ export default function CarouselDemo() {
             onSpeedChange={setSpeedPreset}
             onCustomSpeedChange={setCustomSpeedMs}
             onFullscreenModeChange={setFullscreenMode}
+            autoHideControls={autoHideControls}
+            fadeStartDelay={fadeStartDelay}
+            fadeCompleteDelay={fadeCompleteDelay}
+            onAutoHideChange={setAutoHideControls}
+            onFadeStartDelayChange={setFadeStartDelay}
+            onFadeCompleteDelayChange={setFadeCompleteDelay}
+            showReactions={showReactions}
+            onShowReactionsChange={setShowReactions}
             className="mb-6"
           />
 
@@ -230,6 +250,11 @@ export default function CarouselDemo() {
               showNavigation={true}
               showIndicators={true}
               onImageChange={handleImageChange}
+              autoHideControls={autoHideControls}
+              fadeStartDelay={fadeStartDelay}
+              fadeCompleteDelay={fadeCompleteDelay}
+              showReactions={showReactions}
+              onReaction={handleReaction}
             />
           </div>
         </ContentBlock>
@@ -311,6 +336,11 @@ export default function CarouselDemo() {
                   showNavigation={true}
                   showIndicators={true}
                   onImageChange={handleImageChange}
+                  autoHideControls={autoHideControls}
+                  fadeStartDelay={fadeStartDelay}
+                  fadeCompleteDelay={fadeCompleteDelay}
+                  showReactions={showReactions}
+                  onReaction={handleReaction}
                 />
               </div>
               <div className="text-xs text-white/40 text-center">

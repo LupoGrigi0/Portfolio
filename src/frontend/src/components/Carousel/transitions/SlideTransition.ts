@@ -24,11 +24,11 @@ export const SlideTransition: TransitionHandler = {
     const getTransform = () => {
       if (isActive) return 'translateX(0)';
 
-      // Position inactive images based on direction
-      // Forward: slide from right (100%)
-      // Backward: slide from left (-100%)
-      // Null direction: fade behavior (already off-screen)
-      return direction === 'forward' ? 'translateX(100%)' : 'translateX(-100%)';
+      // Inactive images exit in OPPOSITE direction of travel
+      // Forward (next) → old image exits left (-100%)
+      // Backward (prev) → old image exits right (100%)
+      // Null direction: default to left
+      return direction === 'forward' ? 'translateX(-100%)' : 'translateX(100%)';
     };
 
     return {

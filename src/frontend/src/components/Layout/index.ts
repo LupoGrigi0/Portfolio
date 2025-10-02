@@ -10,3 +10,10 @@
 export { default as Navigation } from './Navigation';
 export { default as Grid, ContentBlock, ResponsiveContainer } from './Grid';
 export { default as Background, BackgroundProvider, useBackground } from './Background';
+export {
+  default as ParallaxBackground,
+  ParallaxBackgroundProvider,
+  useParallaxBackground,
+  createParallaxLayersFromConfig,
+  type ParallaxLayer
+} from './ParallaxBackground';

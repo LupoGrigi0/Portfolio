@@ -9,7 +9,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Navigation, BackgroundProvider } from "@/components/Layout";
+import { Navigation, BackgroundProvider, ParallaxBackgroundProvider } from "@/components/Layout";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,11 +31,12 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased`}
       >
-        <BackgroundProvider>
+        <ParallaxBackgroundProvider>
           <Navigation
             logoSrc="/branding/logo.png"
             menuItems={[
               { label: 'Home', href: '/' },
+              { label: 'Parallax Demo', href: '/parallax-demo', featured: true },
               { label: 'Showcase', href: '/showcase', featured: true },
               { label: 'Collections', href: '/collections', featured: true },
               { label: 'Gallery Demo', href: '/gallery' },
@@ -44,7 +45,7 @@ export default function RootLayout({
           <main className="pt-16 min-h-screen">
             {children}
           </main>
-        </BackgroundProvider>
+        </ParallaxBackgroundProvider>
       </body>
     </html>
   );

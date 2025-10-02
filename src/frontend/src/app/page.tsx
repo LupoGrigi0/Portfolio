@@ -12,14 +12,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ResponsiveContainer, Grid, ContentBlock, useBackground } from "@/components/Layout";
+import { ResponsiveContainer, Grid, ContentBlock, useParallaxBackground, type ParallaxLayer } from "@/components/Layout";
 import { getCollections, getAbsoluteMediaUrl, type Collection } from '@/lib/api-client';
 
 export default function Home() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [featuredCollections, setFeaturedCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-  const { setBackground } = useBackground();
+  const { setLayers } = useParallaxBackground();
 
   useEffect(() => {
     async function loadCollections() {
@@ -40,10 +40,18 @@ export default function Home() {
       // Set background to first featured collection's hero image
       // This runs every time the homepage is visited to reset the background
       if (featured.length > 0 && featured[0].heroImage) {
-        setBackground(featured[0].heroImage);
+        const layers: ParallaxLayer[] = [{
+          id: 'home-bg',
+          type: 'background',
+          imageUrl: getAbsoluteMediaUrl(featured[0].heroImage),
+          speed: 0,
+          opacity: 1,
+          zIndex: 1
+        }];
+        setLayers(layers);
       } else {
         // Fallback to default dark background
-        setBackground(null);
+        setLayers([]);
       }
 
       setLoading(false);
@@ -53,9 +61,9 @@ export default function Home() {
 
     // Cleanup: reset background when leaving homepage
     return () => {
-      // Optional: could reset to null when leaving, but keeping it is also nice
+      // Optional: could reset to [] when leaving, but keeping it is also nice
     };
-  }, [setBackground]);
+  }, [setLayers]);
 
   if (loading) {
     return (
@@ -110,7 +118,15 @@ export default function Home() {
                   onMouseEnter={() => {
                     // Change background on hover - parallax effect!
                     if (collection.heroImage) {
-                      setBackground(collection.heroImage);
+                      const layers: ParallaxLayer[] = [{
+                        id: `home-featured-${collection.id}`,
+                        type: 'background',
+                        imageUrl: getAbsoluteMediaUrl(collection.heroImage),
+                        speed: 0,
+                        opacity: 1,
+                        zIndex: 1
+                      }];
+                      setLayers(layers);
                     }
                   }}
                 >
@@ -164,7 +180,15 @@ export default function Home() {
                 className="group block"
                 onMouseEnter={() => {
                   if (collection.heroImage) {
-                    setBackground(collection.heroImage);
+                    const layers: ParallaxLayer[] = [{
+                      id: `home-all-${collection.id}`,
+                      type: 'background',
+                      imageUrl: getAbsoluteMediaUrl(collection.heroImage),
+                      speed: 0,
+                      opacity: 1,
+                      zIndex: 1
+                    }];
+                    setLayers(layers);
                   }
                 }}
               >

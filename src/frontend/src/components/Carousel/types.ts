@@ -8,7 +8,7 @@
  * @updated 2025-10-01 - Added autoplay speed presets (Kai v3)
  */
 
-export type TransitionType = 'fade' | 'slide' | 'zoom' | 'flip';
+export type TransitionType = 'none' | 'fade' | 'slide' | 'slide-up' | 'slide-down' | 'zoom' | 'flip' | 'flipbook';
 export type CarouselLayout = 'single' | 'side-by-side' | 'stacked';
 export type FullscreenMode = 'browser' | 'native';
 
@@ -48,6 +48,18 @@ export interface CarouselProps {
   onImageChange?: (index: number, image: CarouselImage) => void;
   onSpeedChange?: (speed: AutoplaySpeedPreset) => void; // Callback when speed changes (via cycle button or setSpeed)
   className?: string;
+
+  // Social Reactions (UI-only, default: OFF)
+  showReactions?: boolean; // Enable social reactions UI (default: false)
+  reactionEmojis?: string[]; // Custom emoji set (default: ❤️💀🍑❤️‍🔥🤢☢️👍👎➕)
+  onReaction?: (emoji: string, imageId: string) => void; // Callback when user reacts (stub)
+
+  // Auto-hide controls configuration
+  autoHideControls?: boolean; // Enable auto-hide behavior (default: true)
+  fadeStartDelay?: number; // Delay before starting fade to 50% (default: 2000ms)
+  fadeCompleteDelay?: number; // Delay before fading to 0% and sliding off (default: 4000ms)
+  slideIndicatorsOffscreen?: boolean; // Slide progress dots off bottom when hidden (default: true)
+  permanentlyHideControls?: boolean; // Override to always hide controls (default: false)
 }
 
 export interface CarouselState {

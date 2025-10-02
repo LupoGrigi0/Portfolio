@@ -6,15 +6,17 @@
  * - Dot indicators
  * - Fullscreen toggle
  * - Autoplay pause/resume
+ * - Auto-hide with progressive fade/slide
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
- * @updated 2025-10-01 - Relocated pause/fullscreen controls to bottom (Kai v3)
+ * @updated 2025-10-01 - Auto-hide controls (Kai v3)
  */
 
 'use client';
 
 import type { AutoplaySpeedPreset } from './types';
+import type { ControlVisibility } from './hooks/useAutoHideControls';
 import { AUTOPLAY_SPEEDS } from './constants';
 
 interface CarouselNavigationProps {
@@ -33,6 +35,10 @@ interface CarouselNavigationProps {
   onToggleAutoplay?: () => void;
   currentSpeed?: AutoplaySpeedPreset;
   onCycleSpeed?: () => void;
+
+  // Auto-hide controls
+  controlVisibility?: ControlVisibility;
+  slideIndicatorsOffscreen?: boolean;
 }
 
 export default function CarouselNavigation({
@@ -50,7 +56,9 @@ export default function CarouselNavigation({
   isPaused = false,
   onToggleAutoplay,
   currentSpeed = 'medium',
-  onCycleSpeed
+  onCycleSpeed,
+  controlVisibility = 'visible',
+  slideIndicatorsOffscreen = true
 }: CarouselNavigationProps) {
 
   const handlePrevious = () => {
@@ -97,15 +105,57 @@ export default function CarouselNavigation({
     return labels[speed];
   };
 
+  /**
+   * Get CSS classes for control visibility
+   * Progressive fade: visible → semi-faded (50%) → hidden (0% + slide)
+   */
+  const getVisibilityClasses = (): string => {
+    const baseTransition = 'transition-all duration-500 ease-in-out';
+
+    switch (controlVisibility) {
+      case 'visible':
+        return `${baseTransition} opacity-100 translate-y-0`;
+      case 'semi-faded':
+        return `${baseTransition} opacity-50 translate-y-0`;
+      case 'hidden':
+        return `${baseTransition} opacity-0`;
+      default:
+        return `${baseTransition} opacity-100 translate-y-0`;
+    }
+  };
+
+  /**
+   * Get CSS classes for indicators (with optional slide-off)
+   */
+  const getIndicatorVisibilityClasses = (): string => {
+    const baseTransition = 'transition-all duration-500 ease-in-out';
+
+    if (!slideIndicatorsOffscreen) {
+      // Just fade, no slide
+      return getVisibilityClasses();
+    }
+
+    switch (controlVisibility) {
+      case 'visible':
+        return `${baseTransition} opacity-100 translate-y-0`;
+      case 'semi-faded':
+        return `${baseTransition} opacity-50 translate-y-0`;
+      case 'hidden':
+        return `${baseTransition} opacity-0 translate-y-12`;
+      default:
+        return `${baseTransition} opacity-100 translate-y-0`;
+    }
+  };
+
   return (
     <>
       {/* Previous/Next Arrow Buttons */}
       {showArrows && (
-        <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none z-20">
+        <div className={`absolute inset-0 flex items-center justify-between px-4 pointer-events-none z-20 ${getVisibilityClasses()}`}>
         {/* Previous Button */}
         <button
           onClick={handlePrevious}
-          className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
           aria-label="Previous image"
         >
           <svg
@@ -126,7 +176,7 @@ export default function CarouselNavigation({
         {/* Next Button */}
         <button
           onClick={handleNext}
-          className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="pointer-events-auto bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-transform duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
           aria-label="Next image"
         >
           <svg
@@ -148,7 +198,7 @@ export default function CarouselNavigation({
 
       {/* Dot Indicators */}
       {showIndicators && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-black/50 px-3 py-2 rounded-full z-20">
+        <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 bg-black/50 px-3 py-2 rounded-full z-20 ${getIndicatorVisibilityClasses()}`}>
           {Array.from({ length: totalImages }).map((_, index) => (
             <button
               key={index}
@@ -166,7 +216,7 @@ export default function CarouselNavigation({
       )}
 
       {/* Fullscreen & Autoplay Controls (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 flex gap-2 z-20">
+      <div className={`absolute bottom-4 right-4 flex gap-2 z-20 ${getVisibilityClasses()}`}>
         {/* Autoplay Toggle */}
         {showPauseButton && onToggleAutoplay && (
           <button

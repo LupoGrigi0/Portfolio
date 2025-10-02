@@ -43,7 +43,8 @@
       "mcp__coordination-system-Production__claim_task",
       "Bash(lsof:*)",
       "Bash(git reset:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
     "ask": []

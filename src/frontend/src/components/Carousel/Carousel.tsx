@@ -17,12 +17,16 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { CarouselProps } from './types';
 import { useCarouselState } from './hooks/useCarouselState';
+import { useAutoHideControls } from './hooks/useAutoHideControls';
+import { useImagePreloader } from './hooks/useImagePreloader';
 // import { useBackground } from '@/components/Layout/Background'; // Removed - background handled separately
 import CarouselImageRenderer from './CarouselImageRenderer';
 import CarouselNavigation from './CarouselNavigation';
+import SocialReactions from './SocialReactions';
+import ReactionDisplay from './ReactionDisplay';
 
 export default function Carousel({
   images,
@@ -42,7 +46,17 @@ export default function Carousel({
   showFullscreenButton = true,
   onImageChange,
   onSpeedChange,
-  className = ''
+  className = '',
+  // Social Reactions
+  showReactions = false,
+  reactionEmojis,
+  onReaction,
+  // Auto-hide controls
+  autoHideControls = true,
+  fadeStartDelay = 2000,
+  fadeCompleteDelay = 4000,
+  slideIndicatorsOffscreen = true,
+  permanentlyHideControls = false
 }: CarouselProps) {
 
   console.log('[Carousel] Initializing', {
@@ -71,6 +85,26 @@ export default function Carousel({
   });
 
   const { currentIndex, isFullscreen, direction, isPaused, isAutoPaused, currentSpeed } = state;
+
+  // Reaction refresh trigger (increment to force ReactionDisplay to refresh)
+  const [reactionRefreshTrigger, setReactionRefreshTrigger] = useState(0);
+
+  // Auto-hide controls management
+  const [autoHideState] = useAutoHideControls({
+    enabled: autoHideControls,
+    fadeStartDelay,
+    fadeCompleteDelay,
+    permanentlyHide: permanentlyHideControls
+  });
+
+  // Smart image preloading
+  const { hasInteracted, preloadedCount } = useImagePreloader({
+    images,
+    currentIndex,
+    enabled: true
+  });
+
+  console.log('[Carousel] Preloader state', { hasInteracted, preloadedCount });
 
   // Background integration removed - handled separately by parallax scrolling
   // useEffect(() => {
@@ -110,6 +144,8 @@ export default function Carousel({
     );
   }
 
+  const currentImage = images[currentIndex];
+
   return (
     <div
       className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'h-[600px] z-10'} ${className}`}
@@ -134,6 +170,22 @@ export default function Carousel({
               onNext={controls.next}
             />
           ))}
+
+          {/* Social Reactions (if enabled) */}
+          {showReactions && currentImage && (
+            <>
+              <ReactionDisplay
+                imageId={currentImage.id}
+                refreshTrigger={reactionRefreshTrigger}
+              />
+              <SocialReactions
+                imageId={currentImage.id}
+                emojis={reactionEmojis}
+                onReaction={onReaction}
+                onRefresh={() => setReactionRefreshTrigger(prev => prev + 1)}
+              />
+            </>
+          )}
         </div>
 
         {/* Navigation Controls */}
@@ -154,6 +206,8 @@ export default function Carousel({
             onToggleAutoplay={autoplaySpeed > 0 ? controls.toggleAutoplay : undefined}
             currentSpeed={currentSpeed}
             onCycleSpeed={autoplaySpeed > 0 ? controls.cycleSpeed : undefined}
+            controlVisibility={autoHideState.visibility}
+            slideIndicatorsOffscreen={slideIndicatorsOffscreen}
           />
         )}
 

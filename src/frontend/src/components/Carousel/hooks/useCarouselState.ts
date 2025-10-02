@@ -88,7 +88,7 @@ export function useCarouselState({
 
   // Navigate to specific index
   const goTo = useCallback((index: number, fromAutoplay = false) => {
-    if (state.isTransitioning || index === state.currentIndex) return;
+    if (index === state.currentIndex) return;
     if (index < 0 || index >= imageCount) return;
 
     const direction = index > state.currentIndex ? 'forward' : 'backward';
@@ -105,33 +105,35 @@ export function useCarouselState({
       triggerAutoPause();
     }
 
+    // INSTANT UPDATE: Change index immediately for <50ms keyboard response
+    // The CSS transition handles the visual smoothness
     setState(prev => ({
       ...prev,
+      currentIndex: index,
       isTransitioning: true,
       direction
     }));
+
+    // Notify parent of image change immediately
+    if (onImageChange && images[index]) {
+      onImageChange(index, images[index]);
+    }
 
     // Clear existing transition timer
     if (transitionTimerRef.current) {
       clearTimeout(transitionTimerRef.current);
     }
 
-    // Complete transition
+    // Clean up transition state after animation completes
     transitionTimerRef.current = setTimeout(() => {
       setState(prev => ({
         ...prev,
-        currentIndex: index,
         isTransitioning: false,
         direction: null
       }));
-
-      // Notify parent of image change
-      if (onImageChange && images[index]) {
-        onImageChange(index, images[index]);
-      }
     }, transitionDuration);
 
-  }, [state.isTransitioning, state.currentIndex, imageCount, transitionDuration, onImageChange, images, triggerAutoPause]);
+  }, [state.currentIndex, imageCount, transitionDuration, onImageChange, images, triggerAutoPause]);
 
   // Navigate to next image
   const next = useCallback(() => {

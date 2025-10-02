@@ -28,6 +28,18 @@ interface CarouselConfigPanelProps {
   onCustomSpeedChange?: (ms: number) => void;
   onFullscreenModeChange?: (mode: FullscreenMode) => void;
   className?: string;
+
+  // Auto-hide controls
+  autoHideControls?: boolean;
+  fadeStartDelay?: number;
+  fadeCompleteDelay?: number;
+  onAutoHideChange?: (enabled: boolean) => void;
+  onFadeStartDelayChange?: (ms: number) => void;
+  onFadeCompleteDelayChange?: (ms: number) => void;
+
+  // Social Reactions
+  showReactions?: boolean;
+  onShowReactionsChange?: (enabled: boolean) => void;
 }
 
 export default function CarouselConfigPanel({
@@ -39,10 +51,20 @@ export default function CarouselConfigPanel({
   onSpeedChange,
   onCustomSpeedChange,
   onFullscreenModeChange,
-  className = ''
+  className = '',
+  autoHideControls = true,
+  fadeStartDelay = 2000,
+  fadeCompleteDelay = 4000,
+  onAutoHideChange,
+  onFadeStartDelayChange,
+  onFadeCompleteDelayChange,
+  showReactions = false,
+  onShowReactionsChange
 }: CarouselConfigPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [customInput, setCustomInput] = useState(customSpeedMs.toString());
+  const [fadeStartInput, setFadeStartInput] = useState(fadeStartDelay.toString());
+  const [fadeCompleteInput, setFadeCompleteInput] = useState(fadeCompleteDelay.toString());
 
   // Get all available transitions from the registry
   const transitions = getTransitionMetadata();
@@ -210,6 +232,123 @@ export default function CarouselConfigPanel({
                   ? 'Browser mode fills window (nav bar visible)'
                   : 'Native mode uses Fullscreen API (entire screen)'}
               </p>
+            </div>
+          )}
+
+          {/* Social Reactions */}
+          {onShowReactionsChange && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+                Enable Social Reactions
+                <span className="text-xs text-white/40">(NEW)</span>
+              </label>
+
+              {/* Toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onShowReactionsChange(!showReactions)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    showReactions ? 'bg-purple-500' : 'bg-white/20'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showReactions ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm text-white/70">
+                  {showReactions ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+
+              <p className="text-xs text-white/50 italic">
+                Interactive emoji reactions on carousel images (UI-only stub)
+              </p>
+            </div>
+          )}
+
+          {/* Auto-Hide Controls */}
+          {onAutoHideChange && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+                Auto-Hide Controls
+                <span className="text-xs text-white/40">(NEW)</span>
+              </label>
+
+              {/* Toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onAutoHideChange(!autoHideControls)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    autoHideControls ? 'bg-green-500' : 'bg-white/20'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      autoHideControls ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm text-white/70">
+                  {autoHideControls ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+
+              {/* Timing Controls */}
+              {autoHideControls && onFadeStartDelayChange && onFadeCompleteDelayChange && (
+                <div className="space-y-2 pl-4 border-l-2 border-white/10">
+                  {/* Fade Start Delay */}
+                  <div className="flex gap-2 items-center">
+                    <label className="text-xs text-white/60 w-32">Fade to 50%:</label>
+                    <input
+                      type="number"
+                      value={fadeStartInput}
+                      onChange={(e) => setFadeStartInput(e.target.value)}
+                      onBlur={() => {
+                        const ms = parseInt(fadeStartInput);
+                        if (!isNaN(ms) && ms >= 0 && ms <= 10000) {
+                          onFadeStartDelayChange(ms);
+                        } else {
+                          setFadeStartInput(fadeStartDelay.toString());
+                        }
+                      }}
+                      placeholder="ms"
+                      min="0"
+                      max="10000"
+                      className="flex-1 px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                    />
+                    <span className="text-xs text-white/50">ms</span>
+                  </div>
+
+                  {/* Fade Complete Delay */}
+                  <div className="flex gap-2 items-center">
+                    <label className="text-xs text-white/60 w-32">Hide completely:</label>
+                    <input
+                      type="number"
+                      value={fadeCompleteInput}
+                      onChange={(e) => setFadeCompleteInput(e.target.value)}
+                      onBlur={() => {
+                        const ms = parseInt(fadeCompleteInput);
+                        if (!isNaN(ms) && ms >= 0 && ms <= 10000) {
+                          onFadeCompleteDelayChange(ms);
+                        } else {
+                          setFadeCompleteInput(fadeCompleteDelay.toString());
+                        }
+                      }}
+                      placeholder="ms"
+                      min="0"
+                      max="10000"
+                      className="flex-1 px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-green-500/30"
+                    />
+                    <span className="text-xs text-white/50">ms</span>
+                  </div>
+
+                  <p className="text-xs text-white/40 italic">
+                    Controls fade progressively: full → 50% → 0% + slide off
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

@@ -32,19 +32,27 @@
  */
 
 import type { TransitionHandler, TransitionType } from '../types';
+import { noneTransition } from './none';
 import { FadeTransition } from './FadeTransition';
 import { SlideTransition } from './SlideTransition';
+import { SlideUpTransition } from './SlideUpTransition';
+import { SlideDownTransition } from './SlideDownTransition';
 import { ZoomTransition } from './ZoomTransition';
+import { FlipbookTransition } from './FlipbookTransition';
 
 /**
  * Registry of all available transitions
  * Maps TransitionType to TransitionHandler implementation
  */
 export const Transitions: Record<TransitionType, TransitionHandler> = {
+  none: noneTransition,
   fade: FadeTransition,
   slide: SlideTransition,
+  'slide-up': SlideUpTransition,
+  'slide-down': SlideDownTransition,
   zoom: ZoomTransition,
   flip: FadeTransition, // TODO: Implement FlipTransition (using fade as fallback for now)
+  flipbook: FlipbookTransition,
 };
 
 /**
