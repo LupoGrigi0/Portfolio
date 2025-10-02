@@ -6,10 +6,12 @@
  *
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
+ * @updated 2025-10-01 - Added live API data carousel (Kai v3)
  */
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Carousel } from '@/components/Carousel';
 import { ReferenceCarousel } from '@/components/ReferenceCarousel';
 import { ResponsiveContainer, Grid, ContentBlock } from '@/components/Layout';
@@ -70,6 +72,65 @@ const carouselImages: CarouselImage[] = [
 ];
 
 export default function CarouselDemo() {
+  // State for live API data
+  const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch live data from backend API
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch('http://localhost:4000/api/content/collections/couples?page=1&limit=20');
+
+        if (!response.ok) {
+          throw new Error(`API responded with status: ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        if (!json.success || !json.data?.collection?.gallery) {
+          throw new Error('Invalid API response structure');
+        }
+
+        // Transform API data to carousel format (as specified by Zara)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const transformedImages: CarouselImage[] = json.data.collection.gallery
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter((item: any) => item.type === 'image' && item.urls?.large)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((item: any) => ({
+            id: item.id,
+            src: `http://localhost:4000${item.urls.large}`,
+            alt: item.title || item.filename || 'Portfolio image',
+            title: item.title,
+            caption: item.caption,
+            width: item.dimensions?.width || 4096,
+            height: item.dimensions?.height || 4096,
+            aspectRatio: item.dimensions?.aspectRatio || 1,
+            thumbnail: item.urls?.thumbnail ? `http://localhost:4000${item.urls.thumbnail}` : undefined
+          }));
+
+        console.log('[CarouselDemo] Fetched live images', {
+          count: transformedImages.length,
+          collection: 'couples'
+        });
+
+        setLiveImages(transformedImages);
+      } catch (err) {
+        console.error('[CarouselDemo] Failed to fetch live data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch live data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLiveData();
+  }, []);
+
   const handleImageChange = (index: number, image: CarouselImage) => {
     console.log(`Carousel changed to image ${index + 1}:`, image.title);
   };
@@ -120,6 +181,58 @@ export default function CarouselDemo() {
             />
           </ContentBlock>
         </Grid>
+
+        {/* Live API Data Carousel */}
+        <ContentBlock>
+          <h2 className="text-2xl font-bold text-white mb-4">
+            🎨 Live Portfolio Data - &ldquo;Couples&rdquo; Collection
+          </h2>
+          {isLoading ? (
+            <div className="min-h-[60vh] flex items-center justify-center bg-black/20 rounded-lg">
+              <div className="text-center text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                <p className="text-white/60">Loading live portfolio images...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="min-h-[60vh] flex items-center justify-center bg-red-900/20 rounded-lg border border-red-500/30">
+              <div className="text-center text-white p-8">
+                <p className="text-red-400 font-semibold mb-2">⚠️ Failed to load live data</p>
+                <p className="text-white/60 text-sm mb-4">{error}</p>
+                <p className="text-white/40 text-xs">Make sure Viktor&apos;s backend is running on port 4000</p>
+              </div>
+            </div>
+          ) : liveImages.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-white/60">
+                <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-medium">LIVE</span>
+                <span>Fetched {liveImages.length} images from backend API</span>
+                <span className="text-white/40">• Collection: couples • Source: http://localhost:4000</span>
+              </div>
+              <div className="min-h-[60vh] flex items-center">
+                <Carousel
+                  images={liveImages}
+                  transitionType="fade"
+                  transitionDuration={800}
+                  autoplaySpeed={5000}
+                  autoPauseDuration={5000}
+                  showCaptions={true}
+                  enableFullscreen={true}
+                  showNavigation={true}
+                  showIndicators={true}
+                  onImageChange={handleImageChange}
+                />
+              </div>
+              <div className="text-xs text-white/40 text-center">
+                Testing with actual portfolio images (4096x4096) • Performance target: 60fps
+              </div>
+            </div>
+          ) : (
+            <div className="min-h-[60vh] flex items-center justify-center bg-black/20 rounded-lg">
+              <p className="text-white/60">No images found in collection</p>
+            </div>
+          )}
+        </ContentBlock>
 
         {/* Navigation Features */}
         <Grid variant="masonry" columns={3} spacing="normal">
