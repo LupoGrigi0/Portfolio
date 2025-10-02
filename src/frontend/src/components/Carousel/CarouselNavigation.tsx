@@ -20,6 +20,9 @@ interface CarouselNavigationProps {
   onNext: () => void;
   onGoTo: (index: number) => void;
   showIndicators?: boolean;
+  showArrows?: boolean;
+  showPauseButton?: boolean;
+  showFullscreenButton?: boolean;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   isPaused?: boolean;
@@ -33,6 +36,9 @@ export default function CarouselNavigation({
   onNext,
   onGoTo,
   showIndicators = true,
+  showArrows = true,
+  showPauseButton = true,
+  showFullscreenButton = true,
   isFullscreen = false,
   onToggleFullscreen,
   isPaused = false,
@@ -67,7 +73,8 @@ export default function CarouselNavigation({
   return (
     <>
       {/* Previous/Next Arrow Buttons */}
-      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none z-20">
+      {showArrows && (
+        <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none z-20">
         {/* Previous Button */}
         <button
           onClick={handlePrevious}
@@ -110,6 +117,7 @@ export default function CarouselNavigation({
           </svg>
         </button>
       </div>
+      )}
 
       {/* Dot Indicators */}
       {showIndicators && (
@@ -133,7 +141,7 @@ export default function CarouselNavigation({
       {/* Fullscreen & Autoplay Controls (Top Right) */}
       <div className="absolute top-4 right-4 flex gap-2 z-20">
         {/* Autoplay Toggle */}
-        {onToggleAutoplay && (
+        {showPauseButton && onToggleAutoplay && (
           <button
             onClick={handleToggleAutoplay}
             className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2.5 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -160,7 +168,7 @@ export default function CarouselNavigation({
         )}
 
         {/* Fullscreen Toggle */}
-        {onToggleFullscreen && (
+        {showFullscreenButton && onToggleFullscreen && (
           <button
             onClick={handleToggleFullscreen}
             className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2.5 transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50"

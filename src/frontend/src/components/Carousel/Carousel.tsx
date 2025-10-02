@@ -35,6 +35,9 @@ export default function Carousel({
   enableFullscreen = true,
   showNavigation = true,
   showIndicators = true,
+  showArrows = true,
+  showPauseButton = true,
+  showFullscreenButton = true,
   onImageChange,
   className = ''
 }: CarouselProps) {
@@ -133,6 +136,9 @@ export default function Carousel({
             onNext={controls.next}
             onGoTo={controls.goTo}
             showIndicators={showIndicators}
+            showArrows={showArrows}
+            showPauseButton={showPauseButton}
+            showFullscreenButton={showFullscreenButton}
             isFullscreen={isFullscreen}
             onToggleFullscreen={enableFullscreen ? controls.toggleFullscreen : undefined}
             isPaused={isPaused || isAutoPaused}

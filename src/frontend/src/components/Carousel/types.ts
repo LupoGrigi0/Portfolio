@@ -33,6 +33,9 @@ export interface CarouselProps {
   enableFullscreen?: boolean;
   showNavigation?: boolean;
   showIndicators?: boolean;
+  showArrows?: boolean; // Show/hide navigation arrows (default: true)
+  showPauseButton?: boolean; // Show/hide pause button (default: true)
+  showFullscreenButton?: boolean; // Show/hide fullscreen button (default: true)
   onImageChange?: (index: number, image: CarouselImage) => void;
   className?: string;
 }
