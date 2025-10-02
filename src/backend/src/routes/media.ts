@@ -47,6 +47,37 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 /**
+ * Generic icons for non-image file types
+ */
+const ICONS: Record<string, string> = {
+  video: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="2" y="3" width="20" height="14" rx="2"/>
+    <polygon points="10,8 16,12 10,16"/>
+  </svg>`,
+};
+
+/**
+ * GET /api/media/icons/:type
+ * Serves generic SVG icons for file types without thumbnails
+ */
+router.get('/icons/:type', async (req: Request, res: Response) => {
+  const { type } = req.params;
+  const icon = ICONS[type];
+
+  if (!icon) {
+    return res.status(404).json({
+      success: false,
+      message: `Icon type '${type}' not found`,
+      code: 'ICON_NOT_FOUND'
+    });
+  }
+
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(icon);
+});
+
+/**
  * GET /api/media/:slug/...
  * Serves image/video files from subdirectories (arbitrary depth)
  *

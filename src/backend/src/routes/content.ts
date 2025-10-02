@@ -24,8 +24,17 @@ const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/conte
  *
  * Converts: "E:\mnt\lupoportfolio\content\couples\.thumbnails\Hero-image_640w.webp"
  * To: "/api/media/couples/Hero-image.jpg?size=thumbnail"
+ *
+ * @param absolutePath - Absolute path to file
+ * @param slug - Collection slug
+ * @param originalFormat - Original file extension (jpg, gif, png, etc.)
  */
-function transformImageUrl(absolutePath: string | null, slug: string): string {
+function transformImageUrl(absolutePath: string | null, slug: string, originalFormat: string = 'jpg'): string {
+  // For videos without thumbnails, return a generic video icon
+  if (!absolutePath && originalFormat === 'mp4') {
+    return '/api/media/icons/video';
+  }
+
   if (!absolutePath) return '';
 
   try {
@@ -62,10 +71,10 @@ function transformImageUrl(absolutePath: string | null, slug: string): string {
       else if (filename.includes('_3840w')) size = '4k';
       else if (filename.includes('_640w')) size = 'thumbnail';
 
-      // Remove size suffix and .webp extension to get original filename
+      // Remove size suffix and .webp extension to get original filename with correct extension
       const originalName = filename
         .replace(/_\d+w/, '') // Remove _640w, _1200w, etc.
-        .replace(/\.webp$/, '.jpg'); // Assume original was .jpg
+        .replace(/\.webp$/, `.${originalFormat}`); // Use actual original format
 
       // Extract subdirectory path (skip slug, exclude .thumbnails and filename)
       // E.g., "Cafe/Coffee/.thumbnails/image.webp" → subdirectory = "Coffee"
@@ -230,11 +239,11 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
         caption: img.caption,
         type: img.format === 'mp4' ? 'video' : 'image',
         urls: {
-          thumbnail: transformImageUrl(img.thumbnail_url, slug),
-          small: transformImageUrl(img.small_url, slug),
-          medium: transformImageUrl(img.medium_url, slug),
-          large: transformImageUrl(img.large_url, slug),
-          original: transformImageUrl(img.original_url, slug),
+          thumbnail: transformImageUrl(img.thumbnail_url, slug, img.format),
+          small: transformImageUrl(img.small_url, slug, img.format),
+          medium: transformImageUrl(img.medium_url, slug, img.format),
+          large: transformImageUrl(img.large_url, slug, img.format),
+          original: transformImageUrl(img.original_url, slug, img.format),
         },
         dimensions: {
           width: img.width,
@@ -316,11 +325,11 @@ router.get('/collections/:slug/images', async (req: Request, res: Response, next
       caption: img.caption,
       type: img.format === 'mp4' ? 'video' : 'image',
       urls: {
-        thumbnail: transformImageUrl(img.thumbnail_url, slug),
-        small: transformImageUrl(img.small_url, slug),
-        medium: transformImageUrl(img.medium_url, slug),
-        large: transformImageUrl(img.large_url, slug),
-        original: transformImageUrl(img.original_url, slug),
+        thumbnail: transformImageUrl(img.thumbnail_url, slug, img.format),
+        small: transformImageUrl(img.small_url, slug, img.format),
+        medium: transformImageUrl(img.medium_url, slug, img.format),
+        large: transformImageUrl(img.large_url, slug, img.format),
+        original: transformImageUrl(img.original_url, slug, img.format),
       },
       dimensions: {
         width: img.width,
