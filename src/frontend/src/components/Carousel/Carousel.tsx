@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import type { CarouselProps } from './types';
 import { useCarouselState } from './hooks/useCarouselState';
 import { useAutoHideControls } from './hooks/useAutoHideControls';
+import { useAutoHideReactions } from './hooks/useAutoHideReactions';
 import { useImagePreloader } from './hooks/useImagePreloader';
 // import { useBackground } from '@/components/Layout/Background'; // Removed - background handled separately
 import CarouselImageRenderer from './CarouselImageRenderer';
@@ -56,7 +57,11 @@ export default function Carousel({
   fadeStartDelay = 2000,
   fadeCompleteDelay = 4000,
   slideIndicatorsOffscreen = true,
-  permanentlyHideControls = false
+  permanentlyHideControls = false,
+  // Auto-hide reactions (separate timing from main controls)
+  autoHideReactions = true,
+  reactionFadeStartDelay = 3000,
+  reactionFadeCompleteDelay = 5000
 }: CarouselProps) {
 
   console.log('[Carousel] Initializing', {
@@ -95,6 +100,13 @@ export default function Carousel({
     fadeStartDelay,
     fadeCompleteDelay,
     permanentlyHide: permanentlyHideControls
+  });
+
+  // Auto-hide reactions management (independent from main controls)
+  const [reactionAutoHideState] = useAutoHideReactions({
+    enabled: showReactions && autoHideReactions,
+    fadeStartDelay: reactionFadeStartDelay,
+    fadeCompleteDelay: reactionFadeCompleteDelay
   });
 
   // Smart image preloading
@@ -177,12 +189,14 @@ export default function Carousel({
               <ReactionDisplay
                 imageId={currentImage.id}
                 refreshTrigger={reactionRefreshTrigger}
+                visibility={reactionAutoHideState.visibility}
               />
               <SocialReactions
                 imageId={currentImage.id}
                 emojis={reactionEmojis}
                 onReaction={onReaction}
                 onRefresh={() => setReactionRefreshTrigger(prev => prev + 1)}
+                visibility={reactionAutoHideState.visibility}
               />
             </>
           )}

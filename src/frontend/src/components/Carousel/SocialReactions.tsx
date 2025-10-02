@@ -26,6 +26,7 @@
 
 import { useState } from 'react';
 import { addReaction } from '@/lib/api/reactions-stub';
+import type { ReactionVisibility } from './hooks/useAutoHideReactions';
 
 // Default emoji set
 const DEFAULT_EMOJIS = [
@@ -45,6 +46,7 @@ interface SocialReactionsProps {
   emojis?: string[];
   onReaction?: (emoji: string, imageId: string) => void;
   onRefresh?: () => void; // Callback to trigger reaction count refresh
+  visibility?: ReactionVisibility; // Auto-hide visibility state
   className?: string;
 }
 
@@ -53,10 +55,25 @@ export default function SocialReactions({
   emojis = DEFAULT_EMOJIS,
   onReaction,
   onRefresh,
+  visibility = 'visible',
   className = ''
 }: SocialReactionsProps) {
   const [clickedEmoji, setClickedEmoji] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get visibility styles based on state
+  const getVisibilityStyles = () => {
+    switch (visibility) {
+      case 'visible':
+        return 'opacity-100 translate-y-0';
+      case 'semi-faded':
+        return 'opacity-50 translate-y-0';
+      case 'hidden':
+        return 'opacity-0 translate-y-4';
+      default:
+        return 'opacity-100 translate-y-0';
+    }
+  };
 
   const handleEmojiClick = async (emoji: string) => {
     // Handle ➕ special case (emoji palette - stub)
@@ -106,8 +123,9 @@ export default function SocialReactions({
         border border-white/10
         rounded-full px-4 py-3
         flex items-center gap-3
-        transition-all duration-300
+        transition-all duration-500 ease-in-out
         hover:bg-black/80 hover:scale-105
+        ${getVisibilityStyles()}
         ${className}
       `}
       role="toolbar"

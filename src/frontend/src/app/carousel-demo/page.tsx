@@ -87,6 +87,11 @@ export default function CarouselDemo() {
   // Social reactions state (enabled by default in demo)
   const [showReactions, setShowReactions] = useState(true);
 
+  // Auto-hide reactions state (separate from main controls, enabled by default)
+  const [autoHideReactions, setAutoHideReactions] = useState(true);
+  const [reactionFadeStartDelay, setReactionFadeStartDelay] = useState(3000);
+  const [reactionFadeCompleteDelay, setReactionFadeCompleteDelay] = useState(5000);
+
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -231,6 +236,12 @@ export default function CarouselDemo() {
             onFadeCompleteDelayChange={setFadeCompleteDelay}
             showReactions={showReactions}
             onShowReactionsChange={setShowReactions}
+            autoHideReactions={autoHideReactions}
+            reactionFadeStartDelay={reactionFadeStartDelay}
+            reactionFadeCompleteDelay={reactionFadeCompleteDelay}
+            onAutoHideReactionsChange={setAutoHideReactions}
+            onReactionFadeStartDelayChange={setReactionFadeStartDelay}
+            onReactionFadeCompleteDelayChange={setReactionFadeCompleteDelay}
             className="mb-6"
           />
 
@@ -255,6 +266,9 @@ export default function CarouselDemo() {
               fadeCompleteDelay={fadeCompleteDelay}
               showReactions={showReactions}
               onReaction={handleReaction}
+              autoHideReactions={autoHideReactions}
+              reactionFadeStartDelay={reactionFadeStartDelay}
+              reactionFadeCompleteDelay={reactionFadeCompleteDelay}
             />
           </div>
         </ContentBlock>
@@ -341,6 +355,9 @@ export default function CarouselDemo() {
                   fadeCompleteDelay={fadeCompleteDelay}
                   showReactions={showReactions}
                   onReaction={handleReaction}
+                  autoHideReactions={autoHideReactions}
+                  reactionFadeStartDelay={reactionFadeStartDelay}
+                  reactionFadeCompleteDelay={reactionFadeCompleteDelay}
                 />
               </div>
               <div className="text-xs text-white/40 text-center">

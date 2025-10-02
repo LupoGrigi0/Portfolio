@@ -60,6 +60,11 @@ export interface CarouselProps {
   fadeCompleteDelay?: number; // Delay before fading to 0% and sliding off (default: 4000ms)
   slideIndicatorsOffscreen?: boolean; // Slide progress dots off bottom when hidden (default: true)
   permanentlyHideControls?: boolean; // Override to always hide controls (default: false)
+
+  // Auto-hide reactions configuration (separate from main controls)
+  autoHideReactions?: boolean; // Enable auto-hide for reactions (default: true if showReactions is true)
+  reactionFadeStartDelay?: number; // Delay before reactions start to fade (default: 3000ms)
+  reactionFadeCompleteDelay?: number; // Delay before reactions fully hide (default: 5000ms)
 }
 
 export interface CarouselState {

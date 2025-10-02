@@ -20,20 +20,37 @@
 import { useEffect, useState } from 'react';
 import type { ReactionCounts } from '@/lib/api/reactions-stub';
 import { getReactions } from '@/lib/api/reactions-stub';
+import type { ReactionVisibility } from './hooks/useAutoHideReactions';
 
 interface ReactionDisplayProps {
   imageId: string;
+  visibility?: ReactionVisibility; // Auto-hide visibility state
   className?: string;
   refreshTrigger?: number; // Increment to force refresh
 }
 
 export default function ReactionDisplay({
   imageId,
+  visibility = 'visible',
   className = '',
   refreshTrigger = 0
 }: ReactionDisplayProps) {
   const [reactions, setReactions] = useState<ReactionCounts>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get visibility styles based on state
+  const getVisibilityStyles = () => {
+    switch (visibility) {
+      case 'visible':
+        return 'opacity-100 translate-y-0';
+      case 'semi-faded':
+        return 'opacity-50 translate-y-0';
+      case 'hidden':
+        return 'opacity-0 -translate-y-4';
+      default:
+        return 'opacity-100 translate-y-0';
+    }
+  };
 
   // Fetch reactions when imageId changes or refreshTrigger updates
   useEffect(() => {
@@ -84,8 +101,9 @@ export default function ReactionDisplay({
         border border-white/10
         rounded-lg px-3 py-2
         flex items-center gap-2
-        transition-all duration-300
+        transition-all duration-500 ease-in-out
         hover:bg-black/80
+        ${getVisibilityStyles()}
         ${className}
       `}
       role="status"

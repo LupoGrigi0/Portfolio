@@ -40,6 +40,14 @@ interface CarouselConfigPanelProps {
   // Social Reactions
   showReactions?: boolean;
   onShowReactionsChange?: (enabled: boolean) => void;
+
+  // Auto-hide reactions (separate from main controls)
+  autoHideReactions?: boolean;
+  reactionFadeStartDelay?: number;
+  reactionFadeCompleteDelay?: number;
+  onAutoHideReactionsChange?: (enabled: boolean) => void;
+  onReactionFadeStartDelayChange?: (ms: number) => void;
+  onReactionFadeCompleteDelayChange?: (ms: number) => void;
 }
 
 export default function CarouselConfigPanel({
@@ -59,12 +67,20 @@ export default function CarouselConfigPanel({
   onFadeStartDelayChange,
   onFadeCompleteDelayChange,
   showReactions = false,
-  onShowReactionsChange
+  onShowReactionsChange,
+  autoHideReactions = true,
+  reactionFadeStartDelay = 3000,
+  reactionFadeCompleteDelay = 5000,
+  onAutoHideReactionsChange,
+  onReactionFadeStartDelayChange,
+  onReactionFadeCompleteDelayChange
 }: CarouselConfigPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [customInput, setCustomInput] = useState(customSpeedMs.toString());
   const [fadeStartInput, setFadeStartInput] = useState(fadeStartDelay.toString());
   const [fadeCompleteInput, setFadeCompleteInput] = useState(fadeCompleteDelay.toString());
+  const [reactionFadeStartInput, setReactionFadeStartInput] = useState(reactionFadeStartDelay.toString());
+  const [reactionFadeCompleteInput, setReactionFadeCompleteInput] = useState(reactionFadeCompleteDelay.toString());
 
   // Get all available transitions from the registry
   const transitions = getTransitionMetadata();
@@ -265,6 +281,90 @@ export default function CarouselConfigPanel({
               <p className="text-xs text-white/50 italic">
                 Interactive emoji reactions on carousel images (UI-only stub)
               </p>
+
+              {/* Auto-Hide Reactions (nested under Social Reactions) */}
+              {showReactions && onAutoHideReactionsChange && (
+                <div className="space-y-2 pl-4 border-l-2 border-purple-500/30 mt-3">
+                  <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+                    Auto-Hide Reactions
+                    <span className="text-xs text-white/40">(Separate timing)</span>
+                  </label>
+
+                  {/* Toggle */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onAutoHideReactionsChange(!autoHideReactions)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        autoHideReactions ? 'bg-purple-500' : 'bg-white/20'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          autoHideReactions ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-white/70">
+                      {autoHideReactions ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+
+                  {/* Timing Controls */}
+                  {autoHideReactions && onReactionFadeStartDelayChange && onReactionFadeCompleteDelayChange && (
+                    <div className="space-y-2 pl-4 border-l-2 border-white/10">
+                      {/* Fade Start Delay */}
+                      <div className="flex gap-2 items-center">
+                        <label className="text-xs text-white/60 w-32">Fade to 50%:</label>
+                        <input
+                          type="number"
+                          value={reactionFadeStartInput}
+                          onChange={(e) => setReactionFadeStartInput(e.target.value)}
+                          onBlur={() => {
+                            const ms = parseInt(reactionFadeStartInput);
+                            if (!isNaN(ms) && ms >= 0 && ms <= 10000) {
+                              onReactionFadeStartDelayChange(ms);
+                            } else {
+                              setReactionFadeStartInput(reactionFadeStartDelay.toString());
+                            }
+                          }}
+                          placeholder="ms"
+                          min="0"
+                          max="10000"
+                          className="flex-1 px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                        />
+                        <span className="text-xs text-white/50">ms</span>
+                      </div>
+
+                      {/* Fade Complete Delay */}
+                      <div className="flex gap-2 items-center">
+                        <label className="text-xs text-white/60 w-32">Hide completely:</label>
+                        <input
+                          type="number"
+                          value={reactionFadeCompleteInput}
+                          onChange={(e) => setReactionFadeCompleteInput(e.target.value)}
+                          onBlur={() => {
+                            const ms = parseInt(reactionFadeCompleteInput);
+                            if (!isNaN(ms) && ms >= 0 && ms <= 10000) {
+                              onReactionFadeCompleteDelayChange(ms);
+                            } else {
+                              setReactionFadeCompleteInput(reactionFadeCompleteDelay.toString());
+                            }
+                          }}
+                          placeholder="ms"
+                          min="0"
+                          max="10000"
+                          className="flex-1 px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                        />
+                        <span className="text-xs text-white/50">ms</span>
+                      </div>
+
+                      <p className="text-xs text-white/40 italic">
+                        Reactions fade independently from main controls
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
