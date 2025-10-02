@@ -96,26 +96,65 @@ export default function CarouselDemo() {
           throw new Error('Invalid API response structure');
         }
 
-        // Transform API data to carousel format (as specified by Zara)
+        console.log('[CarouselDemo] Raw API response', {
+          total: json.data.collection.gallery.length,
+          firstItem: json.data.collection.gallery[0]
+        });
+
+        // Transform API data to carousel format with ROBUST validation
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const transformedImages: CarouselImage[] = json.data.collection.gallery
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .filter((item: any) => item.type === 'image' && item.urls?.large)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .map((item: any) => ({
-            id: item.id,
-            src: `http://localhost:4000${item.urls.large}`,
-            alt: item.title || item.filename || 'Portfolio image',
-            title: item.title,
-            caption: item.caption,
-            width: item.dimensions?.width || 4096,
-            height: item.dimensions?.height || 4096,
-            aspectRatio: item.dimensions?.aspectRatio || 1,
-            thumbnail: item.urls?.thumbnail ? `http://localhost:4000${item.urls.thumbnail}` : undefined
-          }));
+          .filter((item: any) => {
+            // Strict validation - item must have all required fields
+            const isValid =
+              item &&
+              item.type === 'image' &&
+              item.id &&
+              item.urls &&
+              typeof item.urls.large === 'string' &&
+              item.urls.large.trim() !== '';
 
-        console.log('[CarouselDemo] Fetched live images', {
-          count: transformedImages.length,
+            if (!isValid && item) {
+              console.warn('[CarouselDemo] Skipping invalid item:', {
+                id: item.id,
+                type: item.type,
+                hasUrls: !!item.urls,
+                largeUrl: item.urls?.large
+              });
+            }
+
+            return isValid;
+          })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((item: any) => {
+            const carouselImage: CarouselImage = {
+              id: item.id,
+              src: `http://localhost:4000${item.urls.large}`,
+              alt: item.title || item.filename || `Portfolio image ${item.id}`,
+              title: item.title || undefined,
+              caption: item.caption || undefined,
+              width: (typeof item.dimensions?.width === 'number') ? item.dimensions.width : 4096,
+              height: (typeof item.dimensions?.height === 'number') ? item.dimensions.height : 4096,
+              aspectRatio: (typeof item.dimensions?.aspectRatio === 'number') ? item.dimensions.aspectRatio : 1,
+              thumbnail: (item.urls?.thumbnail && typeof item.urls.thumbnail === 'string')
+                ? `http://localhost:4000${item.urls.thumbnail}`
+                : undefined
+            };
+
+            console.log('[CarouselDemo] Transformed item:', {
+              id: carouselImage.id,
+              src: carouselImage.src,
+              dimensions: `${carouselImage.width}x${carouselImage.height}`
+            });
+
+            return carouselImage;
+          });
+
+        console.log('[CarouselDemo] Successfully fetched live images', {
+          total: json.data.collection.gallery.length,
+          valid: transformedImages.length,
+          invalid: json.data.collection.gallery.length - transformedImages.length,
           collection: 'couples'
         });
 
