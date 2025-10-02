@@ -735,9 +735,45 @@ services:
    - `warn`: Potential issues
    - `debug`: Detailed debugging info (verbose)
 
+### Next.js Image Configuration for Backend Media
+
+**Issue**: Next.js Image component requires explicit hostname configuration for external images.
+
+**Solution**: Configure `remotePatterns` in `next.config.ts` to allow backend media URLs.
+
+**File**: `worktrees/frontend-core/src/frontend/next.config.ts`
+
+```typescript
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4000',
+        pathname: '/api/media/**',
+      },
+    ],
+  },
+};
+```
+
+**For Production**: Add production domain to remotePatterns:
+```typescript
+{
+  protocol: 'https',
+  hostname: 'portfolio.lupo.art',
+  port: '',
+  pathname: '/api/media/**',
+}
+```
+
+**Testing**: After configuration, frontend can load images from backend at `http://localhost:4000/api/media/thumbnails/*`
+
 ### Current Integration Gaps & TODOs
 
 #### Frontend → Backend Integration
+- [x] Configure Next.js Image component for localhost:4000 backend images ✅ (2025-09-30)
 - [ ] Frontend needs to connect to real backend API (currently using default Next.js pages)
 - [ ] Implement API client wrapper for `/api/content/*` endpoints
 - [ ] Add error handling for API failures
