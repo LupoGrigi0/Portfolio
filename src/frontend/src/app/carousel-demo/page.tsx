@@ -76,11 +76,13 @@ export default function CarouselDemo() {
   // Configuration state
   const [transitionType, setTransitionType] = useState<TransitionType>('fade');
   const [speedPreset, setSpeedPreset] = useState<AutoplaySpeedPreset>('medium');
+  const [customSpeedMs, setCustomSpeedMs] = useState(2000);
 
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [collectionName, setCollectionName] = useState('couples');
 
   // Fetch live data from backend API
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function CarouselDemo() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch('http://localhost:4000/api/content/collections/couples?page=1&limit=20');
+        const response = await fetch(`http://localhost:4000/api/content/collections/${collectionName}?page=1&limit=20`);
 
         if (!response.ok) {
           throw new Error(`API responded with status: ${response.status}`);
@@ -160,7 +162,7 @@ export default function CarouselDemo() {
           total: json.data.collection.gallery.length,
           valid: transformedImages.length,
           invalid: json.data.collection.gallery.length - transformedImages.length,
-          collection: 'couples'
+          collection: collectionName
         });
 
         setLiveImages(transformedImages);
@@ -173,7 +175,7 @@ export default function CarouselDemo() {
     };
 
     fetchLiveData();
-  }, []);
+  }, [collectionName]);
 
   const handleImageChange = (index: number, image: CarouselImage) => {
     console.log(`Carousel changed to image ${index + 1}:`, image.title);
@@ -202,8 +204,10 @@ export default function CarouselDemo() {
           <CarouselConfigPanel
             currentTransition={transitionType}
             currentSpeed={speedPreset}
+            customSpeedMs={customSpeedMs}
             onTransitionChange={setTransitionType}
             onSpeedChange={setSpeedPreset}
+            onCustomSpeedChange={setCustomSpeedMs}
             className="mb-6"
           />
 
@@ -213,7 +217,7 @@ export default function CarouselDemo() {
               images={carouselImages}
               transitionType={transitionType}
               transitionDuration={800}
-              autoplaySpeed={5000}
+              autoplaySpeed={speedPreset === 'custom' ? customSpeedMs : 5000}
               autoPauseDuration={5000}
               showCaptions={true}
               enableFullscreen={true}
@@ -238,9 +242,29 @@ export default function CarouselDemo() {
 
         {/* Live API Data Carousel */}
         <ContentBlock>
-          <h2 className="text-2xl font-bold text-white mb-4">
-            🎨 Live Portfolio Data - &ldquo;Couples&rdquo; Collection
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">
+              🎨 Live Portfolio Data
+            </h2>
+
+            {/* Collection Selector */}
+            <div className="flex gap-2">
+              {['couples', 'mixed'].map((collection) => (
+                <button
+                  key={collection}
+                  onClick={() => setCollectionName(collection)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    collectionName === collection
+                      ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                  }`}
+                >
+                  {collection.charAt(0).toUpperCase() + collection.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {isLoading ? (
             <div className="min-h-[60vh] flex items-center justify-center bg-black/20 rounded-lg">
               <div className="text-center text-white">
@@ -261,14 +285,14 @@ export default function CarouselDemo() {
               <div className="flex items-center gap-2 text-sm text-white/60">
                 <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-medium">LIVE</span>
                 <span>Fetched {liveImages.length} images from backend API</span>
-                <span className="text-white/40">• Collection: couples • Source: http://localhost:4000</span>
+                <span className="text-white/40">• Collection: {collectionName} • Source: http://localhost:4000</span>
               </div>
               <div className="min-h-[60vh] flex items-center">
                 <Carousel
                   images={liveImages}
                   transitionType={transitionType}
                   transitionDuration={800}
-                  autoplaySpeed={5000}
+                  autoplaySpeed={speedPreset === 'custom' ? customSpeedMs : 5000}
                   autoPauseDuration={5000}
                   showCaptions={true}
                   enableFullscreen={true}

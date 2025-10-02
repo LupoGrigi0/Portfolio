@@ -21,30 +21,45 @@ import { getTransitionMetadata } from './transitions';
 interface CarouselConfigPanelProps {
   currentTransition: TransitionType;
   currentSpeed: AutoplaySpeedPreset;
+  customSpeedMs?: number;
   onTransitionChange: (transition: TransitionType) => void;
   onSpeedChange: (speed: AutoplaySpeedPreset) => void;
+  onCustomSpeedChange?: (ms: number) => void;
   className?: string;
 }
 
 export default function CarouselConfigPanel({
   currentTransition,
   currentSpeed,
+  customSpeedMs = 2000,
   onTransitionChange,
   onSpeedChange,
+  onCustomSpeedChange,
   className = ''
 }: CarouselConfigPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [customInput, setCustomInput] = useState(customSpeedMs.toString());
 
   // Get all available transitions from the registry
   const transitions = getTransitionMetadata();
 
   // Speed presets
   const speedPresets: Array<{ value: AutoplaySpeedPreset; label: string; duration: string }> = [
-    { value: 'slow', label: '1x (Slow)', duration: '8s' },
-    { value: 'medium', label: '2x (Medium)', duration: '5s' },
-    { value: 'fast', label: '3x (Fast)', duration: '3s' },
-    { value: 'veryFast', label: '4x (Very Fast)', duration: '1.5s' }
+    { value: 'slow', label: '1x', duration: '8s' },
+    { value: 'medium', label: '2x', duration: '5s' },
+    { value: 'fast', label: '3x', duration: '3s' },
+    { value: 'veryFast', label: '4x', duration: '1.5s' },
+    { value: 'ultraFast', label: '5x', duration: '0.8s' },
+    { value: 'blazing', label: '6x', duration: '0.4s' }
   ];
+
+  const handleCustomSpeedSubmit = () => {
+    const ms = parseInt(customInput);
+    if (!isNaN(ms) && ms >= 100 && ms <= 30000) {
+      onCustomSpeedChange?.(ms);
+      onSpeedChange('custom');
+    }
+  };
 
   return (
     <div className={`bg-black/40 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden ${className}`}>
@@ -100,12 +115,14 @@ export default function CarouselConfigPanel({
           {/* Autoplay Speed Selector */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">Autoplay Speed</label>
-            <div className="grid grid-cols-4 gap-2">
+
+            {/* Preset Buttons */}
+            <div className="grid grid-cols-6 gap-2">
               {speedPresets.map((preset) => (
                 <button
                   key={preset.value}
                   onClick={() => onSpeedChange(preset.value)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-2 py-2 rounded-lg text-sm font-medium transition-all ${
                     currentSpeed === preset.value
                       ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
@@ -113,12 +130,41 @@ export default function CarouselConfigPanel({
                   title={`${preset.duration} per image (${AUTOPLAY_SPEEDS[preset.value]}ms)`}
                 >
                   <div className="flex flex-col items-center">
-                    <span className="font-bold">{preset.label.split(' ')[0]}</span>
-                    <span className="text-xs opacity-70">{preset.duration}</span>
+                    <span className="font-bold text-xs">{preset.label}</span>
+                    <span className="text-[10px] opacity-70">{preset.duration}</span>
                   </div>
                 </button>
               ))}
             </div>
+
+            {/* Custom Speed Input */}
+            {onCustomSpeedChange && (
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCustomSpeedSubmit()}
+                  placeholder="Custom ms"
+                  min="100"
+                  max="30000"
+                  className={`flex-1 px-3 py-2 bg-white/10 border rounded-lg text-white text-sm focus:outline-none focus:ring-2 ${
+                    currentSpeed === 'custom'
+                      ? 'border-green-500 ring-2 ring-green-500/30'
+                      : 'border-white/20 focus:ring-blue-500/30'
+                  }`}
+                />
+                <button
+                  onClick={handleCustomSpeedSubmit}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Set
+                </button>
+                <span className="text-xs text-white/50">
+                  {currentSpeed === 'custom' && `(${customSpeedMs}ms)`}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Info Note */}

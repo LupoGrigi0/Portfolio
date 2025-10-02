@@ -13,8 +13,10 @@ import type { AutoplaySpeedPreset } from './types';
  * Autoplay speed presets in milliseconds
  */
 export const AUTOPLAY_SPEEDS: Record<AutoplaySpeedPreset, number> = {
-  slow: 8000,      // 8 seconds
-  medium: 5000,    // 5 seconds
-  fast: 3000,      // 3 seconds
-  veryFast: 1500   // 1.5 seconds
+  slow: 8000,         // 8 seconds
+  medium: 5000,       // 5 seconds
+  fast: 3000,         // 3 seconds
+  veryFast: 1500,     // 1.5 seconds
+  ultraFast: 800,     // 0.8 seconds
+  blazing: 400        // 0.4 seconds (for flipbook effect)
 };

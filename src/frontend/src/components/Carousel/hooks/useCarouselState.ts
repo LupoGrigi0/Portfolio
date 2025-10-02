@@ -203,9 +203,12 @@ export function useCarouselState({
 
   // Autoplay timer (only runs when not paused and not auto-paused)
   // Uses current speed preset for dynamic speed adjustment
+  // For 'custom' preset, falls back to autoplaySpeed prop
   useEffect(() => {
     if (autoplaySpeed > 0 && !state.isPaused && !state.isAutoPaused && !state.isTransitioning) {
-      const currentSpeedMs = AUTOPLAY_SPEEDS[state.currentSpeed];
+      const currentSpeedMs = state.currentSpeed === 'custom'
+        ? autoplaySpeed
+        : AUTOPLAY_SPEEDS[state.currentSpeed];
 
       autoplayTimerRef.current = setTimeout(() => {
         // Call goTo directly with fromAutoplay flag to avoid triggering auto-pause

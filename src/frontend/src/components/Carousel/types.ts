@@ -14,7 +14,7 @@ export type CarouselLayout = 'single' | 'side-by-side' | 'stacked';
 /**
  * Autoplay speed presets for user-adjustable playback
  */
-export type AutoplaySpeedPreset = 'slow' | 'medium' | 'fast' | 'veryFast';
+export type AutoplaySpeedPreset = 'slow' | 'medium' | 'fast' | 'veryFast' | 'ultraFast' | 'blazing' | 'custom';
 
 export interface CarouselImage {
   id: string;
