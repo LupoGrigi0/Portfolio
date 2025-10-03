@@ -17,3 +17,9 @@ export {
   createParallaxLayersFromConfig,
   type ParallaxLayer
 } from './ParallaxBackground';
+export {
+  MidgroundProjectionProvider,
+  useMidgroundProjection,
+  useCarouselProjection,
+  type CarouselProjection
+} from './MidgroundProjection';

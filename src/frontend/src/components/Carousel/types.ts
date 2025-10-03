@@ -83,6 +83,10 @@ export interface CarouselProps {
   controlOpacity?: number; // Navigation control opacity 0-1 (default: 1)
   controlBackgroundOpacity?: number; // Control background opacity 0-1 (default: 0.5)
 
+  // Midground Projection (carousel projects first image onto background)
+  enableProjection?: boolean; // Enable midground projection (default: false)
+  projectionId?: string; // Unique ID for this carousel's projection (default: auto-generated)
+
   // Reserved UI Space (margins beyond image container for controls/UI)
   // This creates "safe zones" where controls won't overlap the image
   reserveTop?: number; // Reserved space at top in pixels (default: 0)

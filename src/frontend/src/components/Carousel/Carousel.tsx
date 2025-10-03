@@ -23,6 +23,7 @@ import { useCarouselState } from './hooks/useCarouselState';
 import { useAutoHideControls } from './hooks/useAutoHideControls';
 import { useAutoHideReactions } from './hooks/useAutoHideReactions';
 import { useImagePreloader } from './hooks/useImagePreloader';
+import { useCarouselProjection } from '@/components/Layout';
 // import { useBackground } from '@/components/Layout/Background'; // Removed - background handled separately
 import CarouselImageRenderer from './CarouselImageRenderer';
 import CarouselNavigation from './CarouselNavigation';
@@ -76,6 +77,9 @@ export default function Carousel({
   containerPaddingLeft,
   controlOpacity = 1,
   controlBackgroundOpacity = 0.5,
+  // Midground Projection
+  enableProjection = false,
+  projectionId,
   // Reserved UI space
   reserveTop = 0,
   reserveBottom = 0,
@@ -139,6 +143,13 @@ export default function Carousel({
 
   console.log('[Carousel] Preloader state', { hasInteracted, preloadedCount });
 
+  // Midground projection (carousel projects first image onto background layer)
+  const carouselRef = useCarouselProjection(
+    projectionId || `carousel-${images[0]?.id || 'default'}`,
+    enableProjection && images[0] ? images[0].src : null,
+    enableProjection
+  );
+
   // Background integration removed - handled separately by parallax scrolling
   // useEffect(() => {
   //   if (currentImage?.src) {
@@ -181,6 +192,7 @@ export default function Carousel({
 
   return (
     <div
+      ref={carouselRef}
       className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : 'h-[600px] z-10'} ${className}`}
       role="region"
       aria-label="Image carousel"
