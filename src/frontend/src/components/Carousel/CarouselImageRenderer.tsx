@@ -29,6 +29,18 @@ interface CarouselImageRendererProps {
   showCaption?: boolean;
   onPrevious?: () => void;
   onNext?: () => void;
+  // Styling props
+  containerBorderWidth?: number;
+  containerBorderColor?: string;
+  containerBorderOpacity?: number;
+  containerBorderRadius?: number;
+  containerBackgroundColor?: string;
+  containerBackgroundOpacity?: number;
+  containerPadding?: number;
+  containerPaddingTop?: number;
+  containerPaddingRight?: number;
+  containerPaddingBottom?: number;
+  containerPaddingLeft?: number;
 }
 
 export default function CarouselImageRenderer({
@@ -39,7 +51,19 @@ export default function CarouselImageRenderer({
   direction,
   showCaption = false,
   onPrevious,
-  onNext
+  onNext,
+  // Styling with defaults
+  containerBorderWidth = 0,
+  containerBorderColor = '#ffffff',
+  containerBorderOpacity = 1,
+  containerBorderRadius = 0,
+  containerBackgroundColor = 'transparent',
+  containerBackgroundOpacity = 0,
+  containerPadding = 16,
+  containerPaddingTop,
+  containerPaddingRight,
+  containerPaddingBottom,
+  containerPaddingLeft
 }: CarouselImageRendererProps) {
 
   // Track image loading errors for graceful degradation
@@ -55,12 +79,50 @@ export default function CarouselImageRenderer({
     transitionDuration
   });
 
+  // Build container styles from props
+  const paddingTop = containerPaddingTop ?? containerPadding;
+  const paddingRight = containerPaddingRight ?? containerPadding;
+  const paddingBottom = containerPaddingBottom ?? containerPadding;
+  const paddingLeft = containerPaddingLeft ?? containerPadding;
+
+  // Convert hex color to RGB for opacity support
+  const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  };
+
+  const getBorderColor = () => {
+    if (containerBorderWidth === 0) return 'transparent';
+    const rgb = hexToRgb(containerBorderColor);
+    if (!rgb) return containerBorderColor;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${containerBorderOpacity})`;
+  };
+
+  const getBackgroundColor = () => {
+    if (containerBackgroundColor === 'transparent') return 'transparent';
+    const rgb = hexToRgb(containerBackgroundColor);
+    if (!rgb) return containerBackgroundColor;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${containerBackgroundOpacity})`;
+  };
+
+  const containerStyle: React.CSSProperties = {
+    border: containerBorderWidth > 0 ? `${containerBorderWidth}px solid ${getBorderColor()}` : 'none',
+    borderRadius: `${containerBorderRadius}px`,
+    backgroundColor: getBackgroundColor(),
+    padding: `${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px`
+  };
+
   console.debug('[CarouselImageRenderer] Rendering image', {
     imageId: image.id,
     isActive,
     transitionType,
     direction,
-    transitionName: transitionHandler.metadata?.name
+    transitionName: transitionHandler.metadata?.name,
+    containerStyle
   });
 
   /**
@@ -114,8 +176,8 @@ export default function CarouselImageRenderer({
         </div>
       )}
 
-      {/* Image container */}
-      <div className="absolute inset-0">
+      {/* Image container with configurable styling */}
+      <div className="absolute inset-0" style={containerStyle}>
         {imageError ? (
           // Fallback UI for failed image loads
           <div className="w-full h-full flex items-center justify-center bg-black/30">
@@ -134,7 +196,7 @@ export default function CarouselImageRenderer({
             src={image.src}
             alt={image.alt}
             fill
-            className="object-contain p-4"
+            className="object-contain"
             priority={isActive}
             sizes="100vw"
             quality={90}

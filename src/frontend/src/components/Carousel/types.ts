@@ -65,6 +65,23 @@ export interface CarouselProps {
   autoHideReactions?: boolean; // Enable auto-hide for reactions (default: true if showReactions is true)
   reactionFadeStartDelay?: number; // Delay before reactions start to fade (default: 3000ms)
   reactionFadeCompleteDelay?: number; // Delay before reactions fully hide (default: 5000ms)
+
+  // Image Container Styling (configurable borders, padding, backgrounds)
+  containerBorderWidth?: number; // Border width in pixels (default: 0 = no border)
+  containerBorderColor?: string; // Border color (CSS color, default: '#ffffff')
+  containerBorderOpacity?: number; // Border opacity 0-1 (default: 1)
+  containerBorderRadius?: number; // Border radius in pixels (default: 0 = square corners)
+  containerBackgroundColor?: string; // Container background color (CSS color, default: 'transparent')
+  containerBackgroundOpacity?: number; // Container background opacity 0-1 (default: 0 = transparent)
+  containerPadding?: number; // Image padding in pixels (default: 16)
+  containerPaddingTop?: number; // Top padding override (default: uses containerPadding)
+  containerPaddingRight?: number; // Right padding override (default: uses containerPadding)
+  containerPaddingBottom?: number; // Bottom padding override (default: uses containerPadding)
+  containerPaddingLeft?: number; // Left padding override (default: uses containerPadding)
+
+  // Control Styling
+  controlOpacity?: number; // Navigation control opacity 0-1 (default: 1)
+  controlBackgroundOpacity?: number; // Control background opacity 0-1 (default: 0.5)
 }
 
 export interface CarouselState {

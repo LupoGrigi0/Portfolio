@@ -39,6 +39,25 @@ export default function ParallaxDemoPage() {
   const { setLayers } = useParallaxBackground();
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
+  // Control panel state
+  const [showControls, setShowControls] = useState(true);
+  const [bgOpacity, setBgOpacity] = useState(0.4);
+  const [mgOpacity, setMgOpacity] = useState(0.6);
+  const [fgOpacity, setFgOpacity] = useState(0.8);
+  const [bgSpeed, setBgSpeed] = useState(-0.3);
+  const [mgSpeed, setMgSpeed] = useState(-0.15);
+  const [fgSpeed, setFgSpeed] = useState(-0.05);
+  const [bgBlur, setBgBlur] = useState(3);
+  const [mgBlur, setMgBlur] = useState(1.5);
+  const [fgBlur, setFgBlur] = useState(0);
+
+  // Carousel styling controls
+  const [carouselBorderOpacity, setCarouselBorderOpacity] = useState(0.2);
+  const [carouselImageOpacity, setCarouselImageOpacity] = useState(1.0);
+
+  // Store current section ID to update layers
+  const [currentSectionId, setCurrentSectionId] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadCollections() {
       const data = await getCollections();
@@ -47,61 +66,76 @@ export default function ParallaxDemoPage() {
 
       // Fetch collections sequentially with delay to avoid rate limits
       const collectionsWithGallery = [];
-      for (const col of collectionsWithImages.slice(0, 5)) { // Limit to 5 for demo
+      for (const col of collectionsWithImages.slice(0, 5)) { // Show 5 collections for demo
         const fullCollection = await getCollection(col.slug);
         if (fullCollection) {
           collectionsWithGallery.push(fullCollection);
         }
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Longer delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       setCollections(collectionsWithGallery);
 
-      // Set initial parallax layers from first collection
+      // Set initial section (first collection)
       if (collectionsWithGallery.length > 0) {
-        const firstCol = collectionsWithGallery[0];
-        if (firstCol.heroImage) {
-          // Create 3-layer parallax effect
-          const layers: ParallaxLayer[] = [
-            {
-              id: 'bg-1',
-              type: 'background',
-              imageUrl: getAbsoluteMediaUrl(firstCol.heroImage),
-              speed: 0.3,
-              opacity: 0.6,
-              zIndex: 1,
-              blur: 2
-            },
-            {
-              id: 'mg-1',
-              type: 'midground',
-              imageUrl: getAbsoluteMediaUrl(firstCol.heroImage),
-              speed: 0.6,
-              opacity: 0.8,
-              zIndex: 2,
-              blur: 1
-            },
-            {
-              id: 'fg-1',
-              type: 'foreground',
-              imageUrl: getAbsoluteMediaUrl(firstCol.heroImage),
-              speed: 1.0,
-              opacity: 1.0,
-              zIndex: 3
-            }
-          ];
-          setLayers(layers);
-        }
+        setCurrentSectionId(collectionsWithGallery[0].id);
       }
 
       setLoading(false);
     }
 
     loadCollections();
-  }, [setLayers]);
+    // Only run once on mount
+  }, []);
 
-  // Scroll-triggered parallax layer changes
+  // Update layers when settings change (without refetching collections!)
+  useEffect(() => {
+    if (!currentSectionId || collections.length === 0) return;
+
+    const collection = collections.find(c => c.id === currentSectionId);
+    if (!collection) return;
+
+    const gallery = collection.gallery || [];
+    const bgImage = collection.heroImage || gallery[0]?.urls.large;
+    const mgImage = gallery[1]?.urls.large || bgImage;
+    const fgImage = gallery[2]?.urls.large || bgImage;
+
+    if (bgImage) {
+      const layers: ParallaxLayer[] = [
+        {
+          id: `bg-${currentSectionId}`,
+          type: 'background',
+          imageUrl: getAbsoluteMediaUrl(bgImage),
+          speed: bgSpeed,
+          opacity: bgOpacity,
+          zIndex: 1,
+          blur: bgBlur
+        },
+        {
+          id: `mg-${currentSectionId}`,
+          type: 'midground',
+          imageUrl: getAbsoluteMediaUrl(mgImage),
+          speed: mgSpeed,
+          opacity: mgOpacity,
+          zIndex: 2,
+          blur: mgBlur
+        },
+        {
+          id: `fg-${currentSectionId}`,
+          type: 'foreground',
+          imageUrl: getAbsoluteMediaUrl(fgImage),
+          speed: fgSpeed,
+          opacity: fgOpacity,
+          zIndex: 3,
+          blur: fgBlur
+        }
+      ];
+      setLayers(layers);
+    }
+  }, [currentSectionId, collections, bgSpeed, mgSpeed, fgSpeed, bgOpacity, mgOpacity, fgOpacity, bgBlur, mgBlur, fgBlur, setLayers]);
+
+  // Scroll-triggered section changes
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + window.innerHeight / 2;
@@ -113,38 +147,9 @@ export default function ParallaxDemoPage() {
           const elementBottom = elementTop + rect.height;
 
           if (scrollPosition >= elementTop && scrollPosition <= elementBottom) {
-            const collection = collections.find(c => c.id === collectionId);
-            if (collection?.heroImage) {
-              // Update all 3 layers with new image
-              const layers: ParallaxLayer[] = [
-                {
-                  id: `bg-${collectionId}`,
-                  type: 'background',
-                  imageUrl: getAbsoluteMediaUrl(collection.heroImage),
-                  speed: 0.3,
-                  opacity: 0.6,
-                  zIndex: 1,
-                  blur: 2
-                },
-                {
-                  id: `mg-${collectionId}`,
-                  type: 'midground',
-                  imageUrl: getAbsoluteMediaUrl(collection.heroImage),
-                  speed: 0.6,
-                  opacity: 0.8,
-                  zIndex: 2,
-                  blur: 1
-                },
-                {
-                  id: `fg-${collectionId}`,
-                  type: 'foreground',
-                  imageUrl: getAbsoluteMediaUrl(collection.heroImage),
-                  speed: 1.0,
-                  opacity: 1.0,
-                  zIndex: 3
-                }
-              ];
-              setLayers(layers);
+            // Just update the current section ID - layers will update via useEffect
+            if (currentSectionId !== collectionId) {
+              setCurrentSectionId(collectionId);
             }
             break;
           }
@@ -154,7 +159,7 @@ export default function ParallaxDemoPage() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [collections, setLayers]);
+  }, [currentSectionId]);
 
   if (loading) {
     return (
@@ -241,8 +246,14 @@ export default function ParallaxDemoPage() {
                 </div>
               </ContentBlock>
 
-              <ContentBlock>
-                <ReferenceCarousel images={carouselImages} />
+              <ContentBlock
+                style={{
+                  backgroundColor: `rgba(0, 0, 0, ${carouselBorderOpacity})`
+                }}
+              >
+                <div style={{ opacity: carouselImageOpacity }}>
+                  <ReferenceCarousel images={carouselImages} />
+                </div>
               </ContentBlock>
 
               <ContentBlock className="text-center mt-8">
@@ -292,6 +303,210 @@ export default function ParallaxDemoPage() {
           </div>
         </ContentBlock>
       </Grid>
+
+      {/* Floating Control Panel */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => setShowControls(!showControls)}
+          className="bg-white/90 hover:bg-white text-black px-4 py-2 rounded-lg shadow-lg font-semibold mb-2 w-full"
+        >
+          {showControls ? '← Hide Controls' : 'Show Controls →'}
+        </button>
+
+        {showControls && (
+          <div className="bg-black/90 backdrop-blur-md rounded-lg p-6 shadow-2xl border border-white/20 w-96 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-white font-bold text-xl mb-4">Parallax Controls</h3>
+            <p className="text-white/60 text-sm mb-6">Adjust settings and watch them update live!</p>
+
+            {/* Background Layer Controls */}
+            <div className="mb-6 pb-6 border-b border-white/20">
+              <h4 className="text-white font-semibold mb-3">Background Layer</h4>
+
+              <label className="block text-white/80 text-sm mb-2">
+                Opacity: {(bgOpacity * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={bgOpacity}
+                onChange={(e) => setBgOpacity(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Speed: {bgSpeed.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="-1"
+                max="1"
+                step="0.05"
+                value={bgSpeed}
+                onChange={(e) => setBgSpeed(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Blur: {bgBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.5"
+                value={bgBlur}
+                onChange={(e) => setBgBlur(parseFloat(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Midground Layer Controls */}
+            <div className="mb-6 pb-6 border-b border-white/20">
+              <h4 className="text-white font-semibold mb-3">Midground Layer</h4>
+
+              <label className="block text-white/80 text-sm mb-2">
+                Opacity: {(mgOpacity * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={mgOpacity}
+                onChange={(e) => setMgOpacity(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Speed: {mgSpeed.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="-1"
+                max="1"
+                step="0.05"
+                value={mgSpeed}
+                onChange={(e) => setMgSpeed(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Blur: {mgBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.5"
+                value={mgBlur}
+                onChange={(e) => setMgBlur(parseFloat(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Foreground Layer Controls */}
+            <div className="mb-6 pb-6 border-b border-white/20">
+              <h4 className="text-white font-semibold mb-3">Foreground Layer</h4>
+
+              <label className="block text-white/80 text-sm mb-2">
+                Opacity: {(fgOpacity * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={fgOpacity}
+                onChange={(e) => setFgOpacity(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Speed: {fgSpeed.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="-1"
+                max="1"
+                step="0.05"
+                value={fgSpeed}
+                onChange={(e) => setFgSpeed(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Blur: {fgBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.5"
+                value={fgBlur}
+                onChange={(e) => setFgBlur(parseFloat(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Carousel Styling Controls */}
+            <div className="mb-4">
+              <h4 className="text-white font-semibold mb-3">Carousel Styling</h4>
+
+              <label className="block text-white/80 text-sm mb-2">
+                Border/Background Opacity: {(carouselBorderOpacity * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={carouselBorderOpacity}
+                onChange={(e) => setCarouselBorderOpacity(parseFloat(e.target.value))}
+                className="w-full"
+              />
+
+              <label className="block text-white/80 text-sm mb-2 mt-4">
+                Image Opacity: {(carouselImageOpacity * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={carouselImageOpacity}
+                onChange={(e) => setCarouselImageOpacity(parseFloat(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={() => {
+                setBgOpacity(0.4);
+                setMgOpacity(0.6);
+                setFgOpacity(0.8);
+                setBgSpeed(-0.3);
+                setMgSpeed(-0.15);
+                setFgSpeed(-0.05);
+                setBgBlur(3);
+                setMgBlur(1.5);
+                setFgBlur(0);
+                setCarouselBorderOpacity(0.2);
+                setCarouselImageOpacity(1.0);
+              }}
+              className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded mt-4 font-semibold"
+            >
+              Reset to Defaults
+            </button>
+
+            <div className="mt-4 p-3 bg-white/5 rounded text-xs text-white/60">
+              <strong className="text-white/80">Tip:</strong> Negative speeds move layers down when scrolling down (natural). Positive speeds move them up (classic parallax).
+            </div>
+          </div>
+        )}
+      </div>
     </ResponsiveContainer>
   );
 }

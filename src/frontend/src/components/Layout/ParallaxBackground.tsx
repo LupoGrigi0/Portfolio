@@ -80,13 +80,12 @@ export default function ParallaxBackground({
         return (
           <div
             key={layer.id}
-            className="absolute inset-0 transition-opacity"
+            className="absolute inset-0 transition-all duration-1000 ease-out"
             style={{
               transform: `translateY(${translateY}px)`,
               opacity: layer.opacity,
               zIndex: layer.zIndex,
-              transitionDuration: `${transitionDuration}ms`,
-              willChange: 'transform',
+              willChange: 'transform, opacity',
               filter: layer.blur ? `blur(${layer.blur}px)` : undefined,
             }}
           >
@@ -95,7 +94,7 @@ export default function ParallaxBackground({
               alt=""
               fill
               priority={layer.type === 'background'}
-              className="object-cover"
+              className="object-cover transition-opacity duration-1000"
               sizes="100vw"
               quality={90}
             />

@@ -48,6 +48,22 @@ interface CarouselConfigPanelProps {
   onAutoHideReactionsChange?: (enabled: boolean) => void;
   onReactionFadeStartDelayChange?: (ms: number) => void;
   onReactionFadeCompleteDelayChange?: (ms: number) => void;
+
+  // Styling
+  containerBorderWidth?: number;
+  containerBorderColor?: string;
+  containerBorderOpacity?: number;
+  containerBorderRadius?: number;
+  containerBackgroundColor?: string;
+  containerBackgroundOpacity?: number;
+  containerPadding?: number;
+  onContainerBorderWidthChange?: (width: number) => void;
+  onContainerBorderColorChange?: (color: string) => void;
+  onContainerBorderOpacityChange?: (opacity: number) => void;
+  onContainerBorderRadiusChange?: (radius: number) => void;
+  onContainerBackgroundColorChange?: (color: string) => void;
+  onContainerBackgroundOpacityChange?: (opacity: number) => void;
+  onContainerPaddingChange?: (padding: number) => void;
 }
 
 export default function CarouselConfigPanel({
@@ -73,7 +89,22 @@ export default function CarouselConfigPanel({
   reactionFadeCompleteDelay = 5000,
   onAutoHideReactionsChange,
   onReactionFadeStartDelayChange,
-  onReactionFadeCompleteDelayChange
+  onReactionFadeCompleteDelayChange,
+  // Styling
+  containerBorderWidth = 0,
+  containerBorderColor = '#ffffff',
+  containerBorderOpacity = 1,
+  containerBorderRadius = 0,
+  containerBackgroundColor = '#000000',
+  containerBackgroundOpacity = 0,
+  containerPadding = 16,
+  onContainerBorderWidthChange,
+  onContainerBorderColorChange,
+  onContainerBorderOpacityChange,
+  onContainerBorderRadiusChange,
+  onContainerBackgroundColorChange,
+  onContainerBackgroundOpacityChange,
+  onContainerPaddingChange
 }: CarouselConfigPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [customInput, setCustomInput] = useState(customSpeedMs.toString());
@@ -447,6 +478,120 @@ export default function CarouselConfigPanel({
                   <p className="text-xs text-white/40 italic">
                     Controls fade progressively: full → 50% → 0% + slide off
                   </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Styling Section */}
+          {(onContainerBorderWidthChange || onContainerPaddingChange) && (
+            <div className="space-y-3 bg-gradient-to-r from-pink-500/5 to-purple-500/5 border border-pink-500/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-pink-300 mb-3">🎨 Container Styling</h3>
+
+              {/* Border Width */}
+              {onContainerBorderWidthChange && (
+                <div className="space-y-1">
+                  <label className="text-xs text-white/70">Border Width ({containerBorderWidth}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value={containerBorderWidth}
+                    onChange={(e) => onContainerBorderWidthChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Border Color & Opacity */}
+              {containerBorderWidth > 0 && onContainerBorderColorChange && onContainerBorderOpacityChange && (
+                <div className="space-y-2 pl-4 border-l-2 border-pink-500/30">
+                  <div className="flex gap-2 items-center">
+                    <label className="text-xs text-white/70 w-24">Border Color:</label>
+                    <input
+                      type="color"
+                      value={containerBorderColor}
+                      onChange={(e) => onContainerBorderColorChange(e.target.value)}
+                      className="w-12 h-8 rounded cursor-pointer"
+                    />
+                    <span className="text-xs text-white/50">{containerBorderColor}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/70">Border Opacity ({(containerBorderOpacity * 100).toFixed(0)}%)</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={containerBorderOpacity}
+                      onChange={(e) => onContainerBorderOpacityChange(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Border Radius */}
+              {onContainerBorderRadiusChange && (
+                <div className="space-y-1">
+                  <label className="text-xs text-white/70">Border Radius ({containerBorderRadius}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    step="1"
+                    value={containerBorderRadius}
+                    onChange={(e) => onContainerBorderRadiusChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <p className="text-xs text-white/40 italic">0 = square corners, 50 = rounded</p>
+                </div>
+              )}
+
+              {/* Container Background */}
+              {onContainerBackgroundColorChange && onContainerBackgroundOpacityChange && (
+                <div className="space-y-2 mt-3 pt-3 border-t border-white/10">
+                  <div className="flex gap-2 items-center">
+                    <label className="text-xs text-white/70 w-24">Background:</label>
+                    <input
+                      type="color"
+                      value={containerBackgroundColor}
+                      onChange={(e) => onContainerBackgroundColorChange(e.target.value)}
+                      className="w-12 h-8 rounded cursor-pointer"
+                    />
+                    <span className="text-xs text-white/50">{containerBackgroundColor}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/70">Background Opacity ({(containerBackgroundOpacity * 100).toFixed(0)}%)</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={containerBackgroundOpacity}
+                      onChange={(e) => onContainerBackgroundOpacityChange(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-xs text-white/40 italic">0 = transparent (image shows through to parallax bg)</p>
+                </div>
+              )}
+
+              {/* Padding */}
+              {onContainerPaddingChange && (
+                <div className="space-y-1 mt-3 pt-3 border-t border-white/10">
+                  <label className="text-xs text-white/70">Padding ({containerPadding}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="4"
+                    value={containerPadding}
+                    onChange={(e) => onContainerPaddingChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <p className="text-xs text-white/40 italic">Space between image and container edge</p>
                 </div>
               )}
             </div>

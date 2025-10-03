@@ -92,6 +92,15 @@ export default function CarouselDemo() {
   const [reactionFadeStartDelay, setReactionFadeStartDelay] = useState(3000);
   const [reactionFadeCompleteDelay, setReactionFadeCompleteDelay] = useState(5000);
 
+  // Styling state
+  const [containerBorderWidth, setContainerBorderWidth] = useState(0);
+  const [containerBorderColor, setContainerBorderColor] = useState('#ffffff');
+  const [containerBorderOpacity, setContainerBorderOpacity] = useState(1);
+  const [containerBorderRadius, setContainerBorderRadius] = useState(0);
+  const [containerBackgroundColor, setContainerBackgroundColor] = useState('#000000');
+  const [containerBackgroundOpacity, setContainerBackgroundOpacity] = useState(0);
+  const [containerPadding, setContainerPadding] = useState(16);
+
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -242,6 +251,20 @@ export default function CarouselDemo() {
             onAutoHideReactionsChange={setAutoHideReactions}
             onReactionFadeStartDelayChange={setReactionFadeStartDelay}
             onReactionFadeCompleteDelayChange={setReactionFadeCompleteDelay}
+            containerBorderWidth={containerBorderWidth}
+            containerBorderColor={containerBorderColor}
+            containerBorderOpacity={containerBorderOpacity}
+            containerBorderRadius={containerBorderRadius}
+            containerBackgroundColor={containerBackgroundColor}
+            containerBackgroundOpacity={containerBackgroundOpacity}
+            containerPadding={containerPadding}
+            onContainerBorderWidthChange={setContainerBorderWidth}
+            onContainerBorderColorChange={setContainerBorderColor}
+            onContainerBorderOpacityChange={setContainerBorderOpacity}
+            onContainerBorderRadiusChange={setContainerBorderRadius}
+            onContainerBackgroundColorChange={setContainerBackgroundColor}
+            onContainerBackgroundOpacityChange={setContainerBackgroundOpacity}
+            onContainerPaddingChange={setContainerPadding}
             className="mb-6"
           />
 
@@ -269,6 +292,13 @@ export default function CarouselDemo() {
               autoHideReactions={autoHideReactions}
               reactionFadeStartDelay={reactionFadeStartDelay}
               reactionFadeCompleteDelay={reactionFadeCompleteDelay}
+              containerBorderWidth={containerBorderWidth}
+              containerBorderColor={containerBorderColor}
+              containerBorderOpacity={containerBorderOpacity}
+              containerBorderRadius={containerBorderRadius}
+              containerBackgroundColor={containerBackgroundColor}
+              containerBackgroundOpacity={containerBackgroundOpacity}
+              containerPadding={containerPadding}
             />
           </div>
         </ContentBlock>
@@ -358,6 +388,13 @@ export default function CarouselDemo() {
                   autoHideReactions={autoHideReactions}
                   reactionFadeStartDelay={reactionFadeStartDelay}
                   reactionFadeCompleteDelay={reactionFadeCompleteDelay}
+                  containerBorderWidth={containerBorderWidth}
+                  containerBorderColor={containerBorderColor}
+                  containerBorderOpacity={containerBorderOpacity}
+                  containerBorderRadius={containerBorderRadius}
+                  containerBackgroundColor={containerBackgroundColor}
+                  containerBackgroundOpacity={containerBackgroundOpacity}
+                  containerPadding={containerPadding}
                 />
               </div>
               <div className="text-xs text-white/40 text-center">

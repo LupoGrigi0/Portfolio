@@ -61,7 +61,21 @@ export default function Carousel({
   // Auto-hide reactions (separate timing from main controls)
   autoHideReactions = true,
   reactionFadeStartDelay = 3000,
-  reactionFadeCompleteDelay = 5000
+  reactionFadeCompleteDelay = 5000,
+  // Styling
+  containerBorderWidth = 0,
+  containerBorderColor = '#ffffff',
+  containerBorderOpacity = 1,
+  containerBorderRadius = 0,
+  containerBackgroundColor = 'transparent',
+  containerBackgroundOpacity = 0,
+  containerPadding = 16,
+  containerPaddingTop,
+  containerPaddingRight,
+  containerPaddingBottom,
+  containerPaddingLeft,
+  controlOpacity = 1,
+  controlBackgroundOpacity = 0.5
 }: CarouselProps) {
 
   console.log('[Carousel] Initializing', {
@@ -180,6 +194,17 @@ export default function Carousel({
               showCaption={showCaptions && isFullscreen}
               onPrevious={controls.previous}
               onNext={controls.next}
+              containerBorderWidth={containerBorderWidth}
+              containerBorderColor={containerBorderColor}
+              containerBorderOpacity={containerBorderOpacity}
+              containerBorderRadius={containerBorderRadius}
+              containerBackgroundColor={containerBackgroundColor}
+              containerBackgroundOpacity={containerBackgroundOpacity}
+              containerPadding={containerPadding}
+              containerPaddingTop={containerPaddingTop}
+              containerPaddingRight={containerPaddingRight}
+              containerPaddingBottom={containerPaddingBottom}
+              containerPaddingLeft={containerPaddingLeft}
             />
           ))}
 
