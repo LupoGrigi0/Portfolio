@@ -75,7 +75,14 @@ export default function Carousel({
   containerPaddingBottom,
   containerPaddingLeft,
   controlOpacity = 1,
-  controlBackgroundOpacity = 0.5
+  controlBackgroundOpacity = 0.5,
+  // Reserved UI space
+  reserveTop = 0,
+  reserveBottom = 0,
+  reserveLeft = 0,
+  reserveRight = 0,
+  reserveBackgroundColor = 'transparent',
+  reserveBackgroundOpacity = 0
 }: CarouselProps) {
 
   console.log('[Carousel] Initializing', {
@@ -181,8 +188,20 @@ export default function Carousel({
     >
       {/* Main Carousel Container */}
       <div className={`relative w-full ${isFullscreen ? 'h-screen' : 'h-full'}`}>
-        {/* Image Display */}
-        <div className="relative w-full h-full overflow-hidden">
+        {/* Image Display with Reserved UI Space */}
+        <div
+          className="relative w-full h-full overflow-hidden"
+          style={{
+            paddingTop: `${reserveTop}px`,
+            paddingBottom: `${reserveBottom}px`,
+            paddingLeft: `${reserveLeft}px`,
+            paddingRight: `${reserveRight}px`,
+            backgroundColor: reserveBackgroundColor === 'transparent'
+              ? 'transparent'
+              : `rgba(${parseInt(reserveBackgroundColor.slice(1,3), 16)}, ${parseInt(reserveBackgroundColor.slice(3,5), 16)}, ${parseInt(reserveBackgroundColor.slice(5,7), 16)}, ${reserveBackgroundOpacity})`,
+            boxSizing: 'border-box'
+          }}
+        >
           {images.map((image, index) => (
             <CarouselImageRenderer
               key={image.id}

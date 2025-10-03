@@ -82,6 +82,15 @@ export interface CarouselProps {
   // Control Styling
   controlOpacity?: number; // Navigation control opacity 0-1 (default: 1)
   controlBackgroundOpacity?: number; // Control background opacity 0-1 (default: 0.5)
+
+  // Reserved UI Space (margins beyond image container for controls/UI)
+  // This creates "safe zones" where controls won't overlap the image
+  reserveTop?: number; // Reserved space at top in pixels (default: 0)
+  reserveBottom?: number; // Reserved space at bottom in pixels (default: 0)
+  reserveLeft?: number; // Reserved space at left in pixels (default: 0)
+  reserveRight?: number; // Reserved space at right in pixels (default: 0)
+  reserveBackgroundColor?: string; // Color for reserved space (default: transparent)
+  reserveBackgroundOpacity?: number; // Opacity for reserved space background (default: 0)
 }
 
 export interface CarouselState {

@@ -64,6 +64,20 @@ interface CarouselConfigPanelProps {
   onContainerBackgroundColorChange?: (color: string) => void;
   onContainerBackgroundOpacityChange?: (opacity: number) => void;
   onContainerPaddingChange?: (padding: number) => void;
+
+  // Reserved UI space
+  reserveTop?: number;
+  reserveBottom?: number;
+  reserveLeft?: number;
+  reserveRight?: number;
+  reserveBackgroundColor?: string;
+  reserveBackgroundOpacity?: number;
+  onReserveTopChange?: (pixels: number) => void;
+  onReserveBottomChange?: (pixels: number) => void;
+  onReserveLeftChange?: (pixels: number) => void;
+  onReserveRightChange?: (pixels: number) => void;
+  onReserveBackgroundColorChange?: (color: string) => void;
+  onReserveBackgroundOpacityChange?: (opacity: number) => void;
 }
 
 export default function CarouselConfigPanel({
@@ -104,7 +118,20 @@ export default function CarouselConfigPanel({
   onContainerBorderRadiusChange,
   onContainerBackgroundColorChange,
   onContainerBackgroundOpacityChange,
-  onContainerPaddingChange
+  onContainerPaddingChange,
+  // Reserved UI space
+  reserveTop = 0,
+  reserveBottom = 0,
+  reserveLeft = 0,
+  reserveRight = 0,
+  reserveBackgroundColor = '#000000',
+  reserveBackgroundOpacity = 0,
+  onReserveTopChange,
+  onReserveBottomChange,
+  onReserveLeftChange,
+  onReserveRightChange,
+  onReserveBackgroundColorChange,
+  onReserveBackgroundOpacityChange
 }: CarouselConfigPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [customInput, setCustomInput] = useState(customSpeedMs.toString());
@@ -597,6 +624,109 @@ export default function CarouselConfigPanel({
                     className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
                   />
                   <p className="text-xs text-white/40 italic">Space between image and container edge</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reserved UI Space Section */}
+          {(onReserveTopChange || onReserveBottomChange) && (
+            <div className="space-y-3 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 border border-yellow-500/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-yellow-300 mb-3">📐 Reserved UI Space</h3>
+              <p className="text-xs text-white/60 mb-3">
+                Create safe zones for controls that won't overlap the image
+              </p>
+
+              {/* Top Reserve */}
+              {onReserveTopChange && (
+                <div className="space-y-1">
+                  <label className="text-xs text-white/70">Top Reserve ({reserveTop}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="10"
+                    value={reserveTop}
+                    onChange={(e) => onReserveTopChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Bottom Reserve */}
+              {onReserveBottomChange && (
+                <div className="space-y-1">
+                  <label className="text-xs text-white/70">Bottom Reserve ({reserveBottom}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="10"
+                    value={reserveBottom}
+                    onChange={(e) => onReserveBottomChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Left Reserve */}
+              {onReserveLeftChange && (
+                <div className="space-y-1">
+                  <label className="text-xs text-white/70">Left Reserve ({reserveLeft}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="10"
+                    value={reserveLeft}
+                    onChange={(e) => onReserveLeftChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Right Reserve */}
+              {onReserveRightChange && (
+                <div className="space-y-1">
+                  <label className="text-xs text-white/70">Right Reserve ({reserveRight}px)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="200"
+                    step="10"
+                    value={reserveRight}
+                    onChange={(e) => onReserveRightChange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Reserve Background */}
+              {onReserveBackgroundColorChange && onReserveBackgroundOpacityChange && (
+                <div className="space-y-2 mt-3 pt-3 border-t border-white/10">
+                  <div className="flex gap-2 items-center">
+                    <label className="text-xs text-white/70 w-24">Reserve BG:</label>
+                    <input
+                      type="color"
+                      value={reserveBackgroundColor}
+                      onChange={(e) => onReserveBackgroundColorChange(e.target.value)}
+                      className="w-12 h-8 rounded cursor-pointer"
+                    />
+                    <span className="text-xs text-white/50">{reserveBackgroundColor}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-white/70">Reserve Opacity ({(reserveBackgroundOpacity * 100).toFixed(0)}%)</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={reserveBackgroundOpacity}
+                      onChange={(e) => onReserveBackgroundOpacityChange(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <p className="text-xs text-white/40 italic">Background color for reserved control zones</p>
                 </div>
               )}
             </div>

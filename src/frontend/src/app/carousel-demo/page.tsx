@@ -104,6 +104,14 @@ export default function CarouselDemo() {
   const [containerBackgroundOpacity, setContainerBackgroundOpacity] = useState(0);
   const [containerPadding, setContainerPadding] = useState(16);
 
+  // Reserved UI space state
+  const [reserveTop, setReserveTop] = useState(0);
+  const [reserveBottom, setReserveBottom] = useState(0);
+  const [reserveLeft, setReserveLeft] = useState(0);
+  const [reserveRight, setReserveRight] = useState(0);
+  const [reserveBackgroundColor, setReserveBackgroundColor] = useState('#000000');
+  const [reserveBackgroundOpacity, setReserveBackgroundOpacity] = useState(0.3);
+
   // State for live API data
   const [liveImages, setLiveImages] = useState<CarouselImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -286,6 +294,18 @@ export default function CarouselDemo() {
             onContainerBackgroundColorChange={setContainerBackgroundColor}
             onContainerBackgroundOpacityChange={setContainerBackgroundOpacity}
             onContainerPaddingChange={setContainerPadding}
+            reserveTop={reserveTop}
+            reserveBottom={reserveBottom}
+            reserveLeft={reserveLeft}
+            reserveRight={reserveRight}
+            reserveBackgroundColor={reserveBackgroundColor}
+            reserveBackgroundOpacity={reserveBackgroundOpacity}
+            onReserveTopChange={setReserveTop}
+            onReserveBottomChange={setReserveBottom}
+            onReserveLeftChange={setReserveLeft}
+            onReserveRightChange={setReserveRight}
+            onReserveBackgroundColorChange={setReserveBackgroundColor}
+            onReserveBackgroundOpacityChange={setReserveBackgroundOpacity}
           />
 
           {/* Carousel */}
@@ -319,6 +339,12 @@ export default function CarouselDemo() {
               containerBackgroundColor={containerBackgroundColor}
               containerBackgroundOpacity={containerBackgroundOpacity}
               containerPadding={containerPadding}
+              reserveTop={reserveTop}
+              reserveBottom={reserveBottom}
+              reserveLeft={reserveLeft}
+              reserveRight={reserveRight}
+              reserveBackgroundColor={reserveBackgroundColor}
+              reserveBackgroundOpacity={reserveBackgroundOpacity}
             />
           </div>
         </ContentBlock>
@@ -415,6 +441,12 @@ export default function CarouselDemo() {
                   containerBackgroundColor={containerBackgroundColor}
                   containerBackgroundOpacity={containerBackgroundOpacity}
                   containerPadding={containerPadding}
+                  reserveTop={reserveTop}
+                  reserveBottom={reserveBottom}
+                  reserveLeft={reserveLeft}
+                  reserveRight={reserveRight}
+                  reserveBackgroundColor={reserveBackgroundColor}
+                  reserveBackgroundOpacity={reserveBackgroundOpacity}
                 />
               </div>
               <div className="text-xs text-white/40 text-center">
