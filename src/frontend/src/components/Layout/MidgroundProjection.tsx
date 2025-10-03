@@ -161,7 +161,9 @@ function MidgroundLayer() {
             className="object-cover"
             sizes="100vw"
             quality={75}
-            priority={projection.opacity > 0.5}
+            priority={false}
+            loading="lazy"
+            unoptimized={false}
           />
         </div>
       ))}
@@ -279,8 +281,9 @@ export function useCarouselProjection(
     window.addEventListener('scroll', updateProjectionState, { passive: true });
     window.addEventListener('resize', updateProjectionState, { passive: true });
 
-    // Update on animation frame for smooth tracking
-    const interval = setInterval(updateProjectionState, 100); // 10fps tracking
+    // Slower update interval to reduce re-renders and image re-requests
+    // 300ms = ~3fps tracking (smooth enough, much less load)
+    const interval = setInterval(updateProjectionState, 300);
 
     return () => {
       window.removeEventListener('scroll', updateProjectionState);
