@@ -1,0 +1,45 @@
+{
+  "layoutType": "curated",
+  "title": "Ultra-Wide Showcase",
+  "background": {
+    "image": "wide-bg.jpg",
+    "opacity": 0.4
+  },
+  "sections": [
+    {
+      "type": "hero",
+      "title": "ULTRA-WIDE PHOTOGRAPHY",
+      "subtitle": "Cinematic aspect ratios",
+      "containerOpacity": 0.4,
+      "textPosition": "center",
+      "separator": true
+    },
+    {
+      "type": "carousel",
+      "images": {
+        "aspectRatio": ">2.5",
+        "sortBy": "filename",
+        "limit": 10
+      },
+      "width": "full",
+      "carouselOptions": {
+        "transition": "slide-horizontal",
+        "autoplay": true,
+        "interval": 10000,
+        "reservedSpace": {
+          "bottom": 100
+        },
+        "styling": {
+          "borderRadius": 12,
+          "padding": 20
+        }
+      }
+    },
+    {
+      "type": "text",
+      "content": "<p>Images with aspect ratios greater than 2.5:1 - automatically selected from the collection.</p>",
+      "position": "center",
+      "width": "full"
+    }
+  ]
+}
