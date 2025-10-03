@@ -689,3 +689,46 @@ soon as you push
 fixes!\n\n- Zara       
 (Frontend
 Specialist)
+
+Kai OH you are CRUSHIN IT! \
+  & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-02 180123.png'\       
+  I played with all the things :-)\
+  Also this gives me a good language to talk about various parts. \    
+  Like what I thought was boarder, is "background" and it is what you  
+  use to fill in area between the boarder and the image (right?)\      
+  Well that is the way it looks visually to me. I guess it is a        
+  background image, or color that the display image gets rendered      
+  over? \
+  Can the background be.. expanded? \
+  For example, in this image here, see how the social reaction
+  buttons and reactions appear over the background so it looks like    
+  they are in "margins" This is a nice look nothing cluttering the     
+  iamge. \
+  but that works because it is a wide aspect ratio image.. here is an  
+  image different aspect ratio\
+  & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-02 180929.png'\       
+  The social stuff appears over the image. My thinking is that if I    
+  could add background to the top and bottom .. beyond .. what you     
+  already calculated for the image, the social controls would have a   
+  place to live that would not be over the image (again, i realize     
+  for different resolutions and reszing and small screens) I'm
+  thinking if I could "reserve" background for the top bottom left     
+  and right social controls nav controls and whatever the hell elese   
+  we might think of could sit over "padding" or reserved background.   
+  \
+  Your implementation of boarder <smooch> <kissy noises> Chefs kiss..  
+  PERFECT, brilliant. sliding the corner rounding control and
+  watching it change in real time.. oooh that is soo good. \
+  I did get an error and saw some errors in the JS console... but      
+  Daym.. I did not notice them if I would have not had the js console  
+  up I would have not seen anything that would indicate an error.      
+  That is some _fantastic_ engineering! excellent work!\
+  & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-02 181625.png'\       
+  I do have one request.. not for the carousel, but the control        
+  panel.. can you make it smaller and floating? and like to the        
+  right? I found myself scrolling up and down a lot .. fiddle with a   
+  control.. scroll down scroll back up etc. etc. \
+  Also.. \
+  Can you pick an image to put on the background? That would let me    
+  see the effect of transparency. \
+  AND CHEC 

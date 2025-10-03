@@ -170,6 +170,8 @@ Get detailed collection with paginated gallery.
 ```bash
 # First page
 curl "http://localhost:4000/api/content/collections/couples"
+mixed collections.. USE THE SLUG NAME from collections
+http://localhost:4000/api/content/collections/mixed-collection
 
 # Page 2 with 25 items
 curl "http://localhost:4000/api/content/collections/couples?page=2&limit=25"
