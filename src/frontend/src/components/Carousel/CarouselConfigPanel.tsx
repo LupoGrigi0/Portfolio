@@ -135,7 +135,12 @@ export default function CarouselConfigPanel({
   };
 
   return (
-    <div className={`bg-black/40 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden ${className}`}>
+    <div className={`
+      fixed top-4 right-4 w-80 max-h-[calc(100vh-2rem)]
+      bg-black/60 backdrop-blur-lg border border-white/20 rounded-lg
+      overflow-hidden shadow-2xl z-50
+      ${className}
+    `}>
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -158,7 +163,7 @@ export default function CarouselConfigPanel({
 
       {/* Config Controls */}
       {isExpanded && (
-        <div className="p-4 space-y-4 border-t border-white/10">
+        <div className="p-4 space-y-4 border-t border-white/10 overflow-y-auto max-h-[calc(100vh-8rem)]">
           {/* Transition Type Selector */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">Transition Type</label>
