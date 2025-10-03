@@ -90,23 +90,12 @@ export default function CollectionDetailPage() {
     );
   }
 
-  // Prepare images for carousel using Viktor's pre-built URLs
-  // Filter out videos and items without valid image URLs
-  const carouselImages = (collection.gallery || [])
-    .filter((item: MediaItem) => {
-      // Skip videos - carousel only supports images
-      if (item.type === 'video') return false;
+  // Determine layout type
+  const layoutType = collection.config?.layoutType || 'dynamic';
 
-      // Skip items without valid large image URL
-      if (!item.urls.large || item.urls.large === '') return false;
-
-      return true;
-    })
-    .map((item: MediaItem) => ({
-      id: item.id,
-      src: getAbsoluteMediaUrl(item.urls.large), // Use large size for carousel
-      alt: item.altText || item.title || item.filename,
-    }));
+  // Import layout components dynamically
+  const CuratedLayout = require('@/components/Layout/CuratedLayout').default;
+  const DynamicLayout = require('@/components/Layout/DynamicLayout').default;
 
   return (
     <ResponsiveContainer>
@@ -121,35 +110,35 @@ export default function CollectionDetailPage() {
           </Link>
         </ContentBlock>
 
-        {/* Collection Header */}
-        <ContentBlock className="text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">
-            {collection.config?.title || collection.name}
-          </h1>
-          {collection.config?.subtitle && (
-            <p className="text-xl text-white/80 mb-4">
-              {collection.config.subtitle}
-            </p>
-          )}
-          <div className="flex items-center justify-center gap-4 text-sm text-white/60">
-            <span>{collection.imageCount} images</span>
-            {collection.videoCount > 0 && <span>{collection.videoCount} videos</span>}
-          </div>
-        </ContentBlock>
-
-        {/* Carousel */}
-        {carouselImages.length > 0 ? (
-          <ContentBlock>
-            <ReferenceCarousel images={carouselImages} />
-          </ContentBlock>
-        ) : (
-          <ContentBlock className="text-center py-12">
-            <p className="text-white/60">No images found in this collection</p>
+        {/* Collection Header (only for non-curated, curated has HeroSection) */}
+        {layoutType !== 'curated' && (
+          <ContentBlock className="text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">
+              {collection.config?.title || collection.name}
+            </h1>
+            {collection.config?.subtitle && (
+              <p className="text-xl text-white/80 mb-4">
+                {collection.config.subtitle}
+              </p>
+            )}
+            <div className="flex items-center justify-center gap-4 text-sm text-white/60">
+              <span>{collection.imageCount} images</span>
+              {collection.videoCount > 0 && <span>{collection.videoCount} videos</span>}
+            </div>
           </ContentBlock>
         )}
 
-        {/* Description */}
-        {collection.config?.description && (
+        {/* Layout System */}
+        <ContentBlock>
+          {layoutType === 'curated' ? (
+            <CuratedLayout collection={collection} config={collection.config!} />
+          ) : (
+            <DynamicLayout collection={collection} config={collection.config || {}} />
+          )}
+        </ContentBlock>
+
+        {/* Description (only for non-curated) */}
+        {layoutType !== 'curated' && collection.config?.description && (
           <ContentBlock className="text-center max-w-2xl mx-auto">
             <p className="text-white/80 leading-relaxed">
               {collection.config.description}
@@ -175,13 +164,6 @@ export default function CollectionDetailPage() {
             </Grid>
           </ContentBlock>
         )}
-
-        {/* Info Footer */}
-        <ContentBlock className="text-center">
-          <p className="text-white/60 text-sm">
-            Using ReferenceCarousel • Real images from Viktor&apos;s ContentScanner
-          </p>
-        </ContentBlock>
       </Grid>
     </ResponsiveContainer>
   );

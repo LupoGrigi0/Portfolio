@@ -46,9 +46,46 @@ export interface Collection {
 }
 
 export interface CollectionConfig {
+  // Layout type
+  layoutType?: 'curated' | 'dynamic';
+
+  // Meta
   title?: string;
   subtitle?: string;
   description?: string;
+
+  // Background (static image, not carousel)
+  background?: {
+    image: string;
+    opacity?: number;
+    blur?: number;
+    parallax?: boolean;
+  };
+
+  // Parallax config (for sister's multi-layer system)
+  parallaxConfig?: {
+    layers?: any[]; // Will use her ParallaxLayer type when integrated
+    scrollBehavior?: string;
+  };
+
+  // Curated layout sections
+  sections?: Array<
+    | HeroSectionConfig
+    | TextSectionConfig
+    | CarouselSectionConfig
+    | ImageSectionConfig
+    | VideoSectionConfig
+    | SeparatorSectionConfig
+  >;
+
+  // Dynamic layout settings
+  dynamicSettings?: {
+    layout: 'single-column' | '2-across' | '3-across' | 'masonry';
+    imagesPerCarousel?: number | 'all';
+    carouselDefaults?: CarouselOptionsConfig;
+  };
+
+  // DEPRECATED (keeping for backwards compat with Zara's work)
   heroBanner?: {
     enabled: boolean;
     image: string;
@@ -70,6 +107,96 @@ export interface CollectionConfig {
     transitionType: 'fade' | 'slide' | 'zoom';
     autoplaySpeed: number;
   }>;
+}
+
+// Section type definitions
+export interface HeroSectionConfig {
+  type: 'hero';
+  title: string;
+  subtitle?: string;
+  containerOpacity?: number;
+  textPosition?: 'center' | 'left' | 'right';
+  separator?: boolean;
+}
+
+export interface TextSectionConfig {
+  type: 'text';
+  content: string;
+  position?: 'center' | 'left' | 'right';
+  width?: 'full' | 'half' | 'third' | 'quarter';
+}
+
+export interface CarouselSectionConfig {
+  type: 'carousel';
+  images: string[] | 'auto' | ImageQuery;
+  videos?: string[];
+  width?: 'full' | 'half' | 'third' | 'quarter';
+  carouselOptions?: CarouselOptionsConfig;
+}
+
+export interface ImageSectionConfig {
+  type: 'image';
+  src: string;
+  alt?: string;
+  width?: 'full' | 'half' | 'third' | 'quarter';
+  caption?: string;
+}
+
+export interface VideoSectionConfig {
+  type: 'video';
+  src: string;
+  width?: 'full' | 'half' | 'third' | 'quarter';
+  caption?: string;
+  autoplay?: boolean;
+  controls?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+}
+
+export interface SeparatorSectionConfig {
+  type: 'separator';
+  style?: 'line' | 'gradient' | 'dots';
+  opacity?: number;
+  thickness?: number;
+  spacing?: number;
+}
+
+// Image query for dynamic image selection
+export interface ImageQuery {
+  aspectRatio?: { min?: number; max?: number } | string; // ">2.5" or {min: 2.5}
+  tags?: string[];
+  filename?: string; // Pattern matching
+  limit?: number;
+  sortBy?: 'filename' | 'date' | 'random';
+}
+
+// Carousel options (maps to Carousel component props)
+export interface CarouselOptionsConfig {
+  transition?: 'fade' | 'slide-horizontal' | 'slide-vertical' | 'slide-up' | 'slide-down' | 'zoom' | 'flipbook' | 'none';
+  autoplay?: boolean;
+  interval?: number;
+  speed?: number;
+  controls?: {
+    nav?: { show: boolean; position?: 'top' | 'bottom' | 'sides' };
+    reactions?: { show: boolean; autoHide?: boolean };
+  };
+  reservedSpace?: {
+    top?: number;
+    bottom?: number;
+    left?: number;
+    right?: number;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+  };
+  styling?: {
+    borderWidth?: number;
+    borderColor?: string;
+    borderOpacity?: number;
+    borderRadius?: number;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+    padding?: number;
+  };
 }
 
 /**
