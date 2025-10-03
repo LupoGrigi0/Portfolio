@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react';
 import { Carousel } from '@/components/Carousel';
 import CarouselConfigPanel from '@/components/Carousel/CarouselConfigPanel';
 import { ReferenceCarousel } from '@/components/ReferenceCarousel';
-import { ResponsiveContainer, Grid, ContentBlock } from '@/components/Layout';
+import { ResponsiveContainer, Grid, ContentBlock, useParallaxBackground, type ParallaxLayer } from '@/components/Layout';
 import type { CarouselImage, TransitionType, AutoplaySpeedPreset, FullscreenMode } from '@/components/Carousel/types';
 
 // Sample images for carousel demo
@@ -73,6 +73,9 @@ const carouselImages: CarouselImage[] = [
 ];
 
 export default function CarouselDemo() {
+  // Parallax background for transparency testing
+  const { setLayers } = useParallaxBackground();
+
   // Configuration state
   const [transitionType, setTransitionType] = useState<TransitionType>('fade');
   const [speedPreset, setSpeedPreset] = useState<AutoplaySpeedPreset>('medium');
@@ -106,6 +109,24 @@ export default function CarouselDemo() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [collectionName, setCollectionName] = useState('couples');
+
+  // Set background image for transparency testing
+  useEffect(() => {
+    const layers: ParallaxLayer[] = [{
+      id: 'carousel-demo-bg',
+      type: 'background',
+      imageUrl: 'https://picsum.photos/seed/demo-bg/2400/1600',
+      speed: 0,
+      opacity: 0.4,
+      zIndex: 1,
+      blur: 2
+    }];
+    setLayers(layers);
+
+    return () => {
+      setLayers([]); // Clean up on unmount
+    };
+  }, [setLayers]);
 
   // Fetch live data from backend API
   useEffect(() => {
@@ -265,7 +286,6 @@ export default function CarouselDemo() {
             onContainerBackgroundColorChange={setContainerBackgroundColor}
             onContainerBackgroundOpacityChange={setContainerBackgroundOpacity}
             onContainerPaddingChange={setContainerPadding}
-            className="mb-6"
           />
 
           {/* Carousel */}
