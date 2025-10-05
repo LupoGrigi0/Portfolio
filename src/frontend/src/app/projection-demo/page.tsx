@@ -193,7 +193,11 @@ function ProjectionDemoContent() {
               </ContentBlock>
 
               <ContentBlock>
-                <ReferenceCarousel images={images} />
+                <ReferenceCarousel
+                  images={images}
+                  enableProjection={true}
+                  projectionId={`vertical-carousel-${collection.id}`}
+                />
               </ContentBlock>
             </div>
           ))}
@@ -218,7 +222,11 @@ function ProjectionDemoContent() {
                         <h4 className="text-xl font-bold text-white mb-4 text-center">
                           {collection.config?.title || collection.name}
                         </h4>
-                        <ReferenceCarousel images={images.slice(0, 5)} />
+                        <ReferenceCarousel
+                          images={images.slice(0, 5)}
+                          enableProjection={true}
+                          projectionId={`sidebyside-carousel-${collection.id}`}
+                        />
                       </div>
                     ))}
                   </div>

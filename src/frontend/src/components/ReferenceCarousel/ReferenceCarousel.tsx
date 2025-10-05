@@ -11,6 +11,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useCarouselProjection } from '@/components/Layout';
 
 interface ReferenceImage {
   id: string;
@@ -20,10 +21,23 @@ interface ReferenceImage {
 
 interface ReferenceCarouselProps {
   images: ReferenceImage[];
+  enableProjection?: boolean;
+  projectionId?: string;
 }
 
-export default function ReferenceCarousel({ images }: ReferenceCarouselProps) {
+export default function ReferenceCarousel({
+  images,
+  enableProjection = false,
+  projectionId
+}: ReferenceCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Midground projection (carousel projects first image onto background layer)
+  const carouselRef = useCarouselProjection(
+    projectionId || `ref-carousel-${images[0]?.id || 'default'}`,
+    enableProjection && images[0] ? images[0].src : null,
+    enableProjection
+  );
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -40,7 +54,7 @@ export default function ReferenceCarousel({ images }: ReferenceCarouselProps) {
   console.log('[ReferenceCarousel] Current index:', currentIndex);
 
   return (
-    <div className="relative w-full h-[600px] bg-gray-900 rounded-lg overflow-hidden">
+    <div ref={carouselRef} className="relative w-full h-[600px] bg-gray-900 rounded-lg overflow-hidden">
       {/* Images */}
       <div className="relative w-full h-full">
         {images.map((image, index) => (
