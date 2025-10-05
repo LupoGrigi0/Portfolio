@@ -121,6 +121,17 @@ export function useMidgroundProjection() {
  */
 function MidgroundLayer() {
   const { projections } = useMidgroundProjection();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Only render on client to avoid SSR hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null;
+  }
+
   const projectionsArray = Array.from(projections.values());
 
   // Sort by distance from center (furthest first, so closest renders on top)
