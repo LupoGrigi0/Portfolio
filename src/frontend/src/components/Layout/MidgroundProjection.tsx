@@ -17,7 +17,6 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
-import Image from 'next/image';
 
 export interface CarouselProjection {
   id: string;
@@ -154,16 +153,12 @@ function MidgroundLayer() {
             willChange: 'opacity, filter, transform',
           }}
         >
-          <Image
+          {/* Use plain img tag to avoid Next.js Image infinite retry on CORS errors */}
+          <img
             src={projection.imageUrl}
             alt=""
-            fill
-            className="object-cover"
-            sizes="100vw"
-            quality={75}
-            priority={false}
+            className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
-            unoptimized={false}
           />
         </div>
       ))}
