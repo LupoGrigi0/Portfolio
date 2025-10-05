@@ -58,14 +58,30 @@ function ProjectionDemoContent() {
       const data = await getCollections();
       const collectionsWithImages = data.filter(c => c.imageCount && c.imageCount > 0);
 
-      // Fetch first 5 collections sequentially
+      // Prioritize "couples" and "mixed-collection" for side-by-side demo
+      const priorityCollections = collectionsWithImages.filter(
+        c => c.slug === 'couples' || c.slug === 'mixed-collection'
+      );
+      const otherCollections = collectionsWithImages.filter(
+        c => c.slug !== 'couples' && c.slug !== 'mixed-collection'
+      );
+      const orderedCollections = [...priorityCollections, ...otherCollections].slice(0, 3);
+
+      // Load ONLY the first 2 collections with full galleries initially
+      // Others will load when scrolled into view
       const collectionsWithGallery = [];
-      for (const col of collectionsWithImages.slice(0, 5)) {
+      for (let i = 0; i < Math.min(2, orderedCollections.length); i++) {
+        const col = orderedCollections[i];
         const fullCollection = await getCollection(col.slug);
         if (fullCollection) {
           collectionsWithGallery.push(fullCollection);
         }
         await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Add remaining collections as metadata only
+      for (let i = 2; i < orderedCollections.length; i++) {
+        collectionsWithGallery.push(orderedCollections[i]);
       }
 
       setCollections(collectionsWithGallery);
@@ -138,6 +154,11 @@ function ProjectionDemoContent() {
           </ContentBlock>
 
           {collections.map((collection, idx) => {
+            // Skip collections that haven't loaded full gallery yet
+            if (!collection.gallery || collection.gallery.length === 0) {
+              return null;
+            }
+
             const carouselImages: CarouselImage[] = (collection.gallery || [])
               .filter((item: MediaItem) =>
                 item.type === 'image' && item.urls.large && item.urls.large !== ''
@@ -189,7 +210,7 @@ function ProjectionDemoContent() {
           })}
 
           {/* Side-by-Side Test */}
-          {collections.length >= 2 && (
+          {collections.filter(c => c.gallery && c.gallery.length > 0).length >= 2 && (
             <>
               <ContentBlock className="text-center mb-8 mt-20">
                 <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
@@ -203,23 +224,26 @@ function ProjectionDemoContent() {
               <div className="min-h-screen flex flex-col justify-center">
                 <ContentBlock>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {collections.slice(0, 2).map((collection) => {
-                      const carouselImages: CarouselImage[] = (collection.gallery || [])
-                        .filter((item: MediaItem) =>
-                          item.type === 'image' && item.urls.large && item.urls.large !== ''
-                        )
-                        .slice(0, 5)
-                        .map((item: MediaItem) => ({
-                          id: item.id,
-                          src: getAbsoluteMediaUrl(item.urls.large),
-                          alt: item.altText || item.title || item.filename,
-                          title: item.title,
-                          width: item.dimensions?.width || 1920,
-                          height: item.dimensions?.height || 1280,
-                          aspectRatio: item.dimensions?.aspectRatio || 1.5
-                        }));
+                    {collections
+                      .filter(c => c.gallery && c.gallery.length > 0)
+                      .slice(0, 2)
+                      .map((collection) => {
+                        const carouselImages: CarouselImage[] = (collection.gallery || [])
+                          .filter((item: MediaItem) =>
+                            item.type === 'image' && item.urls.large && item.urls.large !== ''
+                          )
+                          .slice(0, 5)
+                          .map((item: MediaItem) => ({
+                            id: item.id,
+                            src: getAbsoluteMediaUrl(item.urls.large),
+                            alt: item.altText || item.title || item.filename,
+                            title: item.title,
+                            width: item.dimensions?.width || 1920,
+                            height: item.dimensions?.height || 1280,
+                            aspectRatio: item.dimensions?.aspectRatio || 1.5
+                          }));
 
-                      return (
+                        return (
                         <div key={collection.id}>
                           <h4 className="text-xl font-bold text-white mb-4 text-center">
                             {collection.config?.title || collection.name}
