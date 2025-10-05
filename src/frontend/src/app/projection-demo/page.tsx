@@ -18,7 +18,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Carousel } from '@/components/Carousel';
 import {
@@ -37,6 +37,25 @@ import {
   type MediaItem
 } from '@/lib/api-client';
 
+// Helper to convert collection to carousel images (stable reference)
+function collectionToCarouselImages(collection: Collection, maxImages: number = 10): CarouselImage[] {
+  return (collection.gallery || [])
+    .filter((item: MediaItem) =>
+      item.type === 'image' && item.urls.large && item.urls.large !== ''
+    )
+    .slice(0, maxImages)
+    .map((item: MediaItem) => ({
+      id: item.id,
+      src: getAbsoluteMediaUrl(item.urls.large),
+      alt: item.altText || item.title || item.filename,
+      title: item.title,
+      caption: item.caption,
+      width: item.dimensions?.width || 1920,
+      height: item.dimensions?.height || 1280,
+      aspectRatio: item.dimensions?.aspectRatio || 1.5
+    }));
+}
+
 export default function ProjectionDemoPage() {
   return (
     <MidgroundProjectionProvider>
@@ -52,6 +71,17 @@ function ProjectionDemoContent() {
 
   // Control panel state
   const [showControls, setShowControls] = useState(true);
+
+  // Memoize carousel images to prevent re-render loop
+  // Only recreate when collections array changes (not on every render)
+  const collectionsWithImages = useMemo(() => {
+    return collections
+      .filter(c => c.gallery && c.gallery.length > 0)
+      .map(collection => ({
+        collection,
+        images: collectionToCarouselImages(collection, 10)
+      }));
+  }, [collections]);
 
   useEffect(() => {
     async function loadCollections() {
@@ -153,64 +183,39 @@ function ProjectionDemoContent() {
             </p>
           </ContentBlock>
 
-          {collections.map((collection, idx) => {
-            // Skip collections that haven't loaded full gallery yet
-            if (!collection.gallery || collection.gallery.length === 0) {
-              return null;
-            }
+          {collectionsWithImages.map(({ collection, images }, idx) => (
+            <div key={collection.id} className="min-h-screen flex flex-col justify-center py-20">
+              <ContentBlock className="text-center mb-8">
+                <h3 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+                  {collection.config?.title || collection.name}
+                </h3>
+                {collection.config?.subtitle && (
+                  <p className="text-xl text-white/70">{collection.config.subtitle}</p>
+                )}
+                <p className="text-sm text-white/50 mt-2">
+                  Projecting image #{idx + 1} • {images.length} images in carousel
+                </p>
+              </ContentBlock>
 
-            const carouselImages: CarouselImage[] = (collection.gallery || [])
-              .filter((item: MediaItem) =>
-                item.type === 'image' && item.urls.large && item.urls.large !== ''
-              )
-              .slice(0, 10)
-              .map((item: MediaItem) => ({
-                id: item.id,
-                src: getAbsoluteMediaUrl(item.urls.large),
-                alt: item.altText || item.title || item.filename,
-                title: item.title,
-                caption: item.caption,
-                width: item.dimensions?.width || 1920,
-                height: item.dimensions?.height || 1280,
-                aspectRatio: item.dimensions?.aspectRatio || 1.5
-              }));
-
-            if (carouselImages.length === 0) return null;
-
-            return (
-              <div key={collection.id} className="min-h-screen flex flex-col justify-center py-20">
-                <ContentBlock className="text-center mb-8">
-                  <h3 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                    {collection.config?.title || collection.name}
-                  </h3>
-                  {collection.config?.subtitle && (
-                    <p className="text-xl text-white/70">{collection.config.subtitle}</p>
-                  )}
-                  <p className="text-sm text-white/50 mt-2">
-                    Projecting image #{idx + 1} • {carouselImages.length} images in carousel
-                  </p>
-                </ContentBlock>
-
-                <ContentBlock>
-                  <Carousel
-                    images={carouselImages}
-                    transitionType="fade"
-                    transitionDuration={600}
-                    autoplaySpeed={5000}
-                    showCaptions={false}
-                    enableFullscreen={true}
-                    showNavigation={true}
-                    showIndicators={true}
-                    enableProjection={true}
-                    projectionId={`vertical-carousel-${collection.id}`}
-                  />
-                </ContentBlock>
-              </div>
-            );
-          })}
+              <ContentBlock>
+                <Carousel
+                  images={images}
+                  transitionType="fade"
+                  transitionDuration={600}
+                  autoplaySpeed={5000}
+                  showCaptions={false}
+                  enableFullscreen={true}
+                  showNavigation={true}
+                  showIndicators={true}
+                  enableProjection={true}
+                  projectionId={`vertical-carousel-${collection.id}`}
+                />
+              </ContentBlock>
+            </div>
+          ))}
 
           {/* Side-by-Side Test */}
-          {collections.filter(c => c.gallery && c.gallery.length > 0).length >= 2 && (
+          {collectionsWithImages.length >= 2 && (
             <>
               <ContentBlock className="text-center mb-8 mt-20">
                 <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
@@ -224,45 +229,25 @@ function ProjectionDemoContent() {
               <div className="min-h-screen flex flex-col justify-center">
                 <ContentBlock>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {collections
-                      .filter(c => c.gallery && c.gallery.length > 0)
-                      .slice(0, 2)
-                      .map((collection) => {
-                        const carouselImages: CarouselImage[] = (collection.gallery || [])
-                          .filter((item: MediaItem) =>
-                            item.type === 'image' && item.urls.large && item.urls.large !== ''
-                          )
-                          .slice(0, 5)
-                          .map((item: MediaItem) => ({
-                            id: item.id,
-                            src: getAbsoluteMediaUrl(item.urls.large),
-                            alt: item.altText || item.title || item.filename,
-                            title: item.title,
-                            width: item.dimensions?.width || 1920,
-                            height: item.dimensions?.height || 1280,
-                            aspectRatio: item.dimensions?.aspectRatio || 1.5
-                          }));
-
-                        return (
-                        <div key={collection.id}>
-                          <h4 className="text-xl font-bold text-white mb-4 text-center">
-                            {collection.config?.title || collection.name}
-                          </h4>
-                          <Carousel
-                            images={carouselImages}
-                            transitionType="fade"
-                            transitionDuration={600}
-                            autoplaySpeed={6000}
-                            showCaptions={false}
-                            enableFullscreen={false}
-                            showNavigation={true}
-                            showIndicators={true}
-                            enableProjection={true}
-                            projectionId={`sidebyside-carousel-${collection.id}`}
-                          />
-                        </div>
-                      );
-                    })}
+                    {collectionsWithImages.slice(0, 2).map(({ collection, images }) => (
+                      <div key={collection.id}>
+                        <h4 className="text-xl font-bold text-white mb-4 text-center">
+                          {collection.config?.title || collection.name}
+                        </h4>
+                        <Carousel
+                          images={images.slice(0, 5)}
+                          transitionType="fade"
+                          transitionDuration={600}
+                          autoplaySpeed={6000}
+                          showCaptions={false}
+                          enableFullscreen={false}
+                          showNavigation={true}
+                          showIndicators={true}
+                          enableProjection={true}
+                          projectionId={`sidebyside-carousel-${collection.id}`}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </ContentBlock>
               </div>
