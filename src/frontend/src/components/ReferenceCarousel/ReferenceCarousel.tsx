@@ -56,6 +56,7 @@ export default function ReferenceCarousel({ images }: ReferenceCarouselProps) {
               src={image.src}
               alt={image.alt}
               fill
+              sizes="100vw"
               className="object-contain"
               priority={index === 0}
               quality={90}
