@@ -4,8 +4,93 @@
 **Created**: 2025-10-05
 **Author**: Phoenix (Foundation Architect)
 **Context**: Team debugging skills gap identified after 3 days of "fixes" that didn't fix anything
+**Philosophy**: Root cause obsession - Keep asking "why" until you hit first principles
 
 ---
+
+## Core Philosophy
+
+**Simple, modular, easy to extend.**
+
+**Never, never, never optimize... until you know you have a performance problem.**
+
+> "Programmers waste enormous amounts of time thinking about, or worrying about, the speed of noncritical parts of their programs... We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet we should not pass up our opportunities in that critical 3%."
+>
+> — Donald Knuth, 1974
+
+---
+
+## Debugging Maxims
+
+**When it's not working the way you thought it should:**
+
+- **Observe, don't interpret** - Your variables and execution sequence are facts. Your hunches are hypotheses to be tested.
+
+- **Rubber duck it** - Explain the problem out loud (Lupo makes a fine rubber duck). Articulating forces clarity.
+
+- **Enumerate assumptions** - You may have assumptions you don't realize you've made. "Next.js works like X" is an assumption.
+
+- **Challenge assumptions** - Does it actually work like X? Most difficult bugs arise from incorrect assumptions. Be skeptical. No, it never works like it's supposed to.
+
+- **Log everything** - Too many console messages means broken code. Functioning code runs quiet even with logging everywhere.
+
+---
+
+## First Principles for This Project
+
+### 1. KISS (Keep It Simple, Stupid)
+Avoid unnecessary complexity. Simple = understandable, testable, resilient.
+
+**For this project**: One background image with CSS parallax, not 3-layer custom engine. Fetch once per load, not continuous polling.
+
+### 2. Single Source of Truth
+Every piece of knowledge has one authoritative representation. Centralize logic for consistency and easier debugging.
+
+**For this project**: API client handles all fetching (`src/lib/api-client.ts`). Don't scatter fetch calls across components.
+
+### 3. YAGNI (You Aren't Gonna Need It)
+Implement only features needed RIGHT NOW. Prevents over-engineering, keeps codebase lean.
+
+**For this project**: Don't build caching before measuring fetch performance. Don't optimize images before basic loading works.
+
+### 4. Separation of Concerns
+Divide system into distinct sections with separate responsibilities. Enhances modularity.
+
+**For this project**:
+- CollectionPage fetches data (one job)
+- Carousel displays images (one job)
+- Background updates on change (one job)
+- Don't make CollectionPage do all three
+
+### 5. Single Responsibility Principle (SRP)
+A component should have only one reason to change. Focused, testable, robust.
+
+**For this project**: Don't mix API logic into render methods. Don't handle both data fetching AND complex animations in same component.
+
+### 6. High Cohesion, Low Coupling
+Internal parts belong together (high cohesion). Few dependencies on other modules (low coupling). Leads to resilient, modular design.
+
+**For this project**: Carousel shouldn't know about API structure. Background shouldn't know about carousel internals. Pass data through clean interfaces.
+
+### 7. Information Hiding
+Conceal internal details from outside world. Implementation is private, interface is public.
+
+**For this project**: Carousel's state management is internal. Only expose props like `onImageChange`, not internal state setters.
+
+### 8. Composition Over Inheritance
+Build with small, focused components rather than large files that do everything.
+
+**For this project**: `<CollectionPage>` composes `<Carousel>`, `<Background>`, `<Navigation>` - doesn't inherit from giant base class.
+
+### 9. Abstraction
+Model at the most relevant level, hide irrelevant information.
+
+**For this project**: Components work with "image URLs" not "filesystem paths with Windows backslashes that need transformation".
+
+### 10. Principle of Least Astonishment
+Code should behave as users expect. No surprises.
+
+**For this project**: Clicking next arrow should show next image. Not trigger 400 API requests. Not crash. Not do nothing. Just show next image.
 
 ## The Problem We're Solving
 
@@ -89,7 +174,7 @@
 **If your code is running when you're not interacting, YOUR CODE IS BROKEN.**
 
 **Not broken**:
-- "Viktor's rate limiting is too aggressive"
+- "Backend rate limiting is too aggressive"
 - "Next.js is making too many requests"
 - "The browser is slow"
 
@@ -154,7 +239,7 @@ useEffect(() => {
 
 ### Principle 5: Clean Code Is Stable Code
 
-**Viktor's standard**: Code runs with zero warnings, zero errors, zero mystery logs.
+**The standard**: Code runs with zero warnings, zero errors, zero mystery logs.
 
 **Why this matters**:
 
@@ -173,6 +258,8 @@ useEffect(() => {
 - Production stable
 
 **Rule**: Before saying "it's done," run code for 60 seconds idle. Console should be silent.
+
+**Example**: Backend code demonstrates this standard consistently - zero warnings, silent when idle, clear logging only for actual user actions. Frontend should match this quality bar.
 
 ---
 
@@ -366,7 +453,7 @@ const fixedUrls = {
 ```typescript
 // URLs are broken because backend ContentScanner uses absolute paths
 // Fix: Update backend to return relative URLs
-// (Message Viktor with specific fix request)
+// (Message backend developer with specific fix request)
 ```
 
 **Rule**: Fix it at the source, not at the symptom.
@@ -477,7 +564,7 @@ useEffect(() => {
 ### Anti-Pattern 4: Blame Deflection
 
 **What it looks like**:
-- "Viktor's rate limiting is broken"
+- "Backend rate limiting is broken"
 - "Next.js is buggy"
 - "The browser is slow"
 - "It works on my machine"
@@ -503,9 +590,9 @@ useEffect(() => {
 
 ---
 
-## The Viktor Standard
+## The Quality Standard
 
-**Goal**: Code that runs like Viktor's backend.
+**Goal**: Code that works reliably and debuggably.
 
 **Characteristics**:
 - ✅ Zero warnings in console
@@ -515,16 +602,18 @@ useEffect(() => {
 - ✅ Fails gracefully with helpful error messages
 - ✅ Fast, responsive, predictable
 
-**How Viktor achieves this**:
-1. Writes simple, clear code
-2. Tests thoroughly before reporting "done"
-3. Chases down every warning
-4. Adds logging proactively
-5. Validates assumptions constantly
-6. Never ignores "odd behavior"
-7. Fixes root causes, not symptoms
+**How to achieve this**:
+1. Write simple, clear code
+2. Test thoroughly before reporting "done"
+3. Chase down every warning
+4. Add logging proactively
+5. Validate assumptions constantly
+6. Never ignore "odd behavior"
+7. Fix root causes, not symptoms
 
-**This should be the standard for ALL code in this project.**
+**Example**: Backend specialist Viktor consistently demonstrates these practices. His code runs clean because he hunts down every warning and validates every assumption. Frontend code should meet the same standard.
+
+**This is the baseline for ALL code in this project.**
 
 ---
 
@@ -615,11 +704,9 @@ useEffect(() => {
 
 **Debugging is a skill.** Like any skill, it improves with practice.
 
-**Viktor has this skill.** He hunts root causes relentlessly. Code runs clean.
+**Some team members have mastered this discipline** (backend runs clean, zero warnings, root cause hunting). Others are developing it. The gap isn't intelligence - it's methodology and practice.
 
-**Frontend team needs this skill.** Not because you're bad developers, but because this is a discipline that must be trained.
-
-**The gap isn't intelligence. It's methodology.**
+**This document provides the methodology.** The practice comes from applying these steps consistently.
 
 **Use the 8-step process**:
 1. Reproduce
@@ -645,7 +732,7 @@ useEffect(() => {
 
 **Required**: When you fix a bug, document what you learned (Step 8).
 
-**Required**: Achieve Viktor standard (zero warnings, silent when idle) before considering work "done."
+**Required**: Achieve the quality standard (zero warnings, silent when idle) before considering work "done."
 
 ---
 
