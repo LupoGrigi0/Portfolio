@@ -77,6 +77,8 @@ export default function Carousel({
   containerPaddingLeft,
   controlOpacity = 1,
   controlBackgroundOpacity = 0.5,
+  // Image Preloading
+  enablePreload = true,
   // Midground Projection
   enableProjection = false,
   projectionId,
@@ -138,7 +140,7 @@ export default function Carousel({
   const { hasInteracted, preloadedCount } = useImagePreloader({
     images,
     currentIndex,
-    enabled: true
+    enabled: enablePreload
   });
 
   console.log('[Carousel] Preloader state', { hasInteracted, preloadedCount });

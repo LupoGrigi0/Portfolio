@@ -83,6 +83,9 @@ export interface CarouselProps {
   controlOpacity?: number; // Navigation control opacity 0-1 (default: 1)
   controlBackgroundOpacity?: number; // Control background opacity 0-1 (default: 0.5)
 
+  // Image Preloading
+  enablePreload?: boolean; // Enable image preloading (default: true)
+
   // Midground Projection (carousel projects first image onto background)
   enableProjection?: boolean; // Enable midground projection (default: false)
   projectionId?: string; // Unique ID for this carousel's projection (default: auto-generated)

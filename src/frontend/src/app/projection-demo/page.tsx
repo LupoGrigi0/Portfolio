@@ -207,6 +207,7 @@ function ProjectionDemoContent() {
                   enableFullscreen={true}
                   showNavigation={true}
                   showIndicators={true}
+                  enablePreload={false}
                   enableProjection={true}
                   projectionId={`vertical-carousel-${collection.id}`}
                 />
@@ -243,6 +244,7 @@ function ProjectionDemoContent() {
                           enableFullscreen={false}
                           showNavigation={true}
                           showIndicators={true}
+                          enablePreload={false}
                           enableProjection={true}
                           projectionId={`sidebyside-carousel-${collection.id}`}
                         />
