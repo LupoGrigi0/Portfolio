@@ -18,7 +18,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import Link from 'next/link';
 import { Carousel } from '@/components/Carousel';
 import {
@@ -55,6 +55,9 @@ function collectionToCarouselImages(collection: Collection, maxImages: number = 
       aspectRatio: item.dimensions?.aspectRatio || 1.5
     }));
 }
+
+// Memoized carousel wrapper to prevent re-mounting on parent re-renders
+const MemoizedCarousel = memo(Carousel);
 
 export default function ProjectionDemoPage() {
   return (
@@ -198,7 +201,7 @@ function ProjectionDemoContent() {
               </ContentBlock>
 
               <ContentBlock>
-                <Carousel
+                <MemoizedCarousel
                   images={images}
                   transitionType="fade"
                   transitionDuration={600}
@@ -235,7 +238,7 @@ function ProjectionDemoContent() {
                         <h4 className="text-xl font-bold text-white mb-4 text-center">
                           {collection.config?.title || collection.name}
                         </h4>
-                        <Carousel
+                        <MemoizedCarousel
                           images={images.slice(0, 5)}
                           transitionType="fade"
                           transitionDuration={600}
