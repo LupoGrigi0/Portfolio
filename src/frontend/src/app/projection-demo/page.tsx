@@ -62,7 +62,7 @@ export default function ProjectionDemoPage() {
 function ProjectionDemoContent() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-  const { fadeDistance, maxBlur, projectionScaleX, projectionScaleY, setFadeDistance, setMaxBlur, setProjectionScaleX, setProjectionScaleY } = useMidgroundProjection();
+  const { fadeDistance, maxBlur, projectionScaleX, projectionScaleY, blendMode, setFadeDistance, setMaxBlur, setProjectionScaleX, setProjectionScaleY, setBlendMode } = useMidgroundProjection();
 
   // Control panel state
   const [showControls, setShowControls] = useState(true);
@@ -350,6 +350,32 @@ function ProjectionDemoContent() {
               </p>
             </div>
 
+            {/* Blend Mode */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Blend Mode: {blendMode}
+              </label>
+              <select
+                value={blendMode}
+                onChange={(e) => setBlendMode(e.target.value)}
+                className="w-full bg-white/10 text-white border border-white/20 rounded px-3 py-2"
+              >
+                <option value="normal">Normal (no blend)</option>
+                <option value="multiply">Multiply (darken)</option>
+                <option value="screen">Screen (lighten)</option>
+                <option value="overlay">Overlay (contrast)</option>
+                <option value="soft-light">Soft Light (subtle)</option>
+                <option value="hard-light">Hard Light (vivid)</option>
+                <option value="color-dodge">Color Dodge (bright)</option>
+                <option value="color-burn">Color Burn (intense)</option>
+                <option value="lighten">Lighten Only</option>
+                <option value="darken">Darken Only</option>
+              </select>
+              <p className="text-xs text-white/50 mt-1">
+                How overlapping projections blend together
+              </p>
+            </div>
+
             {/* Reset Button */}
             <button
               onClick={() => {
@@ -357,6 +383,7 @@ function ProjectionDemoContent() {
                 setMaxBlur(4);
                 setProjectionScaleX(1.2);
                 setProjectionScaleY(1.2);
+                setBlendMode('normal');
               }}
               className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded font-semibold"
             >

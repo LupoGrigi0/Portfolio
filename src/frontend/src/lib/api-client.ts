@@ -166,6 +166,7 @@ export interface ImageQuery {
   aspectRatio?: { min?: number; max?: number } | string; // ">2.5" or {min: 2.5}
   tags?: string[];
   filename?: string; // Pattern matching
+  skip?: number; // Skip first N images (for pagination/offsetting)
   limit?: number;
   sortBy?: 'filename' | 'date' | 'random';
 }

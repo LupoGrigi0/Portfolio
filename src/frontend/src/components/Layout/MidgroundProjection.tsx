@@ -44,10 +44,12 @@ interface MidgroundProjectionContextType {
   maxBlur: number;
   projectionScaleX: number;
   projectionScaleY: number;
+  blendMode: string; // CSS mix-blend-mode for overlapping projections
   setFadeDistance: (distance: number) => void;
   setMaxBlur: (blur: number) => void;
   setProjectionScaleX: (scale: number) => void;
   setProjectionScaleY: (scale: number) => void;
+  setBlendMode: (mode: string) => void;
 }
 
 const MidgroundProjectionContext = createContext<MidgroundProjectionContextType | undefined>(undefined);
@@ -60,6 +62,7 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
   const [maxBlur, setMaxBlur] = useState(4); // Max blur in pixels
   const [projectionScaleX, setProjectionScaleX] = useState(1.2); // Horizontal scale
   const [projectionScaleY, setProjectionScaleY] = useState(1.2); // Vertical scale
+  const [blendMode, setBlendMode] = useState('normal'); // CSS mix-blend-mode
 
   const registerProjection = useCallback((projection: CarouselProjection) => {
     setProjections(prev => {
@@ -99,10 +102,12 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
         maxBlur,
         projectionScaleX,
         projectionScaleY,
+        blendMode,
         setFadeDistance,
         setMaxBlur,
         setProjectionScaleX,
         setProjectionScaleY,
+        setBlendMode,
       }}
     >
       <MidgroundLayer />
@@ -126,7 +131,7 @@ export function useMidgroundProjection() {
  * Fixed position, sits between background and content.
  */
 function MidgroundLayer() {
-  const { projections } = useMidgroundProjection();
+  const { projections, blendMode } = useMidgroundProjection();
   const [isMounted, setIsMounted] = useState(false);
 
   // Only render on client to avoid SSR hydration mismatch
@@ -167,6 +172,7 @@ function MidgroundLayer() {
             filter: `blur(${projection.blur}px)`,
             transform: `scale(${projection.scaleX}, ${projection.scaleY})`,
             transformOrigin: 'center center',
+            mixBlendMode: blendMode as any,
             willChange: 'opacity, filter, transform',
           }}
         >

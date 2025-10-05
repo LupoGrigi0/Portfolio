@@ -35,6 +35,19 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
   const sections = config.sections || [];
 
   /**
+   * Variable substitution for template configs
+   * Replaces $CollectionName, $ImageCount, etc. with actual values
+   */
+  const substituteVariables = (text: string): string => {
+    return text
+      .replace(/\$CollectionName/g, collection.name)
+      .replace(/\$CollectionTitle/g, collection.config?.title || collection.name)
+      .replace(/\$ImageCount/g, collection.imageCount.toString())
+      .replace(/\$VideoCount/g, collection.videoCount.toString())
+      .replace(/\$TotalCount/g, (collection.imageCount + collection.videoCount).toString());
+  };
+
+  /**
    * Resolve image filenames to full URLs
    */
   const resolveImageUrl = (filename: string): string => {
@@ -108,9 +121,14 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
       filtered.sort(() => Math.random() - 0.5);
     }
 
-    // Limit
-    if (query.limit) {
-      filtered = filtered.slice(0, query.limit);
+    // Skip + Limit (for pagination/offsetting)
+    const skip = query.skip || 0;
+    const limit = query.limit;
+
+    if (limit) {
+      filtered = filtered.slice(skip, skip + limit);
+    } else if (skip > 0) {
+      filtered = filtered.slice(skip);
     }
 
     return filtered.map((item) => item.filename);
@@ -192,8 +210,8 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             return (
               <HeroSection
                 key={key}
-                title={section.title}
-                subtitle={section.subtitle}
+                title={substituteVariables(section.title)}
+                subtitle={section.subtitle ? substituteVariables(section.subtitle) : undefined}
                 textPosition={section.textPosition}
                 containerOpacity={section.containerOpacity}
                 separator={section.separator}
@@ -204,7 +222,7 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             return (
               <div key={key} className={getWidthClass(section.width)}>
                 <TextSection
-                  content={section.content}
+                  content={substituteVariables(section.content)}
                   position={section.position}
                 />
               </div>

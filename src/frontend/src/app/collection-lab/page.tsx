@@ -24,10 +24,23 @@ import { MidgroundProjectionProvider } from '@/components/Layout';
 
 // Example configs for quick testing
 const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
-  'dynamic-simple': {
+  'dynamic-single-column': {
     layoutType: 'dynamic',
-    title: 'Dynamic Layout',
-    subtitle: 'Auto-generated from all images',
+    title: 'Single Column (Mobile Style)',
+    subtitle: 'One carousel per row',
+    dynamicSettings: {
+      layout: 'single-column',
+      imagesPerCarousel: 'all', // All images in one carousel, or set to number
+      carouselDefaults: {
+        transition: 'slide-horizontal',
+        reservedSpace: { bottom: 80 },
+      },
+    },
+  },
+  'dynamic-2-across': {
+    layoutType: 'dynamic',
+    title: 'Dynamic 2-Across',
+    subtitle: 'Auto-generated grid',
     dynamicSettings: {
       layout: '2-across',
       imagesPerCarousel: 5,
@@ -42,15 +55,68 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
     sections: [
       {
         type: 'hero',
-        title: 'COUPLES IN LOVE',
-        subtitle: 'Capturing moments of connection',
+        title: '$CollectionName',
+        subtitle: '$ImageCount images • $VideoCount videos',
         containerOpacity: 0.3,
         textPosition: 'center',
         separator: true,
       },
       {
+        type: 'text',
+        content: '<p>Welcome to the <strong>$CollectionTitle</strong> collection with <strong>$TotalCount</strong> items total.</p>',
+        position: 'center',
+        width: 'full',
+      },
+      {
         type: 'carousel',
         images: 'auto',
+        width: 'full',
+        carouselOptions: {
+          transition: 'slide-horizontal',
+          autoplay: false,
+          reservedSpace: { bottom: 80 },
+        },
+      },
+    ],
+  },
+  'template-demo': {
+    layoutType: 'curated',
+    sections: [
+      {
+        type: 'hero',
+        title: '$CollectionName',
+        subtitle: '$ImageCount images • $VideoCount videos • $TotalCount total',
+        containerOpacity: 0.35,
+        textPosition: 'center',
+        separator: true,
+      },
+      {
+        type: 'text',
+        content: `
+          <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Template Variable Demo</h3>
+            <p style="margin-bottom: 0.5rem;"><strong>Collection:</strong> $CollectionName</p>
+            <p style="margin-bottom: 0.5rem;"><strong>Title:</strong> $CollectionTitle</p>
+            <p style="margin-bottom: 0.5rem;"><strong>Images:</strong> $ImageCount</p>
+            <p style="margin-bottom: 0.5rem;"><strong>Videos:</strong> $VideoCount</p>
+            <p style="margin-bottom: 0.5rem;"><strong>Total:</strong> $TotalCount items</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.7;">
+              This config can be copied to any collection directory - values auto-fill!
+            </p>
+          </div>
+        `,
+        position: 'center',
+        width: 'full',
+      },
+      {
+        type: 'separator',
+        style: 'gradient',
+        opacity: 0.4,
+        spacing: 50,
+      },
+      {
+        type: 'carousel',
+        images: { limit: 10 },
         width: 'full',
         carouselOptions: {
           transition: 'slide-horizontal',
@@ -66,7 +132,7 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
       {
         type: 'hero',
         title: 'GALLERY GRID',
-        subtitle: 'Multiple carousels side-by-side',
+        subtitle: 'Multiple carousels side-by-side with different images',
         containerOpacity: 0.4,
         textPosition: 'center',
       },
@@ -78,13 +144,13 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
       },
       {
         type: 'carousel',
-        images: { limit: 5 },
+        images: { limit: 5, skip: 0 }, // First 5 images
         width: 'half',
         carouselOptions: { transition: 'fade' },
       },
       {
         type: 'carousel',
-        images: { limit: 5 },
+        images: { limit: 5, skip: 5 }, // Next 5 images (skip first 5)
         width: 'half',
         carouselOptions: { transition: 'fade' },
       },
@@ -240,22 +306,34 @@ export default function CollectionLabPage() {
             <label className="text-sm text-white/70 font-semibold">Load Example</label>
             <div className="flex gap-2 flex-wrap">
               <button
-                onClick={() => handleLoadExample('dynamic-simple')}
+                onClick={() => handleLoadExample('dynamic-single-column')}
                 className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
               >
-                Dynamic
+                Single Column
+              </button>
+              <button
+                onClick={() => handleLoadExample('dynamic-2-across')}
+                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+              >
+                2-Across
+              </button>
+              <button
+                onClick={() => handleLoadExample('template-demo')}
+                className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
+              >
+                Template (Variables)
               </button>
               <button
                 onClick={() => handleLoadExample('curated-hero')}
                 className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
               >
-                Curated Hero
+                Hero
               </button>
               <button
                 onClick={() => handleLoadExample('curated-grid')}
                 className="text-xs bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 px-3 py-1 rounded"
               >
-                Grid Layout
+                Grid
               </button>
             </div>
           </div>
