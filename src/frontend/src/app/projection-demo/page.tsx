@@ -90,12 +90,12 @@ function ProjectionDemoContent() {
       const otherCollections = collectionsWithImages.filter(
         c => c.slug !== 'couples' && c.slug !== 'mixed-collection'
       );
-      const orderedCollections = [...priorityCollections, ...otherCollections].slice(0, 3);
+      const orderedCollections = [...priorityCollections, ...otherCollections].slice(0, 5);
 
-      // Load ONLY the first 2 collections with full galleries initially
+      // Load ONLY the first 4 collections with full galleries initially
       // Others will load when scrolled into view
       const collectionsWithGallery = [];
-      for (let i = 0; i < Math.min(2, orderedCollections.length); i++) {
+      for (let i = 0; i < Math.min(4, orderedCollections.length); i++) {
         const col = orderedCollections[i];
         const fullCollection = await getCollection(col.slug);
         if (fullCollection) {
@@ -105,7 +105,7 @@ function ProjectionDemoContent() {
       }
 
       // Add remaining collections as metadata only
-      for (let i = 2; i < orderedCollections.length; i++) {
+      for (let i = 4; i < orderedCollections.length; i++) {
         collectionsWithGallery.push(orderedCollections[i]);
       }
 
@@ -179,7 +179,7 @@ function ProjectionDemoContent() {
           </ContentBlock>
 
           {collectionsWithImages.map(({ collection, images }, idx) => (
-            <div key={collection.id} className="min-h-screen flex flex-col justify-center py-20">
+            <div key={collection.id} className="min-h-[60vh] flex flex-col justify-center py-12">
               <ContentBlock className="text-center mb-8">
                 <h3 className="text-3xl sm:text-4xl font-bold text-white mb-2">
                   {collection.config?.title || collection.name}
