@@ -29,7 +29,8 @@ export interface CarouselProjection {
   };
   opacity: number;
   blur: number;
-  scale: number; // 1.0 = normal, >1 = zoomed (depth illusion)
+  scaleX: number; // 1.0 = normal width, >1 = wider
+  scaleY: number; // 1.0 = normal height, >1 = taller
   distanceFromCenter: number; // For debugging
 }
 
@@ -41,10 +42,12 @@ interface MidgroundProjectionContextType {
   // Global settings
   fadeDistance: number; // Viewport distance where fade starts (0-1, fraction of viewport height)
   maxBlur: number;
-  projectionScale: number;
+  projectionScaleX: number;
+  projectionScaleY: number;
   setFadeDistance: (distance: number) => void;
   setMaxBlur: (blur: number) => void;
-  setProjectionScale: (scale: number) => void;
+  setProjectionScaleX: (scale: number) => void;
+  setProjectionScaleY: (scale: number) => void;
 }
 
 const MidgroundProjectionContext = createContext<MidgroundProjectionContextType | undefined>(undefined);
@@ -55,7 +58,8 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
   // Global projection settings (configurable)
   const [fadeDistance, setFadeDistance] = useState(0.5); // Start fading at 50% from center
   const [maxBlur, setMaxBlur] = useState(4); // Max blur in pixels
-  const [projectionScale, setProjectionScale] = useState(1.2); // Slightly larger than carousel for depth
+  const [projectionScaleX, setProjectionScaleX] = useState(1.2); // Horizontal scale
+  const [projectionScaleY, setProjectionScaleY] = useState(1.2); // Vertical scale
 
   const registerProjection = useCallback((projection: CarouselProjection) => {
     setProjections(prev => {
@@ -93,10 +97,12 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
         updateProjection,
         fadeDistance,
         maxBlur,
-        projectionScale,
+        projectionScaleX,
+        projectionScaleY,
         setFadeDistance,
         setMaxBlur,
-        setProjectionScale,
+        setProjectionScaleX,
+        setProjectionScaleY,
       }}
     >
       <MidgroundLayer />
@@ -159,7 +165,7 @@ function MidgroundLayer() {
             height: projection.position.height,
             opacity: projection.opacity,
             filter: `blur(${projection.blur}px)`,
-            transform: `scale(${projection.scale})`,
+            transform: `scale(${projection.scaleX}, ${projection.scaleY})`,
             transformOrigin: 'center center',
             willChange: 'opacity, filter, transform',
           }}
@@ -210,7 +216,8 @@ export function useCarouselProjection(
     updateProjection,
     fadeDistance,
     maxBlur,
-    projectionScale,
+    projectionScaleX,
+    projectionScaleY,
   } = useMidgroundProjection();
 
   const elementRef = useRef<HTMLDivElement>(null);
@@ -252,10 +259,11 @@ export function useCarouselProjection(
       },
       opacity: isInViewport ? opacity : 0,
       blur,
-      scale: projectionScale,
+      scaleX: projectionScaleX,
+      scaleY: projectionScaleY,
       distanceFromCenter,
     };
-  }, [carouselId, imageUrl, fadeDistance, maxBlur, projectionScale]);
+  }, [carouselId, imageUrl, fadeDistance, maxBlur, projectionScaleX, projectionScaleY]);
 
   // Update projection on scroll/resize
   useEffect(() => {

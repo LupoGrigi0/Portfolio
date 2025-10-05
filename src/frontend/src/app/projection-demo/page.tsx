@@ -62,7 +62,7 @@ export default function ProjectionDemoPage() {
 function ProjectionDemoContent() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-  const { fadeDistance, maxBlur, projectionScale, setFadeDistance, setMaxBlur, setProjectionScale } = useMidgroundProjection();
+  const { fadeDistance, maxBlur, projectionScaleX, projectionScaleY, setFadeDistance, setMaxBlur, setProjectionScaleX, setProjectionScaleY } = useMidgroundProjection();
 
   // Control panel state
   const [showControls, setShowControls] = useState(true);
@@ -312,22 +312,41 @@ function ProjectionDemoContent() {
               </p>
             </div>
 
-            {/* Projection Scale */}
+            {/* Projection Scale X (Width) */}
             <div className="mb-6">
               <label className="block text-white/80 text-sm mb-2">
-                Projection Scale: {projectionScale.toFixed(2)}x
+                Projection Width: {projectionScaleX.toFixed(2)}x
               </label>
               <input
                 type="range"
-                min="1"
+                min="0.5"
                 max="2"
                 step="0.05"
-                value={projectionScale}
-                onChange={(e) => setProjectionScale(parseFloat(e.target.value))}
+                value={projectionScaleX}
+                onChange={(e) => setProjectionScaleX(parseFloat(e.target.value))}
                 className="w-full"
               />
               <p className="text-xs text-white/50 mt-1">
-                Scale of projected image (creates depth illusion)
+                Horizontal scale (0.5 = narrow, 2.0 = wide)
+              </p>
+            </div>
+
+            {/* Projection Scale Y (Height) */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Projection Height: {projectionScaleY.toFixed(2)}x
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.05"
+                value={projectionScaleY}
+                onChange={(e) => setProjectionScaleY(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Vertical scale (0.5 = short, 2.0 = tall)
               </p>
             </div>
 
@@ -336,7 +355,8 @@ function ProjectionDemoContent() {
               onClick={() => {
                 setFadeDistance(0.5);
                 setMaxBlur(4);
-                setProjectionScale(1.2);
+                setProjectionScaleX(1.2);
+                setProjectionScaleY(1.2);
               }}
               className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded font-semibold"
             >

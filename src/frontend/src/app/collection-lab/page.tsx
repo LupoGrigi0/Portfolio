@@ -17,7 +17,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getCollection, type Collection, type CollectionConfig } from '@/lib/api-client';
+import { getCollection, getCollections, type Collection, type CollectionConfig } from '@/lib/api-client';
 import CuratedLayout from '@/components/Layout/CuratedLayout';
 import DynamicLayout from '@/components/Layout/DynamicLayout';
 import { MidgroundProjectionProvider } from '@/components/Layout';
@@ -93,6 +93,7 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
 };
 
 export default function CollectionLabPage() {
+  const [availableCollections, setAvailableCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState('couples');
   const [collection, setCollection] = useState<Collection | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,6 +103,20 @@ export default function CollectionLabPage() {
   const [configJson, setConfigJson] = useState('');
   const [parsedConfig, setParsedConfig] = useState<CollectionConfig | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
+
+  // Load available collections from backend
+  useEffect(() => {
+    async function loadCollections() {
+      const collections = await getCollections();
+      setAvailableCollections(collections);
+
+      // Set first collection as default if couples not available
+      if (collections.length > 0 && !collections.find(c => c.slug === 'couples')) {
+        setSelectedCollection(collections[0].slug);
+      }
+    }
+    loadCollections();
+  }, []);
 
   // Load collection from backend
   useEffect(() => {
@@ -209,13 +224,14 @@ export default function CollectionLabPage() {
               onChange={(e) => setSelectedCollection(e.target.value)}
               className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white text-sm"
             >
-              <option value="couples">Couples</option>
-              <option value="mixed-collection">Mixed Collection</option>
-              <option value="sunset-monsters">Sunset Monsters</option>
-              <option value="curating">Curating</option>
+              {availableCollections.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.name} ({c.imageCount} images)
+                </option>
+              ))}
             </select>
             <p className="text-xs text-white/60">
-              {collection.imageCount} images • {collection.videoCount} videos
+              {collection ? `${collection.imageCount} images • ${collection.videoCount} videos` : 'Loading...'}
             </p>
           </div>
 
