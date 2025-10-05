@@ -18,9 +18,9 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Carousel } from '@/components/Carousel';
+import ReferenceCarousel from '@/components/ReferenceCarousel/ReferenceCarousel';
 import {
   MidgroundProjectionProvider,
   useMidgroundProjection,
@@ -37,8 +37,8 @@ import {
   type MediaItem
 } from '@/lib/api-client';
 
-// Helper to convert collection to carousel images (stable reference)
-function collectionToCarouselImages(collection: Collection, maxImages: number = 10): CarouselImage[] {
+// Helper to convert collection to simple reference carousel images
+function collectionToReferenceImages(collection: Collection, maxImages: number = 10) {
   return (collection.gallery || [])
     .filter((item: MediaItem) =>
       item.type === 'image' && item.urls.large && item.urls.large !== ''
@@ -47,17 +47,9 @@ function collectionToCarouselImages(collection: Collection, maxImages: number = 
     .map((item: MediaItem) => ({
       id: item.id,
       src: getAbsoluteMediaUrl(item.urls.large),
-      alt: item.altText || item.title || item.filename,
-      title: item.title,
-      caption: item.caption,
-      width: item.dimensions?.width || 1920,
-      height: item.dimensions?.height || 1280,
-      aspectRatio: item.dimensions?.aspectRatio || 1.5
+      alt: item.altText || item.title || item.filename
     }));
 }
-
-// Memoized carousel wrapper to prevent re-mounting on parent re-renders
-const MemoizedCarousel = memo(Carousel);
 
 export default function ProjectionDemoPage() {
   return (
@@ -82,7 +74,7 @@ function ProjectionDemoContent() {
       .filter(c => c.gallery && c.gallery.length > 0)
       .map(collection => ({
         collection,
-        images: collectionToCarouselImages(collection, 10)
+        images: collectionToReferenceImages(collection, 10)
       }));
   }, [collections]);
 
@@ -201,19 +193,7 @@ function ProjectionDemoContent() {
               </ContentBlock>
 
               <ContentBlock>
-                <MemoizedCarousel
-                  images={images}
-                  transitionType="fade"
-                  transitionDuration={600}
-                  autoplaySpeed={5000}
-                  showCaptions={false}
-                  enableFullscreen={true}
-                  showNavigation={true}
-                  showIndicators={true}
-                  enablePreload={false}
-                  enableProjection={true}
-                  projectionId={`vertical-carousel-${collection.id}`}
-                />
+                <ReferenceCarousel images={images} />
               </ContentBlock>
             </div>
           ))}
@@ -238,19 +218,7 @@ function ProjectionDemoContent() {
                         <h4 className="text-xl font-bold text-white mb-4 text-center">
                           {collection.config?.title || collection.name}
                         </h4>
-                        <MemoizedCarousel
-                          images={images.slice(0, 5)}
-                          transitionType="fade"
-                          transitionDuration={600}
-                          autoplaySpeed={6000}
-                          showCaptions={false}
-                          enableFullscreen={false}
-                          showNavigation={true}
-                          showIndicators={true}
-                          enablePreload={false}
-                          enableProjection={true}
-                          projectionId={`sidebyside-carousel-${collection.id}`}
-                        />
+                        <ReferenceCarousel images={images.slice(0, 5)} />
                       </div>
                     ))}
                   </div>
