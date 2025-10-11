@@ -23,3 +23,4 @@ export {
   useCarouselProjection,
   type CarouselProjection
 } from './MidgroundProjection';
+export { CheckerboardVignette, generateCheckerboardMask } from './CheckerboardVignette';

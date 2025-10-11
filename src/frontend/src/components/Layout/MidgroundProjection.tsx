@@ -16,7 +16,8 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback, useMemo } from 'react';
+import { generateCheckerboardMask } from './CheckerboardVignette';
 
 export interface CarouselProjection {
   id: string;
@@ -45,11 +46,24 @@ interface MidgroundProjectionContextType {
   projectionScaleX: number;
   projectionScaleY: number;
   blendMode: string; // CSS mix-blend-mode for overlapping projections
+  vignetteWidth: number; // Vignette fade width (0-100, percentage from edge)
+  vignetteStrength: number; // Vignette opacity (0-1, how dark the fade is)
+  // Checkerboard vignette
+  checkerboardEnabled: boolean; // Use checkerboard instead of radial vignette
+  checkerboardTileSize: number; // Size of checker squares in pixels
+  checkerboardScatterSpeed: number; // Animation speed (0-1)
+  checkerboardBlur: number; // Blur amount for checker edges (0-10px)
   setFadeDistance: (distance: number) => void;
   setMaxBlur: (blur: number) => void;
   setProjectionScaleX: (scale: number) => void;
   setProjectionScaleY: (scale: number) => void;
   setBlendMode: (mode: string) => void;
+  setVignetteWidth: (width: number) => void;
+  setVignetteStrength: (strength: number) => void;
+  setCheckerboardEnabled: (enabled: boolean) => void;
+  setCheckerboardTileSize: (size: number) => void;
+  setCheckerboardScatterSpeed: (speed: number) => void;
+  setCheckerboardBlur: (blur: number) => void;
 }
 
 const MidgroundProjectionContext = createContext<MidgroundProjectionContextType | undefined>(undefined);
@@ -63,6 +77,12 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
   const [projectionScaleX, setProjectionScaleX] = useState(1.2); // Horizontal scale
   const [projectionScaleY, setProjectionScaleY] = useState(1.2); // Vertical scale
   const [blendMode, setBlendMode] = useState('normal'); // CSS mix-blend-mode
+  const [vignetteWidth, setVignetteWidth] = useState(20); // 20% from edge
+  const [vignetteStrength, setVignetteStrength] = useState(0.8); // 80% opacity
+  const [checkerboardEnabled, setCheckerboardEnabled] = useState(false); // Checkerboard vignette
+  const [checkerboardTileSize, setCheckerboardTileSize] = useState(30); // 30px tiles
+  const [checkerboardScatterSpeed, setCheckerboardScatterSpeed] = useState(0.3); // Animation speed
+  const [checkerboardBlur, setCheckerboardBlur] = useState(0); // Blur checker edges
 
   const registerProjection = useCallback((projection: CarouselProjection) => {
     setProjections(prev => {
@@ -103,11 +123,23 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
         projectionScaleX,
         projectionScaleY,
         blendMode,
+        vignetteWidth,
+        vignetteStrength,
+        checkerboardEnabled,
+        checkerboardTileSize,
+        checkerboardScatterSpeed,
+        checkerboardBlur,
         setFadeDistance,
         setMaxBlur,
         setProjectionScaleX,
         setProjectionScaleY,
         setBlendMode,
+        setVignetteWidth,
+        setVignetteStrength,
+        setCheckerboardEnabled,
+        setCheckerboardTileSize,
+        setCheckerboardScatterSpeed,
+        setCheckerboardBlur,
       }}
     >
       <MidgroundLayer />
@@ -125,13 +157,104 @@ export function useMidgroundProjection() {
 }
 
 /**
+ * ProjectionItem - Single Projection with Memoized Mask
+ *
+ * Memoizes the expensive checkerboard mask generation.
+ * Only regenerates when mask parameters change, not on every scroll.
+ */
+interface ProjectionItemProps {
+  projection: CarouselProjection;
+  blendMode: string;
+  vignetteWidth: number;
+  vignetteStrength: number;
+  checkerboardEnabled: boolean;
+  checkerboardTileSize: number;
+  checkerboardBlur: number;
+}
+
+const ProjectionItem = React.memo(function ProjectionItem({
+  projection,
+  blendMode,
+  vignetteWidth,
+  vignetteStrength,
+  checkerboardEnabled,
+  checkerboardTileSize,
+  checkerboardBlur,
+}: ProjectionItemProps) {
+  // Memoize mask generation - only recalculate when these params change
+  const maskImage = useMemo(() => {
+    if (checkerboardEnabled && typeof window !== 'undefined') {
+      // Generate checkerboard mask (cached until parameters change)
+      return `url(${generateCheckerboardMask(
+        projection.position.width,
+        projection.position.height,
+        checkerboardTileSize,
+        vignetteWidth,
+        checkerboardBlur
+      )})`;
+    } else if (vignetteStrength > 0) {
+      // Traditional radial gradient vignette
+      return `radial-gradient(ellipse at center,
+        rgba(0,0,0,1) ${100 - vignetteWidth}%,
+        rgba(0,0,0,${1 - vignetteStrength}) 100%)`;
+    }
+    return 'none';
+  }, [
+    checkerboardEnabled,
+    projection.position.width,
+    projection.position.height,
+    checkerboardTileSize,
+    vignetteWidth,
+    checkerboardBlur,
+    vignetteStrength,
+  ]);
+
+  return (
+    <div
+      className="absolute transition-all duration-300 ease-out"
+      style={{
+        top: projection.position.top,
+        left: projection.position.left,
+        width: projection.position.width,
+        height: projection.position.height,
+        opacity: projection.opacity,
+        filter: `blur(${projection.blur}px)`,
+        transform: `scale(${projection.scaleX}, ${projection.scaleY})`,
+        transformOrigin: 'center center',
+        mixBlendMode: blendMode as any,
+        WebkitMaskImage: maskImage,
+        maskImage: maskImage,
+        willChange: 'opacity, filter, transform',
+      }}
+    >
+      {/* Use plain img tag to avoid Next.js Image infinite retry on CORS errors */}
+      <img
+        src={projection.imageUrl}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="lazy"
+      />
+    </div>
+  );
+});
+
+/**
  * MidgroundLayer - The Projection Screen
  *
  * Renders all active projections, composited together.
  * Fixed position, sits between background and content.
  */
 function MidgroundLayer() {
-  const { projections, blendMode } = useMidgroundProjection();
+  const {
+    projections,
+    blendMode,
+    vignetteWidth,
+    vignetteStrength,
+    checkerboardEnabled,
+    checkerboardTileSize,
+    checkerboardScatterSpeed,
+    checkerboardBlur,
+  } = useMidgroundProjection();
   const [isMounted, setIsMounted] = useState(false);
 
   // Only render on client to avoid SSR hydration mismatch
@@ -160,30 +283,16 @@ function MidgroundLayer() {
       aria-hidden="true"
     >
       {sortedProjections.map((projection) => (
-        <div
+        <ProjectionItem
           key={projection.id}
-          className="absolute transition-all duration-300 ease-out"
-          style={{
-            top: projection.position.top,
-            left: projection.position.left,
-            width: projection.position.width,
-            height: projection.position.height,
-            opacity: projection.opacity,
-            filter: `blur(${projection.blur}px)`,
-            transform: `scale(${projection.scaleX}, ${projection.scaleY})`,
-            transformOrigin: 'center center',
-            mixBlendMode: blendMode as any,
-            willChange: 'opacity, filter, transform',
-          }}
-        >
-          {/* Use plain img tag to avoid Next.js Image infinite retry on CORS errors */}
-          <img
-            src={projection.imageUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            loading="lazy"
-          />
-        </div>
+          projection={projection}
+          blendMode={blendMode}
+          vignetteWidth={vignetteWidth}
+          vignetteStrength={vignetteStrength}
+          checkerboardEnabled={checkerboardEnabled}
+          checkerboardTileSize={checkerboardTileSize}
+          checkerboardBlur={checkerboardBlur}
+        />
       ))}
 
       {/* Debug overlay (optional - can be toggled) */}
