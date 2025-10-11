@@ -850,6 +850,8 @@ export class ContentScanner {
     const existing = await this.db.getDirectoryBySlug(slug) as any;
 
     if (existing && existing.id) {
+      // Directory exists - update it with latest config
+      await this.db.updateDirectoryMetadata(existing.id, config || {});
       return existing.id as string;
     }
 
@@ -869,7 +871,7 @@ export class ContentScanner {
       status: config?.status || 'published',
       parentCategory: null,
       tags: config?.tags || [],
-      config: config?.metadata || {}
+      config: config || {}  // Store entire config object, not just config.metadata
     });
 
     return dirId;
