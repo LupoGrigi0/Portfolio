@@ -59,19 +59,105 @@ curl -X POST http://localhost:4000/api/admin/shutdown
 ---
 
 ### POST /api/admin/scan
-Trigger manual content directory scan.
+Trigger manual content directory scan for all collections.
 
 **Response:**
 ```json
 {
   "success": true,
-  "message": "Content scan initiated"
+  "message": "Content scan initiated",
+  "data": {
+    "status": "scanning",
+    "startedAt": "2025-10-11T02:45:03.459Z"
+  }
 }
 ```
 
 **Test:**
 ```bash
 curl -X POST http://localhost:4000/api/admin/scan -H "Content-Type: application/json"
+```
+
+---
+
+### POST /api/admin/scan/:slug
+Trigger manual content scan for a specific collection.
+
+**Path Parameters:**
+- `slug` (required): Collection slug (e.g., "posted", "scientists")
+
+**Query Parameters:**
+- `mode` (optional, default: "incremental"): Scan mode
+  - `full` - **Full Rescan**: Purges all database entries for the collection and rebuilds from disk. Use when database is out of sync.
+  - `incremental` - **Incremental Scan** (Default): Adds new images, updates changed images, removes orphaned entries (files that no longer exist on disk).
+  - `lightweight` - **Lightweight Scan**: Filesystem-only operations, minimal metadata extraction.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Content scan initiated for directory: posted (mode: full)",
+  "data": {
+    "status": "scanning",
+    "slug": "posted",
+    "mode": "full",
+    "startedAt": "2025-10-11T02:45:03.459Z"
+  }
+}
+```
+
+**Performance:**
+- **Posted collection** (2,407 images): ~2m 36s for metadata-only scan (Phase 1)
+- **Speed**: ~15 images/second
+- **Improvement**: ~46x faster than previous implementation
+
+**Examples:**
+```bash
+# Incremental scan (default) - adds/updates/cleans up
+curl -X POST "http://localhost:4000/api/admin/scan/posted" -H "Content-Type: application/json"
+
+# Full rescan - purges and rebuilds database
+curl -X POST "http://localhost:4000/api/admin/scan/posted?mode=full" -H "Content-Type: application/json"
+
+# Lightweight scan - minimal metadata
+curl -X POST "http://localhost:4000/api/admin/scan/posted?mode=lightweight" -H "Content-Type: application/json"
+```
+
+**When to use each mode:**
+- **Full**: First-time setup, major filesystem changes, database corruption, or significant discrepancies
+- **Incremental**: Regular updates, adding/removing images, daily operations
+- **Lightweight**: Quick refresh when only file existence matters
+
+---
+
+### POST /api/admin/thumbnails/:slug
+Generate thumbnails for a specific collection (Phase 2 - Parallel Generation).
+
+**Path Parameters:**
+- `slug` (required): Collection slug (e.g., "posted", "scientists")
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Thumbnail generation initiated for directory: posted",
+  "data": {
+    "status": "generating",
+    "slug": "posted",
+    "startedAt": "2025-10-11T02:45:03.459Z"
+  }
+}
+```
+
+**Process:**
+- Generates 3 priority sizes: **1920w** (large), **1200w** (medium), **640w** (thumbnail)
+- Uses 5 parallel workers for concurrent processing
+- Skips existing thumbnails (idempotent)
+- Run this after Phase 1 metadata scan completes
+
+**Test:**
+```bash
+curl -X POST "http://localhost:4000/api/admin/thumbnails/posted" -H "Content-Type: application/json"
 ```
 
 ---
@@ -382,11 +468,46 @@ All endpoints support credentials and proper CORS headers.
 
 ## Notes
 
-- **Image Counts:** The `imageCount` field in collections is currently returning `0` or `null` (known issue, pending fix)
-- **Video Support:** Videos return generic icon URLs for thumbnails until frame extraction is implemented
-- **Subdirectories:** Fully supports arbitrary nesting depth (e.g., `couples/gallery/Dancing Gynoids/image.jpg`)
-- **URL Encoding:** Spaces in paths must be URL-encoded (`%20`)
-- **Format Support:** JPG, JPEG, PNG, GIF, WEBP, AVIF, MP4, WEBM
+### Image Counts
+- **Fixed**: The `imageCount` field now returns accurate counts after database optimization
+- **Posted collection**: 2,407 images indexed (as of 2025-10-11)
+
+### Scanner Performance
+- **Two-Phase Architecture**:
+  - **Phase 1 (Metadata)**: Fast indexing (~15 images/sec) - makes counts accurate immediately
+  - **Phase 2 (Thumbnails)**: Parallel generation with 5 workers - run separately after Phase 1
+- **Scan Modes**:
+  - `full` - Purges and rebuilds (use for major changes)
+  - `incremental` - Smart add/update/cleanup (default, recommended)
+  - `lightweight` - Minimal metadata (fastest)
+
+### Windows Development Limitations
+- **Long Filename Issue**: Windows MAX_PATH limit (260 characters) prevents access to files with extremely long names
+- **Impact**: ~33 files in Posted collection cannot be indexed on Windows (e.g., filenames with 200+ character descriptions)
+- **Production Note**: ⚠️ **Verify on Linux deployment** - Linux has much higher path limits (4096 chars) and should handle these files correctly
+- **Affected files**: Look for "Input file is missing" errors in logs for files that physically exist but have path length issues
+
+### Video Support
+- Videos return generic icon URLs for thumbnails until frame extraction is implemented
+
+### Subdirectories
+- Fully supports arbitrary nesting depth (e.g., `couples/gallery/Dancing Gynoids/image.jpg`)
+
+### URL Encoding
+- Spaces in paths must be URL-encoded (`%20`)
+
+### Format Support
+- Images: JPG, JPEG, JFIF, PNG, GIF, WEBP, AVIF, TIFF, BMP
+- Videos: MP4, WEBM
+
+### Metadata Collected
+Scanner collects the following metadata for each image:
+- **Identity**: filename, path, hash (MD5 of path+size+mtime for fast change detection)
+- **Dimensions**: width, height, aspectRatio (requires Sharp to read image headers)
+- **File Info**: fileSize, format
+- **Timestamps**: birthtime (created), mtime (modified), created_at, updated_at
+- **Display**: title (auto-generated from filename), altText
+- **Status**: published/draft/archived
 
 ---
 
@@ -410,3 +531,88 @@ curl -X POST http://localhost:4000/api/admin/shutdown
 cd D:/Lupo/Source/Portfolio/worktrees/backend-api/src/backend
 npm run dev
 ```
+# Requesting all the images in a gallery for large galleries:
+Pagination is already implemented. Here's how the frontend should request all 2400+ images from Posted:
+
+  Current Implementation
+
+  Endpoint: GET /api/content/collections/:slug
+
+  Query Parameters:
+  - page - Page number (starts at 1)
+  - limit - Images per page (default: 20, max: 50)
+
+  Response includes:
+  {
+    "pagination": {
+      "page": 1,
+      "limit": 50,
+      "total": 2398,
+      "totalPages": 48,
+      "hasNext": true,
+      "hasPrev": false
+    }
+  }
+
+  Frontend Strategies
+
+  Option 1: Infinite Scroll (Recommended)
+
+  let page = 1;
+  const limit = 50;
+
+  async function loadMoreImages() {
+    const response = await fetch(`/api/content/collections/posted?page=${page}&limit=${limit}`);
+    const data = await response.json();
+
+    // Append images to gallery
+    appendImages(data.data.collection.gallery);
+
+    // Check if more pages exist
+    if (data.data.collection.pagination.hasNext) {
+      page++;
+    }
+  }
+
+  // Trigger on scroll or "Load More" button
+
+  Option 2: Load All (Multiple Requests)
+
+  async function loadAllImages(slug) {
+    const firstPage = await fetch(`/api/content/collections/${slug}?page=1&limit=50`);
+    const firstData = await firstPage.json();
+
+    const totalPages = firstData.data.collection.pagination.totalPages;
+    let allImages = [...firstData.data.collection.gallery];
+
+    // Fetch remaining pages in parallel
+    const promises = [];
+    for (let page = 2; page <= totalPages; page++) {
+      promises.push(
+        fetch(`/api/content/collections/${slug}?page=${page}&limit=50`)
+          .then(r => r.json())
+          .then(d => d.data.collection.gallery)
+      );
+    }
+
+    const results = await Promise.all(promises);
+    allImages = allImages.concat(...results);
+
+    return allImages; // All 2400+ images
+  }
+**viktor**
+  If the frontend really needs more images per request, I can increase the max limit from 50 to something higher        
+  (e.g., 100 or 200). However, 50 is reasonable for performance:
+
+  - 2398 images ÷ 50 = ~48 requests
+  - Or with limit=100: ~24 requests
+
+  My recommendation: Use Option 1 (Infinite Scroll) for better UX and performance. Load images as the user scrolls,     
+  rather than loading all 2400 upfront.
+
+  Want me to increase the max limit, or is the pagination approach good?
+
+**Lupo** I think for the front end we will do a bit of both, probably do a small load and test what kind of bandwidth we have  
+  and then adjust the batch size and how we load images accordingly. For now we are just stress testing the front       
+  end, and trying to come up with good designs for the larger galleries. So if you could up the batch size from 50 to   
+  100 that would work.  
