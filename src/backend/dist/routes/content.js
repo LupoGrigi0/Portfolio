@@ -6,11 +6,108 @@
  * API endpoints for directories, images, and carousels per API Specification
  */
 import { Router } from 'express';
-import { DatabaseManager } from '../services/DatabaseManager.js';
 import { createLogger } from '../utils/logger-wrapper.js';
 const logger = createLogger('backend-content.log');
 const router = Router();
-const db = new DatabaseManager();
+// Database manager instance (injected by index.ts on startup)
+export let db = null;
+export function setDatabaseManager(manager) {
+    db = manager;
+}
+// Content directory for URL transformation
+const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
+/**
+ * Transform absolute file paths to relative API URLs
+ * Author: Viktor v2 (Backend API & Database Specialist)
+ *
+ * Converts: "E:\mnt\lupoportfolio\content\couples\.thumbnails\Hero-image_640w.webp"
+ * To: "/api/media/couples/Hero-image.jpg?size=thumbnail"
+ *
+ * @param absolutePath - Absolute path to file
+ * @param slug - Collection slug
+ * @param originalFormat - Original file extension (jpg, gif, png, etc.)
+ */
+function transformImageUrl(absolutePath, slug, originalFormat = 'jpg') {
+    // For videos without thumbnails, return a generic video icon
+    if (!absolutePath && originalFormat === 'mp4') {
+        return '/api/media/icons/video';
+    }
+    if (!absolutePath)
+        return '';
+    try {
+        // Normalize path separators
+        const normalizedPath = absolutePath.replace(/\\/g, '/');
+        const normalizedContentDir = CONTENT_DIR.replace(/\\/g, '/');
+        // Extract relative path from content directory
+        let relativePath = normalizedPath;
+        if (normalizedPath.startsWith(normalizedContentDir)) {
+            relativePath = normalizedPath.substring(normalizedContentDir.length);
+            // Remove leading slash if present
+            if (relativePath.startsWith('/')) {
+                relativePath = relativePath.substring(1);
+            }
+        }
+        // Parse the path to determine if it's a thumbnail or original
+        const parts = relativePath.split('/');
+        // Check if path contains .thumbnails directory
+        const isThumbnail = parts.includes('.thumbnails');
+        if (isThumbnail) {
+            // Extract filename from thumbnail path
+            const filename = parts[parts.length - 1]; // e.g., "Hero-image_640w.webp"
+            // Detect size from filename suffix
+            let size = 'thumbnail'; // default
+            if (filename.includes('_828w'))
+                size = 'small';
+            else if (filename.includes('_1200w'))
+                size = 'medium';
+            else if (filename.includes('_1920w'))
+                size = 'large';
+            else if (filename.includes('_2048w'))
+                size = 'xlarge';
+            else if (filename.includes('_3840w'))
+                size = '4k';
+            else if (filename.includes('_640w'))
+                size = 'thumbnail';
+            // Remove size suffix and .webp extension to get original filename with correct extension
+            const originalName = filename
+                .replace(/_\d+w/, '') // Remove _640w, _1200w, etc.
+                .replace(/\.webp$/, `.${originalFormat}`); // Use actual original format
+            // Extract subdirectory path (skip slug, exclude .thumbnails and filename)
+            // E.g., "Cafe/Coffee/.thumbnails/image.webp" → subdirectory = "Coffee"
+            const subdirectoryParts = parts.slice(1, parts.indexOf('.thumbnails'));
+            const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
+            // Construct API URL with size parameter (URL-encode filename)
+            const encodedName = encodeURIComponent(originalName);
+            if (subdirectory) {
+                return `/api/media/${slug}/${subdirectory}/${encodedName}?size=${size}`;
+            }
+            return `/api/media/${slug}/${encodedName}?size=${size}`;
+        }
+        else {
+            // Original file - no thumbnail
+            const filename = parts[parts.length - 1];
+            const encodedFilename = encodeURIComponent(filename);
+            // Extract subdirectory path (skip slug and filename)
+            // E.g., "Cafe/Coffee/image.jpg" → subdirectory = "Coffee"
+            const subdirectoryParts = parts.slice(1, -1);
+            const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
+            // Construct API URL (URL-encode filename)
+            if (subdirectory) {
+                return `/api/media/${slug}/${subdirectory}/${encodedFilename}`;
+            }
+            return `/api/media/${slug}/${encodedFilename}`;
+        }
+    }
+    catch (error) {
+        logger.error('URL Transformation Error', 'Failed to transform image URL', {
+            absolutePath,
+            slug,
+            error
+        });
+        // Return empty string on error rather than exposing file paths
+        return '';
+    }
+}
 /**
  * GET /api/content/collections
  * Get all collections (directories) for frontend integration
@@ -18,6 +115,13 @@ const db = new DatabaseManager();
  */
 router.get('/collections', async (req, res, next) => {
     try {
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database manager not initialized',
+                code: 'DB_NOT_INITIALIZED'
+            });
+        }
         await logger.info('ContentRoutes', 'GET /collections');
         const { status } = req.query;
         const filter = {};
@@ -58,12 +162,23 @@ router.get('/collections', async (req, res, next) => {
 /**
  * GET /api/content/collections/:slug
  * Get specific collection with full details
+ * Supports pagination: ?page=1&limit=20
  * Alias for /directories/:slug with collection format
  */
 router.get('/collections/:slug', async (req, res, next) => {
     try {
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database manager not initialized',
+                code: 'DB_NOT_INITIALIZED'
+            });
+        }
         const { slug } = req.params;
-        await logger.info('ContentRoutes', 'GET /collections/:slug', { slug });
+        // Pagination parameters
+        const requestedPage = parseInt(req.query.page) || 1;
+        const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
+        await logger.info('ContentRoutes', 'GET /collections/:slug', { slug, page: requestedPage, limit });
         const directory = await db.getDirectoryBySlug(slug);
         if (!directory) {
             return res.status(404).json({
@@ -72,8 +187,18 @@ router.get('/collections/:slug', async (req, res, next) => {
                 code: 'COLLECTION_NOT_FOUND',
             });
         }
-        // Get images for this collection
-        const images = await db.getImagesByDirectory(directory.id);
+        // Get total count of images
+        const allImages = await db.getImagesByDirectory(directory.id);
+        const totalImages = allImages.length;
+        // Calculate pagination metadata
+        const totalPages = Math.max(1, Math.ceil(totalImages / limit));
+        // Clamp page to valid range (1 to totalPages)
+        const page = Math.max(1, Math.min(requestedPage, totalPages));
+        const offset = (page - 1) * limit;
+        // Get paginated images
+        const paginatedImages = allImages.slice(offset, offset + limit);
+        const hasNext = page < totalPages;
+        const hasPrev = page > 1;
         // Format as collection
         const config = JSON.parse(directory.config || '{}');
         const tags = JSON.parse(directory.tags || '[]');
@@ -83,21 +208,23 @@ router.get('/collections/:slug', async (req, res, next) => {
             slug: directory.slug,
             heroImage: directory.cover_image,
             description: directory.description,
+            imageCount: totalImages,
+            videoCount: 0, // TODO: Track video count separately
             config,
             featured: Boolean(directory.featured),
             tags,
-            gallery: images.map((img) => ({
+            gallery: paginatedImages.map((img) => ({
                 id: img.id,
                 filename: img.filename,
                 title: img.title,
                 caption: img.caption,
                 type: img.format === 'mp4' ? 'video' : 'image',
                 urls: {
-                    thumbnail: img.thumbnail_url,
-                    small: img.small_url,
-                    medium: img.medium_url,
-                    large: img.large_url,
-                    original: img.original_url,
+                    thumbnail: transformImageUrl(img.thumbnail_url, slug, img.format),
+                    small: transformImageUrl(img.small_url, slug, img.format),
+                    medium: transformImageUrl(img.medium_url, slug, img.format),
+                    large: transformImageUrl(img.large_url, slug, img.format),
+                    original: transformImageUrl(img.original_url, slug, img.format),
                 },
                 dimensions: {
                     width: img.width,
@@ -106,6 +233,14 @@ router.get('/collections/:slug', async (req, res, next) => {
                 },
                 status: img.status,
             })),
+            pagination: {
+                page,
+                limit,
+                total: totalImages,
+                totalPages,
+                hasNext,
+                hasPrev,
+            },
             subcollections: [], // TODO: Implement hierarchical structure
         };
         res.json({
@@ -121,11 +256,97 @@ router.get('/collections/:slug', async (req, res, next) => {
     }
 });
 /**
+ * GET /api/content/collections/:slug/images
+ * Get paginated images for a collection (lighter response for lazy loading)
+ */
+router.get('/collections/:slug/images', async (req, res, next) => {
+    try {
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database manager not initialized',
+                code: 'DB_NOT_INITIALIZED'
+            });
+        }
+        const { slug } = req.params;
+        // Pagination parameters
+        const requestedPage = parseInt(req.query.page) || 1;
+        const limit = Math.min(parseInt(req.query.limit) || 20, 100); // Max 100 per page
+        await logger.info('ContentRoutes', 'GET /collections/:slug/images', { slug, page: requestedPage, limit });
+        const directory = await db.getDirectoryBySlug(slug);
+        if (!directory) {
+            return res.status(404).json({
+                success: false,
+                message: 'Collection not found',
+                code: 'COLLECTION_NOT_FOUND',
+            });
+        }
+        // Get total count of images
+        const allImages = await db.getImagesByDirectory(directory.id);
+        const totalImages = allImages.length;
+        // Calculate pagination metadata
+        const totalPages = Math.max(1, Math.ceil(totalImages / limit));
+        // Clamp page to valid range (1 to totalPages)
+        const page = Math.max(1, Math.min(requestedPage, totalPages));
+        const offset = (page - 1) * limit;
+        // Get paginated images
+        const paginatedImages = allImages.slice(offset, offset + limit);
+        const hasNext = page < totalPages;
+        const hasPrev = page > 1;
+        // Format images (lighter response - no collection metadata)
+        const formattedImages = paginatedImages.map((img) => ({
+            id: img.id,
+            filename: img.filename,
+            title: img.title,
+            caption: img.caption,
+            type: img.format === 'mp4' ? 'video' : 'image',
+            urls: {
+                thumbnail: transformImageUrl(img.thumbnail_url, slug, img.format),
+                small: transformImageUrl(img.small_url, slug, img.format),
+                medium: transformImageUrl(img.medium_url, slug, img.format),
+                large: transformImageUrl(img.large_url, slug, img.format),
+                original: transformImageUrl(img.original_url, slug, img.format),
+            },
+            dimensions: {
+                width: img.width,
+                height: img.height,
+                aspectRatio: img.aspect_ratio,
+            },
+            status: img.status,
+        }));
+        res.json({
+            success: true,
+            data: {
+                images: formattedImages,
+                pagination: {
+                    page,
+                    limit,
+                    total: totalImages,
+                    totalPages,
+                    hasNext,
+                    hasPrev,
+                },
+            },
+        });
+    }
+    catch (error) {
+        await logger.error('ContentRoutes', 'GET /collections/:slug/images failed', { error });
+        next(error);
+    }
+});
+/**
  * GET /api/content/directories
  * Get all portfolio directories
  */
 router.get('/directories', async (req, res, next) => {
     try {
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database manager not initialized',
+                code: 'DB_NOT_INITIALIZED'
+            });
+        }
         await logger.info('ContentRoutes', 'GET /directories');
         const { status, featured } = req.query;
         const filter = {};
@@ -165,6 +386,13 @@ router.get('/directories', async (req, res, next) => {
  */
 router.get('/directories/:slug', async (req, res, next) => {
     try {
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database manager not initialized',
+                code: 'DB_NOT_INITIALIZED'
+            });
+        }
         const { slug } = req.params;
         await logger.info('ContentRoutes', 'GET /directories/:slug', { slug });
         const directory = await db.getDirectoryBySlug(slug);
@@ -235,6 +463,13 @@ router.get('/directories/:slug', async (req, res, next) => {
  */
 router.get('/images/:imageId', async (req, res, next) => {
     try {
+        if (!db) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database manager not initialized',
+                code: 'DB_NOT_INITIALIZED'
+            });
+        }
         const { imageId } = req.params;
         await logger.info('ContentRoutes', 'GET /images/:imageId', { imageId });
         const image = await db.getImageById(imageId);

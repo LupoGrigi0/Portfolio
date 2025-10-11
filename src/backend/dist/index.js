@@ -12,10 +12,11 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 // Route imports
-import contentRoutes from './routes/content.js';
-import socialRoutes from './routes/social.js';
-import adminRoutes from './routes/admin.js';
+import contentRoutes, { setDatabaseManager as setContentDb } from './routes/content.js';
+import socialRoutes, { setDatabaseManager as setSocialDb } from './routes/social.js';
+import adminRoutes, { setContentScanner, setDatabaseManager as setAdminDb } from './routes/admin.js';
 import healthRoutes from './routes/health.js';
+import mediaRoutes from './routes/media.js';
 // Service imports
 import { DatabaseManager } from './services/DatabaseManager.js';
 import { WebSocketManager } from './services/WebSocketManager.js';
@@ -52,6 +53,7 @@ app.use(helmet({
 // CORS configuration - support multiple frontend ports
 const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:3003'
 ];
@@ -79,25 +81,7 @@ app.use('/api/content', contentRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/health', healthRoutes);
-// Content scanning endpoint
-app.post('/api/admin/scan', async (req, res) => {
-    try {
-        await logger.info('Content scan triggered via API');
-        const result = await contentScanner.scanAll();
-        res.json({
-            success: true,
-            data: result
-        });
-    }
-    catch (error) {
-        await logger.error('Content scan failed', { error });
-        res.status(500).json({
-            success: false,
-            error: 'Content scan failed',
-            message: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
+app.use('/api/media', mediaRoutes);
 // Graceful shutdown endpoint (development only)
 app.post('/api/admin/shutdown', async (req, res) => {
     const isDev = process.env.NODE_ENV !== 'production';
@@ -127,11 +111,17 @@ async function startServer() {
         // Initialize database
         await dbManager.initialize();
         console.log('✅ Database initialized');
+        // Inject DatabaseManager into route modules
+        setContentDb(dbManager);
+        setSocialDb(dbManager);
+        setAdminDb(dbManager);
+        console.log('✅ Database manager injected into routes');
         // Initialize content scanner
         const contentDir = process.env.CONTENT_DIRECTORY || '../content';
         const imageSizes = process.env.IMAGE_SIZES || '640,750,828,1080,1200,1920,2048,3840';
-        const supportedFormats = process.env.SUPPORTED_FORMATS || 'jpg,jpeg,png,webp,avif,gif,tiff,bmp';
+        const supportedFormats = process.env.SUPPORTED_FORMATS || 'jpg,jpeg,jfif,png,webp,avif,gif,tiff,bmp';
         contentScanner = new ContentScanner(logger, dbManager, contentDir, imageSizes, supportedFormats);
+        setContentScanner(contentScanner);
         console.log('✅ Content scanner initialized');
         // Start directory watcher
         await directoryWatcher.start();

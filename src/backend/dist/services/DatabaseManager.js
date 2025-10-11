@@ -104,12 +104,29 @@ export class DatabaseManager {
         const stmt = db.prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
         return stmt.run(JSON.stringify(updatedConfig), directoryId);
     }
-    // Image operations
-    async getImagesByDirectory(directoryId, limit = 50, offset = 0) {
+    async updateDirectoryImageCount(directoryId, imageCount) {
         const db = this.getDb();
+        const stmt = db.prepare(`
+      UPDATE directories
+      SET image_count = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+        return stmt.run(imageCount, directoryId);
+    }
+    // Image operations
+    async getImagesByDirectory(directoryId, limit, offset) {
+        const db = this.getDb();
+        // If no limit specified, return all images
+        if (limit === undefined) {
+            return db
+                .prepare('SELECT * FROM images WHERE directory_id = ? AND status = ? ORDER BY position ASC')
+                .all(directoryId, 'published');
+        }
+        // If limit specified, apply pagination
         return db
             .prepare('SELECT * FROM images WHERE directory_id = ? AND status = ? ORDER BY position ASC LIMIT ? OFFSET ?')
-            .all(directoryId, 'published', limit, offset);
+            .all(directoryId, 'published', limit, offset || 0);
     }
     async getImageById(id) {
         const db = this.getDb();
@@ -144,6 +161,11 @@ export class DatabaseManager {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
         return stmt.run(data.id, data.filename, data.title, data.caption || null, data.directoryId, data.carouselId || null, data.position || 0, data.thumbnailUrl || null, data.smallUrl || null, data.mediumUrl || null, data.largeUrl || null, data.originalUrl || null, data.width || null, data.height || null, data.aspectRatio || null, data.fileSize || null, data.format || null, JSON.stringify(data.colorPalette || []), data.averageColor || null, data.status || 'processing', data.altText || null, JSON.stringify(data.exifData || {}));
+    }
+    async deleteImage(id) {
+        const db = this.getDb();
+        const stmt = db.prepare('DELETE FROM images WHERE id = ?');
+        return stmt.run(id);
     }
     // Reaction operations
     async addReaction(imageId, reactionType, ipHash, sessionId) {

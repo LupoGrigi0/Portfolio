@@ -156,13 +156,24 @@ export class DatabaseManager {
   }
 
   // Image operations
-  async getImagesByDirectory(directoryId: string, limit = 50, offset = 0) {
+  async getImagesByDirectory(directoryId: string, limit?: number, offset?: number) {
     const db = this.getDb();
+
+    // If no limit specified, return all images
+    if (limit === undefined) {
+      return db
+        .prepare(
+          'SELECT * FROM images WHERE directory_id = ? AND status = ? ORDER BY position ASC'
+        )
+        .all(directoryId, 'published');
+    }
+
+    // If limit specified, apply pagination
     return db
       .prepare(
         'SELECT * FROM images WHERE directory_id = ? AND status = ? ORDER BY position ASC LIMIT ? OFFSET ?'
       )
-      .all(directoryId, 'published', limit, offset);
+      .all(directoryId, 'published', limit, offset || 0);
   }
 
   async getImageById(id: string) {
@@ -247,6 +258,12 @@ export class DatabaseManager {
       data.altText || null,
       JSON.stringify(data.exifData || {})
     );
+  }
+
+  async deleteImage(id: string) {
+    const db = this.getDb();
+    const stmt = db.prepare('DELETE FROM images WHERE id = ?');
+    return stmt.run(id);
   }
 
   // Reaction operations

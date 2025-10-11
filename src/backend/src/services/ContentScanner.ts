@@ -45,28 +45,35 @@ interface ScanResult {
   thumbnailsGenerated: number;
   directoriesCreated: number;
   configsApplied: number;
+  orphansRemoved?: number;
   errors: string[];
 }
+
+type ScanMode = 'full' | 'incremental' | 'lightweight';
 
 export class ContentScanner {
   private logger: Logger;
   private db: DatabaseManager;
   private contentDir: string;
   private imageSizes: number[];
+  private prioritySizes: number[];
   private supportedFormats: Set<string>;
   private processing = new Set<string>();
+  private thumbnailWorkers = 5; // Parallel workers for thumbnail generation
 
   constructor(
     logger: Logger,
     db: DatabaseManager,
     contentDir: string,
     imageSizes: string = '640,750,828,1080,1200,1920,2048,3840',
-    supportedFormats: string = 'jpg,jpeg,png,webp,avif,gif,tiff,bmp'
+    supportedFormats: string = 'jpg,jpeg,jfif,png,webp,avif,gif,tiff,bmp'
   ) {
     this.logger = logger;
     this.db = db;
     this.contentDir = contentDir;
     this.imageSizes = imageSizes.split(',').map(Number);
+    // Priority sizes: large (1920w), medium (1200w), thumbnail (640w)
+    this.prioritySizes = [1920, 1200, 640];
     this.supportedFormats = new Set(supportedFormats.split(',').map(f => f.toLowerCase()));
   }
 
@@ -113,6 +120,156 @@ export class ContentScanner {
     } catch (error) {
       await this.logger.error('Fatal error during content scan', { error });
       throw error;
+    }
+  }
+
+  /**
+   * Scan a specific directory by slug
+   * @param slug - Directory slug (e.g., "posted", "scientists")
+   * @param mode - Scan mode: 'full' (purge & rebuild), 'incremental' (add/update/cleanup), 'lightweight' (filesystem-only)
+   */
+  async scanBySlug(slug: string, mode: ScanMode = 'incremental'): Promise<ScanResult> {
+    const result: ScanResult = {
+      imagesProcessed: 0,
+      thumbnailsGenerated: 0,
+      directoriesCreated: 0,
+      configsApplied: 0,
+      orphansRemoved: 0,
+      errors: []
+    };
+
+    try {
+      const dirPath = path.join(this.contentDir, slug);
+
+      await this.logger.info('Starting directory scan', { slug, dirPath, mode });
+
+      // Check if directory exists
+      try {
+        const stats = await fs.stat(dirPath);
+        if (!stats.isDirectory()) {
+          const errMsg = `Path is not a directory: ${slug}`;
+          await this.logger.error(errMsg);
+          result.errors.push(errMsg);
+          return result;
+        }
+      } catch (error) {
+        const errMsg = `Directory not found: ${slug}`;
+        await this.logger.error(errMsg, { error });
+        result.errors.push(errMsg);
+        return result;
+      }
+
+      // Get directory from database
+      const directory = await this.db.getDirectoryBySlug(slug) as any;
+      const directoryId = directory?.id;
+
+      // Handle different scan modes
+      if (mode === 'full') {
+        // Full rescan: Purge all images for this directory and rebuild
+        await this.logger.info('Full rescan mode: Purging existing entries', { slug });
+        const purged = await this.purgeDirectoryImages(directoryId);
+        result.orphansRemoved = purged;
+      }
+
+      // Scan the directory (works for all modes)
+      const dirResult = await this.scanDirectory(dirPath);
+      result.imagesProcessed = dirResult.imagesProcessed;
+      result.thumbnailsGenerated = dirResult.thumbnailsGenerated;
+      result.directoriesCreated = dirResult.directoriesCreated;
+      result.configsApplied = dirResult.configsApplied;
+      result.errors.push(...dirResult.errors);
+
+      // Incremental mode: Clean up orphaned entries
+      if (mode === 'incremental' && directoryId) {
+        await this.logger.info('Incremental mode: Cleaning up orphaned entries', { slug });
+        const orphans = await this.removeOrphanedImages(directoryId, dirPath);
+        result.orphansRemoved = orphans;
+      }
+
+      // Update directory image counts
+      await this.updateDirectoryImageCounts();
+
+      await this.logger.info('Directory scan complete', { slug, mode, result });
+      return result;
+
+    } catch (error) {
+      const errMsg = `Fatal error during directory scan: ${error}`;
+      await this.logger.error(errMsg, { error, slug });
+      result.errors.push(errMsg);
+      return result;
+    }
+  }
+
+  /**
+   * Purge all images for a directory (Full Rescan mode)
+   */
+  private async purgeDirectoryImages(directoryId: string): Promise<number> {
+    if (!directoryId) return 0;
+
+    try {
+      const images = await this.db.getImagesByDirectory(directoryId);
+      const count = images.length;
+
+      // Delete all images for this directory
+      for (const image of images as any[]) {
+        await this.db.deleteImage(image.id);
+      }
+
+      await this.logger.info('Purged directory images', { directoryId, count });
+      return count;
+    } catch (error) {
+      await this.logger.error('Failed to purge directory images', { directoryId, error });
+      return 0;
+    }
+  }
+
+  /**
+   * Remove orphaned images (exist in database but not on filesystem)
+   * Used in Incremental mode
+   */
+  private async removeOrphanedImages(directoryId: string, dirPath: string): Promise<number> {
+    try {
+      // Get all images from database for this directory
+      const dbImages = await this.db.getImagesByDirectory(directoryId) as any[];
+
+      let orphanCount = 0;
+
+      for (const image of dbImages) {
+        // Extract path from exif_data or use original_url
+        const imagePath = image.exif_data
+          ? JSON.parse(image.exif_data).path
+          : image.original_url;
+
+        if (!imagePath) {
+          // No path stored, delete this entry
+          await this.db.deleteImage(image.id);
+          orphanCount++;
+          await this.logger.debug('Removed orphaned image (no path)', { imageId: image.id });
+          continue;
+        }
+
+        // Check if file exists on filesystem
+        try {
+          await fs.access(imagePath);
+          // File exists, keep it
+        } catch {
+          // File doesn't exist, delete database entry
+          await this.db.deleteImage(image.id);
+          orphanCount++;
+          await this.logger.debug('Removed orphaned image', {
+            imageId: image.id,
+            filename: image.filename,
+            path: imagePath
+          });
+        }
+      }
+
+      await this.logger.info('Orphan cleanup complete', { directoryId, orphanCount });
+      return orphanCount;
+
+    } catch (error) {
+      await this.logger.error('Failed to remove orphaned images', { directoryId, error });
+      return 0;
     }
   }
 
@@ -179,7 +336,7 @@ export class ContentScanner {
         // This is a subdirectory - use parent's directory ID unless it has its own config
         if (hasConfig && config) {
           // Subdirectory with config.json gets its own directory entry
-          const slug = config.slug;
+          const slug = config.slug || this.generateSlug(dirPath);
           dirId = await this.ensureDirectory(dirPath, config, slug);
           result.directoriesCreated++;
           await this.logger.info('Subdirectory has config, creating separate directory entry', { dirPath });
@@ -196,7 +353,7 @@ export class ContentScanner {
         if (!config) {
           config = await this.generateDirectoryConfig(dirPath);
         }
-        const slug = config.slug;
+        const slug = config.slug || this.generateSlug(dirPath);
         dirId = await this.ensureDirectory(dirPath, config, slug);
         result.directoriesCreated++;
       }
@@ -266,7 +423,8 @@ export class ContentScanner {
   }
 
   /**
-   * Process a single image file
+   * Process a single image file - METADATA ONLY (Phase 1)
+   * Fast metadata extraction without thumbnail generation
    */
   async processImage(imagePath: string, directoryId: string): Promise<void> {
     // Prevent duplicate processing
@@ -276,7 +434,7 @@ export class ContentScanner {
     this.processing.add(imagePath);
 
     try {
-      // Extract metadata
+      // Extract metadata (fast - just reads file headers)
       const metadata = await this.extractImageMetadata(imagePath);
       const hash = await this.generateFileHash(imagePath);
       const stats = await fs.stat(imagePath);
@@ -293,19 +451,8 @@ export class ContentScanner {
         }
       }
 
-      // Generate thumbnails
-      const thumbnailDir = path.join(path.dirname(imagePath), '.thumbnails');
-      await fs.mkdir(thumbnailDir, { recursive: true });
-
-      const thumbnails: Record<string, string> = {};
-      for (const size of this.imageSizes) {
-        if (size < metadata.width) {
-          const thumbPath = await this.generateThumbnail(imagePath, thumbnailDir, size);
-          thumbnails[`${size}w`] = thumbPath;
-        }
-      }
-
-      // Store in database (using camelCase keys that DatabaseManager expects)
+      // Store in database WITHOUT thumbnails (Phase 1: Metadata only)
+      // This makes image counts accurate immediately
       const imageData = {
         id: hash,
         directoryId,
@@ -314,10 +461,10 @@ export class ContentScanner {
         caption: null,
         carouselId: null,
         position: 0,
-        thumbnailUrl: thumbnails['640w'] || null,
-        smallUrl: thumbnails['828w'] || null,
-        mediumUrl: thumbnails['1200w'] || null,
-        largeUrl: thumbnails['1920w'] || null,
+        thumbnailUrl: null, // Will be generated in Phase 2
+        smallUrl: null,
+        mediumUrl: null,
+        largeUrl: null,
         originalUrl: imagePath,
         width: metadata.width,
         height: metadata.height,
@@ -331,7 +478,7 @@ export class ContentScanner {
         exifData: {
           path: imagePath,
           hash,
-          thumbnails,
+          thumbnails: {}, // Empty - thumbnails generated later
           capturedAt: stats.birthtime,
           modifiedAt: stats.mtime
         }
@@ -343,17 +490,132 @@ export class ContentScanner {
         await this.db.createImage(imageData);
       }
 
-      await this.logger.info('Image processed', {
-        path: imagePath,
-        thumbnails: Object.keys(thumbnails).length
-      });
+      await this.logger.debug('Image metadata indexed', { path: imagePath });
 
     } catch (error) {
-      await this.logger.error('Failed to process image', { imagePath, error });
+      await this.logger.error('Failed to process image metadata', { imagePath, error });
       throw error;
     } finally {
       this.processing.delete(imagePath);
     }
+  }
+
+  /**
+   * Generate thumbnails for images (Phase 2)
+   * Can be run after metadata scan completes
+   */
+  async generateThumbnailsForDirectory(slug: string): Promise<ScanResult> {
+    const result: ScanResult = {
+      imagesProcessed: 0,
+      thumbnailsGenerated: 0,
+      directoriesCreated: 0,
+      configsApplied: 0,
+      errors: []
+    };
+
+    try {
+      await this.logger.info('Starting thumbnail generation', { slug });
+
+      // Get directory from database
+      const directory = await this.db.getDirectoryBySlug(slug) as any;
+      if (!directory || !directory.id) {
+        const errMsg = `Directory not found: ${slug}`;
+        result.errors.push(errMsg);
+        return result;
+      }
+
+      // Get all images in directory
+      const images = await this.db.getImagesByDirectory(directory.id);
+      await this.logger.info('Found images to process', { count: images.length });
+
+      // Process images in parallel batches
+      const batchSize = this.thumbnailWorkers;
+      for (let i = 0; i < images.length; i += batchSize) {
+        const batch = images.slice(i, i + batchSize);
+
+        // Process batch in parallel
+        const batchPromises = batch.map(async (image: any) => {
+          try {
+            const thumbCount = await this.generateThumbnailsForImage(image);
+            result.imagesProcessed++;
+            result.thumbnailsGenerated += thumbCount;
+          } catch (error) {
+            const errMsg = `Failed to generate thumbnails for ${image.filename}: ${error}`;
+            result.errors.push(errMsg);
+            await this.logger.error(errMsg);
+          }
+        });
+
+        await Promise.all(batchPromises);
+
+        // Log progress
+        const processed = Math.min(i + batchSize, images.length);
+        await this.logger.info('Thumbnail generation progress', {
+          processed,
+          total: images.length,
+          percentage: Math.round((processed / images.length) * 100)
+        });
+      }
+
+      await this.logger.info('Thumbnail generation complete', result);
+      return result;
+
+    } catch (error) {
+      const errMsg = `Fatal error during thumbnail generation: ${error}`;
+      await this.logger.error(errMsg);
+      result.errors.push(errMsg);
+      return result;
+    }
+  }
+
+  /**
+   * Generate priority thumbnails for a single image
+   * Only generates 3 sizes: 1920w, 1200w, 640w
+   */
+  private async generateThumbnailsForImage(image: any): Promise<number> {
+    const imagePath = image.exif_data ? JSON.parse(image.exif_data).path : image.original_url;
+
+    if (!imagePath) {
+      throw new Error('Image path not found in database');
+    }
+
+    // Check if file exists
+    try {
+      await fs.access(imagePath);
+    } catch {
+      throw new Error(`Image file not found: ${imagePath}`);
+    }
+
+    const thumbnailDir = path.join(path.dirname(imagePath), '.thumbnails');
+    await fs.mkdir(thumbnailDir, { recursive: true });
+
+    const thumbnails: Record<string, string> = {};
+    let generatedCount = 0;
+
+    // Generate only priority sizes
+    for (const size of this.prioritySizes) {
+      if (size < image.width) {
+        const thumbPath = await this.generateThumbnail(imagePath, thumbnailDir, size);
+        thumbnails[`${size}w`] = thumbPath;
+        generatedCount++;
+      }
+    }
+
+    // Update database with thumbnail URLs
+    const updateData = {
+      thumbnailUrl: thumbnails['640w'] || null,
+      mediumUrl: thumbnails['1200w'] || null,
+      largeUrl: thumbnails['1920w'] || null,
+      exifData: {
+        ...JSON.parse(image.exif_data || '{}'),
+        thumbnails
+      }
+    };
+
+    await this.db.updateImage(image.id, updateData);
+    await this.logger.debug('Thumbnails generated', { imagePath, count: generatedCount });
+
+    return generatedCount;
   }
 
   /**
@@ -488,10 +750,14 @@ export class ContentScanner {
 
   /**
    * Generate file hash for change detection
+   * Uses file stats (size + mtime) for fast change detection
+   * Avoids reading entire file into memory
    */
   private async generateFileHash(filePath: string): Promise<string> {
-    const buffer = await fs.readFile(filePath);
-    return createHash('sha256').update(buffer).digest('hex');
+    const stats = await fs.stat(filePath);
+    // Hash based on path + size + modification time - much faster than reading entire file
+    const hashInput = `${filePath}:${stats.size}:${stats.mtimeMs}`;
+    return createHash('md5').update(hashInput).digest('hex');
   }
 
   /**
