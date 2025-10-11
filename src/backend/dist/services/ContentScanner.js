@@ -127,6 +127,8 @@ export class ContentScanner {
             }
             // Update directory image counts
             await this.updateDirectoryImageCounts();
+            // Auto-detect and set hero images
+            await this.updateHeroImages();
             await this.logger.info('Directory scan complete', { slug, mode, result });
             return result;
         }
@@ -223,6 +225,72 @@ export class ContentScanner {
         }
         catch (error) {
             await this.logger.error('Failed to update directory image counts', { error });
+        }
+    }
+    /**
+     * Auto-detect and set hero images for directories
+     * Looks for files named: hero.jpg, hero.png, hero.jfif, Hero-image.jpg, etc.
+     */
+    async updateHeroImages() {
+        try {
+            const directories = await this.db.getDirectories({});
+            for (const dir of directories) {
+                // Skip if directory already has a cover image set
+                if (dir.cover_image) {
+                    continue;
+                }
+                // Build directory path from slug
+                const dirPath = path.join(this.contentDir, dir.slug);
+                // Check if directory exists
+                try {
+                    await fs.access(dirPath);
+                }
+                catch {
+                    continue; // Directory doesn't exist, skip
+                }
+                // Look for hero image files (case-insensitive)
+                const heroPatterns = [
+                    /^hero\.jpg$/i,
+                    /^hero\.jpeg$/i,
+                    /^hero\.jfif$/i,
+                    /^hero\.png$/i,
+                    /^hero\.webp$/i,
+                    /^hero-image\.jpg$/i,
+                    /^hero-image\.jpeg$/i,
+                    /^hero-image\.jfif$/i,
+                    /^hero-image\.png$/i,
+                ];
+                try {
+                    const entries = await fs.readdir(dirPath);
+                    for (const entry of entries) {
+                        // Check if entry matches any hero pattern
+                        if (heroPatterns.some(pattern => pattern.test(entry))) {
+                            const heroPath = path.join(dirPath, entry);
+                            // Verify it's a file
+                            const stats = await fs.stat(heroPath);
+                            if (stats.isFile()) {
+                                // Set this as the cover image
+                                await this.db.updateDirectoryCoverImage(dir.id, heroPath);
+                                await this.logger.info('Auto-detected hero image', {
+                                    slug: dir.slug,
+                                    heroImage: entry
+                                });
+                                break; // Found one, move to next directory
+                            }
+                        }
+                    }
+                }
+                catch (error) {
+                    await this.logger.debug('Failed to detect hero image', {
+                        slug: dir.slug,
+                        error
+                    });
+                }
+            }
+            await this.logger.info('Hero image detection complete');
+        }
+        catch (error) {
+            await this.logger.error('Failed to update hero images', { error });
         }
     }
     /**

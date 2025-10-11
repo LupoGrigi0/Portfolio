@@ -9,11 +9,27 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { createLogger } from '../utils/logger-wrapper.js';
 const logger = createLogger('backend-ratelimit.log');
 // Create rate limiter with in-memory store (will upgrade to Redis later)
-const rateLimiter = new RateLimiterMemory({
+export const rateLimiter = new RateLimiterMemory({
     points: parseInt(process.env.RATE_LIMIT_MAX || '100'), // Number of requests
     duration: parseInt(process.env.RATE_LIMIT_WINDOW || '15') * 60, // Time window in seconds
     blockDuration: 60, // Block for 60 seconds if limit exceeded
 });
+/**
+ * Reset rate limit for a specific IP or all IPs
+ * @param identifier - IP address to reset, or undefined to reset all
+ */
+export async function resetRateLimit(identifier) {
+    if (identifier) {
+        // Reset specific IP
+        await rateLimiter.delete(identifier);
+        await logger.info('RateLimiter', `Rate limit reset for IP: ${identifier}`);
+    }
+    else {
+        // Reset all - not directly supported by library, but we can log it
+        // The RateLimiterMemory doesn't have a clear all method, but limits expire naturally
+        await logger.info('RateLimiter', 'Rate limit reset requested (limits will expire naturally)');
+    }
+}
 export async function rateLimiterMiddleware(req, res, next) {
     try {
         // Use IP address as identifier

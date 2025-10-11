@@ -10,6 +10,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { createLogger } from '../utils/logger-wrapper.js';
 import { DatabaseManager } from '../services/DatabaseManager.js';
 import { ContentScanner } from '../services/ContentScanner.js';
+import { resetRateLimit } from '../middleware/rateLimiter.js';
 
 const logger = createLogger('backend-admin.log');
 const router = Router();
@@ -217,6 +218,36 @@ router.post('/reinit-db', async (req: Request, res: Response, next: NextFunction
 
   } catch (error) {
     await logger.error('AdminRoutes', 'POST /reinit-db failed', { error });
+    next(error);
+  }
+});
+
+/**
+ * POST /api/admin/reset-rate-limit
+ * Reset rate limit counters for testing purposes
+ * Query params:
+ *   - ip: (optional) Specific IP address to reset. If omitted, resets for the requesting IP
+ */
+router.post('/reset-rate-limit', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const targetIp = (req.query.ip as string) || req.ip || req.connection.remoteAddress || 'unknown';
+
+    await logger.info('AdminRoutes', 'POST /reset-rate-limit - Rate limit reset triggered', { targetIp });
+
+    // Reset rate limit for the specified IP
+    await resetRateLimit(targetIp);
+
+    res.json({
+      success: true,
+      message: `Rate limit reset for IP: ${targetIp}`,
+      data: {
+        resetAt: new Date().toISOString(),
+        ip: targetIp
+      }
+    });
+
+  } catch (error) {
+    await logger.error('AdminRoutes', 'POST /reset-rate-limit failed', { error });
     next(error);
   }
 });

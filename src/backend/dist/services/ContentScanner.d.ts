@@ -51,6 +51,11 @@ export declare class ContentScanner {
      */
     private updateDirectoryImageCounts;
     /**
+     * Auto-detect and set hero images for directories
+     * Looks for files named: hero.jpg, hero.png, hero.jfif, Hero-image.jpg, etc.
+     */
+    private updateHeroImages;
+    /**
      * Scan a specific directory and its subdirectories
      * @param dirPath - Path to directory to scan
      * @param parentDirectoryId - Optional parent directory ID for subdirectories

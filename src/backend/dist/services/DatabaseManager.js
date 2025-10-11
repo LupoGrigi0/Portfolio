@@ -114,6 +114,16 @@ export class DatabaseManager {
     `);
         return stmt.run(imageCount, directoryId);
     }
+    async updateDirectoryCoverImage(directoryId, coverImagePath) {
+        const db = this.getDb();
+        const stmt = db.prepare(`
+      UPDATE directories
+      SET cover_image = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+        return stmt.run(coverImagePath, directoryId);
+    }
     // Image operations
     async getImagesByDirectory(directoryId, limit, offset) {
         const db = this.getDb();
