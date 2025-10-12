@@ -349,6 +349,7 @@ export class ContentScanner {
   /**
    * Auto-detect and set hero images for directories
    * Looks for files named: hero.jpg, hero.png, hero.jfif, Hero-image.jpg, etc.
+   * Queries images from database instead of building paths from slugs
    */
   private async updateHeroImages(): Promise<void> {
     try {
@@ -360,14 +361,11 @@ export class ContentScanner {
           continue;
         }
 
-        // Build directory path from slug
-        const dirPath = path.join(this.contentDir, dir.slug);
+        // Get all images for this directory from database
+        const images = await this.db.getImagesByDirectory(dir.id) as any[];
 
-        // Check if directory exists
-        try {
-          await fs.access(dirPath);
-        } catch {
-          continue; // Directory doesn't exist, skip
+        if (!images || images.length === 0) {
+          continue; // No images in directory
         }
 
         // Look for hero image files (case-insensitive)
@@ -383,34 +381,40 @@ export class ContentScanner {
           /^hero-image\.png$/i,
         ];
 
-        try {
-          const entries = await fs.readdir(dirPath);
+        // Find hero image by checking filenames
+        for (const image of images) {
+          const filename = image.filename;
 
-          for (const entry of entries) {
-            // Check if entry matches any hero pattern
-            if (heroPatterns.some(pattern => pattern.test(entry))) {
-              const heroPath = path.join(dirPath, entry);
+          if (heroPatterns.some(pattern => pattern.test(filename))) {
+            // Found a hero image - extract path from exif_data or use original_url
+            const heroPath = image.exif_data
+              ? JSON.parse(image.exif_data).path
+              : image.original_url;
 
-              // Verify it's a file
-              const stats = await fs.stat(heroPath);
-              if (stats.isFile()) {
+            if (heroPath) {
+              // Verify file still exists
+              try {
+                await fs.access(heroPath);
+
                 // Set this as the cover image
                 await this.db.updateDirectoryCoverImage(dir.id, heroPath);
 
                 await this.logger.info('Auto-detected hero image', {
                   slug: dir.slug,
-                  heroImage: entry
+                  heroImage: filename,
+                  path: heroPath
                 });
 
                 break; // Found one, move to next directory
+              } catch {
+                await this.logger.debug('Hero image file not found on filesystem', {
+                  slug: dir.slug,
+                  filename,
+                  path: heroPath
+                });
               }
             }
           }
-        } catch (error) {
-          await this.logger.debug('Failed to detect hero image', {
-            slug: dir.slug,
-            error
-          });
         }
       }
 

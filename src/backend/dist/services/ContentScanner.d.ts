@@ -26,6 +26,7 @@ export declare class ContentScanner {
     private supportedFormats;
     private processing;
     private thumbnailWorkers;
+    private videoProcessor;
     constructor(logger: Logger, db: DatabaseManager, contentDir: string, imageSizes?: string, supportedFormats?: string);
     /**
      * Scan entire content directory and process all files
@@ -42,6 +43,11 @@ export declare class ContentScanner {
      */
     private purgeDirectoryImages;
     /**
+     * Recursively purge a directory and all its children (Full Rescan mode)
+     * Deletes images and subdirectories to prevent UNIQUE constraint errors
+     */
+    private purgeDirectoryAndChildren;
+    /**
      * Remove orphaned images (exist in database but not on filesystem)
      * Used in Incremental mode
      */
@@ -53,14 +59,16 @@ export declare class ContentScanner {
     /**
      * Auto-detect and set hero images for directories
      * Looks for files named: hero.jpg, hero.png, hero.jfif, Hero-image.jpg, etc.
+     * Queries images from database instead of building paths from slugs
      */
     private updateHeroImages;
     /**
      * Scan a specific directory and its subdirectories
      * @param dirPath - Path to directory to scan
      * @param parentDirectoryId - Optional parent directory ID for subdirectories
+     * @param parentSlug - Optional parent slug for hierarchical slug generation
      */
-    scanDirectory(dirPath: string, parentDirectoryId?: string): Promise<ScanResult>;
+    scanDirectory(dirPath: string, parentDirectoryId?: string, parentSlug?: string): Promise<ScanResult>;
     /**
      * Process a single image file - METADATA ONLY (Phase 1)
      * Fast metadata extraction without thumbnail generation
@@ -77,7 +85,7 @@ export declare class ContentScanner {
      */
     private generateThumbnailsForImage;
     /**
-     * Process a video file (metadata only, no thumbnail generation yet)
+     * Process a video file with metadata extraction and thumbnail generation
      */
     processVideo(videoPath: string, directoryId: string): Promise<void>;
     /**
@@ -94,8 +102,14 @@ export declare class ContentScanner {
     private generateThumbnail;
     /**
      * Generate file hash for change detection
-     * Uses file stats (size + mtime) for fast change detection
+     * Uses file stats (path + size) for stable, deterministic hashing
+     * Excludes mtime to avoid false changes from file copies/touches
      * Avoids reading entire file into memory
+     *
+     * IMPORTANT: mtime excluded for stability across:
+     * - File copy operations (mtime changes even if content identical)
+     * - Cross-platform differences (Linux vs Windows mtime behavior)
+     * - File system operations (touch, metadata changes)
      */
     private generateFileHash;
     /**
@@ -111,6 +125,10 @@ export declare class ContentScanner {
      */
     private generateSlug;
     /**
+     * Generate hierarchical slug combining parent and current directory
+     */
+    private generateHierarchicalSlug;
+    /**
      * Generate directory ID from path
      */
     private generateDirectoryId;
@@ -122,5 +140,12 @@ export declare class ContentScanner {
      * Format string as title
      */
     private formatTitle;
+    /**
+     * Build subcollections tree for a directory with depth limiting
+     * @param parentId - Parent directory ID
+     * @param maxDepth - Maximum depth to recurse (default 4)
+     * @param currentDepth - Current recursion depth
+     */
+    getSubcollectionsTree(parentId: string, maxDepth?: number, currentDepth?: number): Promise<any[]>;
 }
 export {};
