@@ -13,6 +13,7 @@ import sharp from 'sharp';
 import { createHash } from 'crypto';
 import type { Logger } from '../utils/logger-wrapper.js';
 import type { DatabaseManager } from './DatabaseManager.js';
+import { VideoProcessor } from './VideoProcessor.js';
 
 interface ImageMetadata {
   width: number;
@@ -60,6 +61,7 @@ export class ContentScanner {
   private supportedFormats: Set<string>;
   private processing = new Set<string>();
   private thumbnailWorkers = 5; // Parallel workers for thumbnail generation
+  private videoProcessor: VideoProcessor;
 
   constructor(
     logger: Logger,
@@ -75,6 +77,7 @@ export class ContentScanner {
     // Priority sizes: large (1920w), medium (1200w), thumbnail (640w)
     this.prioritySizes = [1920, 1200, 640];
     this.supportedFormats = new Set(supportedFormats.split(',').map(f => f.toLowerCase()));
+    this.videoProcessor = new VideoProcessor(logger);
   }
 
   /**
@@ -165,9 +168,9 @@ export class ContentScanner {
 
       // Handle different scan modes
       if (mode === 'full') {
-        // Full rescan: Purge all images for this directory and rebuild
-        await this.logger.info('Full rescan mode: Purging existing entries', { slug });
-        const purged = await this.purgeDirectoryImages(directoryId);
+        // Full rescan: Recursively purge directory, subdirectories, and all images
+        await this.logger.info('Full rescan mode: Recursively purging existing entries', { slug });
+        const purged = await this.purgeDirectoryAndChildren(directoryId);
         result.orphansRemoved = purged;
       }
 
@@ -222,6 +225,47 @@ export class ContentScanner {
       return count;
     } catch (error) {
       await this.logger.error('Failed to purge directory images', { directoryId, error });
+      return 0;
+    }
+  }
+
+  /**
+   * Recursively purge a directory and all its children (Full Rescan mode)
+   * Deletes images and subdirectories to prevent UNIQUE constraint errors
+   */
+  private async purgeDirectoryAndChildren(directoryId: string): Promise<number> {
+    if (!directoryId) return 0;
+
+    try {
+      let totalPurged = 0;
+
+      // Get all child directories first
+      const children = await this.db.getSubdirectoriesByParentId(directoryId) as any[];
+
+      // Recursively purge children first (depth-first)
+      for (const child of children) {
+        totalPurged += await this.purgeDirectoryAndChildren(child.id);
+      }
+
+      // Purge images in this directory
+      const imageCount = await this.purgeDirectoryImages(directoryId);
+      totalPurged += imageCount;
+
+      // Delete the directory entry itself (but only for subdirectories)
+      // We don't delete the top-level directory being scanned
+      const directory = await this.db.getDirectoryById(directoryId) as any;
+      if (directory && directory.parent_category) {
+        await this.db.deleteDirectory(directoryId);
+        await this.logger.info('Deleted subdirectory entry', {
+          directoryId,
+          slug: directory.slug
+        });
+      }
+
+      return totalPurged;
+
+    } catch (error) {
+      await this.logger.error('Failed to purge directory and children', { directoryId, error });
       return 0;
     }
   }
@@ -380,8 +424,9 @@ export class ContentScanner {
    * Scan a specific directory and its subdirectories
    * @param dirPath - Path to directory to scan
    * @param parentDirectoryId - Optional parent directory ID for subdirectories
+   * @param parentSlug - Optional parent slug for hierarchical slug generation
    */
-  async scanDirectory(dirPath: string, parentDirectoryId?: string): Promise<ScanResult> {
+  async scanDirectory(dirPath: string, parentDirectoryId?: string, parentSlug?: string): Promise<ScanResult> {
     const result: ScanResult = {
       imagesProcessed: 0,
       thumbnailsGenerated: 0,
@@ -413,10 +458,16 @@ export class ContentScanner {
         // This is a subdirectory - use parent's directory ID unless it has its own config
         if (hasConfig && config) {
           // Subdirectory with config.json gets its own directory entry
-          const slug = config.slug || this.generateSlug(dirPath);
-          dirId = await this.ensureDirectory(dirPath, config, slug);
+          // Generate hierarchical slug: parent-slug + current-name
+          const dirName = path.basename(dirPath);
+          const hierarchicalSlug = config.slug || this.generateHierarchicalSlug(dirName, parentSlug);
+          dirId = await this.ensureDirectory(dirPath, config, hierarchicalSlug, parentDirectoryId);
           result.directoriesCreated++;
-          await this.logger.info('Subdirectory has config, creating separate directory entry', { dirPath });
+          await this.logger.info('Subdirectory has config, creating separate directory entry', {
+            dirPath,
+            parentDirectoryId,
+            slug: hierarchicalSlug
+          });
         } else {
           // Subdirectory without config - link images to parent directory
           dirId = parentDirectoryId;
@@ -431,7 +482,7 @@ export class ContentScanner {
           config = await this.generateDirectoryConfig(dirPath);
         }
         const slug = config.slug || this.generateSlug(dirPath);
-        dirId = await this.ensureDirectory(dirPath, config, slug);
+        dirId = await this.ensureDirectory(dirPath, config, slug, null);
         result.directoriesCreated++;
       }
 
@@ -447,8 +498,11 @@ export class ContentScanner {
         }
 
         if (entry.isDirectory()) {
-          // Recursively process subdirectories, passing current dirId as parent
-          const subResult = await this.scanDirectory(fullPath, dirId);
+          // Recursively process subdirectories, passing current dirId and slug as parent
+          // Get current directory's slug from database
+          const currentDir = await this.db.getDirectoryById(dirId) as any;
+          const currentSlug = currentDir?.slug || parentSlug || '';
+          const subResult = await this.scanDirectory(fullPath, dirId, currentSlug);
           result.imagesProcessed += subResult.imagesProcessed;
           result.thumbnailsGenerated += subResult.thumbnailsGenerated;
           result.directoriesCreated += subResult.directoriesCreated;
@@ -696,12 +750,28 @@ export class ContentScanner {
   }
 
   /**
-   * Process a video file (metadata only, no thumbnail generation yet)
+   * Process a video file with metadata extraction and thumbnail generation
    */
   async processVideo(videoPath: string, directoryId: string): Promise<void> {
     try {
       const stats = await fs.stat(videoPath);
       const hash = await this.generateFileHash(videoPath);
+
+      // Extract video metadata using ffprobe
+      const metadata = await this.videoProcessor.extractMetadata(videoPath);
+
+      // Generate thumbnail (first frame)
+      const thumbnailDir = path.join(path.dirname(videoPath), '.thumbnails');
+      await fs.mkdir(thumbnailDir, { recursive: true });
+
+      const basename = path.basename(videoPath, path.extname(videoPath));
+      const thumbnailPath = path.join(thumbnailDir, `${basename}_thumb.jpg`);
+
+      const thumbnail = await this.videoProcessor.generateThumbnail(
+        videoPath,
+        thumbnailPath,
+        0 // First frame
+      );
 
       const videoData = {
         id: hash,
@@ -711,16 +781,16 @@ export class ContentScanner {
         caption: null,
         carouselId: null,
         position: 0,
-        thumbnailUrl: null,
+        thumbnailUrl: thumbnail || null,
         smallUrl: null,
         mediumUrl: null,
         largeUrl: null,
         originalUrl: videoPath,
-        width: 0, // TODO: Extract video dimensions
-        height: 0,
-        aspectRatio: 16/9, // Default, should extract actual
+        width: metadata.width,
+        height: metadata.height,
+        aspectRatio: metadata.aspectRatio,
         fileSize: stats.size,
-        format: 'mp4',
+        format: metadata.format,
         colorPalette: [],
         averageColor: null,
         status: 'published',
@@ -729,6 +799,11 @@ export class ContentScanner {
           path: videoPath,
           hash,
           type: 'video',
+          duration: metadata.duration,
+          codec: metadata.codec,
+          bitrate: metadata.bitrate,
+          fps: metadata.fps,
+          thumbnail: thumbnail || null,
           capturedAt: stats.birthtime,
           modifiedAt: stats.mtime
         }
@@ -741,7 +816,13 @@ export class ContentScanner {
         await this.db.createImage(videoData);
       }
 
-      await this.logger.info('Video processed', { path: videoPath });
+      await this.logger.info('Video processed', {
+        path: videoPath,
+        width: metadata.width,
+        height: metadata.height,
+        duration: metadata.duration,
+        thumbnail: thumbnail ? 'generated' : 'skipped'
+      });
 
     } catch (error) {
       await this.logger.error('Failed to process video', { videoPath, error });
@@ -827,13 +908,20 @@ export class ContentScanner {
 
   /**
    * Generate file hash for change detection
-   * Uses file stats (size + mtime) for fast change detection
+   * Uses file stats (path + size) for stable, deterministic hashing
+   * Excludes mtime to avoid false changes from file copies/touches
    * Avoids reading entire file into memory
+   *
+   * IMPORTANT: mtime excluded for stability across:
+   * - File copy operations (mtime changes even if content identical)
+   * - Cross-platform differences (Linux vs Windows mtime behavior)
+   * - File system operations (touch, metadata changes)
    */
   private async generateFileHash(filePath: string): Promise<string> {
     const stats = await fs.stat(filePath);
-    // Hash based on path + size + modification time - much faster than reading entire file
-    const hashInput = `${filePath}:${stats.size}:${stats.mtimeMs}`;
+    // Hash based on path + size only - stable and deterministic
+    // If file size changes, content changed (acceptable for our use case)
+    const hashInput = `${filePath}:${stats.size}`;
     return createHash('md5').update(hashInput).digest('hex');
   }
 
@@ -843,7 +931,8 @@ export class ContentScanner {
   private async ensureDirectory(
     dirPath: string,
     config: DirectoryConfig,
-    slug: string
+    slug: string,
+    parentDirectoryId: string | null = null
   ): Promise<string> {
     const dirId = config?.id || this.generateDirectoryId(dirPath);
 
@@ -869,7 +958,7 @@ export class ContentScanner {
       featured: config?.isFeatured || false,
       menuOrder: config?.order || 0,
       status: config?.status || 'published',
-      parentCategory: null,
+      parentCategory: parentDirectoryId,  // Set parent category for subcollections
       tags: config?.tags || [],
       config: config || {}  // Store entire config object, not just config.metadata
     });
@@ -909,6 +998,21 @@ export class ContentScanner {
   }
 
   /**
+   * Generate hierarchical slug combining parent and current directory
+   */
+  private generateHierarchicalSlug(dirName: string, parentSlug?: string): string {
+    const currentSlug = dirName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    if (parentSlug) {
+      return `${parentSlug}-${currentSlug}`;
+    }
+    return currentSlug;
+  }
+
+  /**
    * Generate directory ID from path
    */
   private generateDirectoryId(dirPath: string): string {
@@ -933,5 +1037,51 @@ export class ContentScanner {
     return str
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  /**
+   * Build subcollections tree for a directory with depth limiting
+   * @param parentId - Parent directory ID
+   * @param maxDepth - Maximum depth to recurse (default 4)
+   * @param currentDepth - Current recursion depth
+   */
+  async getSubcollectionsTree(parentId: string, maxDepth: number = 4, currentDepth: number = 0): Promise<any[]> {
+    // Prevent infinite recursion
+    if (currentDepth >= maxDepth) {
+      return [];
+    }
+
+    try {
+      const subdirectories = await this.db.getSubdirectoriesByParentId(parentId) as any[];
+
+      // Build subcollection objects
+      const subcollections = await Promise.all(
+        subdirectories.map(async (subdir) => {
+          // Recursively get nested subcollections
+          const nestedSubcollections = await this.getSubcollectionsTree(
+            subdir.id,
+            maxDepth,
+            currentDepth + 1
+          );
+
+          return {
+            id: subdir.id,
+            title: subdir.title,
+            slug: subdir.slug,
+            description: subdir.description,
+            coverImage: subdir.cover_image,
+            imageCount: subdir.image_count,
+            featured: Boolean(subdir.featured),
+            subcollections: nestedSubcollections
+          };
+        })
+      );
+
+      return subcollections;
+
+    } catch (error) {
+      await this.logger.error('Failed to build subcollections tree', { parentId, error });
+      return [];
+    }
   }
 }

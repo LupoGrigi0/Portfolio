@@ -8,12 +8,24 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { DatabaseManager } from '../services/DatabaseManager.js';
+import { ContentScanner } from '../services/ContentScanner.js';
 import { createLogger } from '../utils/logger-wrapper.js';
 import path from 'path';
 
 const logger = createLogger('backend-content.log');
 const router = Router();
-const db = new DatabaseManager();
+
+// Database manager instance (injected by index.ts on startup)
+export let db: DatabaseManager | null = null;
+export let scanner: ContentScanner | null = null;
+
+export function setDatabaseManager(manager: DatabaseManager) {
+  db = manager;
+}
+
+export function setContentScanner(contentScanner: ContentScanner) {
+  scanner = contentScanner;
+}
 
 // Content directory for URL transformation
 const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
@@ -81,28 +93,30 @@ function transformImageUrl(absolutePath: string | null, slug: string, originalFo
       const subdirectoryParts = parts.slice(1, parts.indexOf('.thumbnails'));
       const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
 
-      // Construct API URL with size parameter
+      // Construct API URL with size parameter (URL-encode filename)
+      const encodedName = encodeURIComponent(originalName);
       if (subdirectory) {
-        return `/api/media/${slug}/${subdirectory}/${originalName}?size=${size}`;
+        return `/api/media/${slug}/${subdirectory}/${encodedName}?size=${size}`;
       }
 
-      return `/api/media/${slug}/${originalName}?size=${size}`;
+      return `/api/media/${slug}/${encodedName}?size=${size}`;
 
     } else {
       // Original file - no thumbnail
       const filename = parts[parts.length - 1];
+      const encodedFilename = encodeURIComponent(filename);
 
       // Extract subdirectory path (skip slug and filename)
       // E.g., "Cafe/Coffee/image.jpg" → subdirectory = "Coffee"
       const subdirectoryParts = parts.slice(1, -1);
       const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
 
-      // Construct API URL
+      // Construct API URL (URL-encode filename)
       if (subdirectory) {
-        return `/api/media/${slug}/${subdirectory}/${filename}`;
+        return `/api/media/${slug}/${subdirectory}/${encodedFilename}`;
       }
 
-      return `/api/media/${slug}/${filename}`;
+      return `/api/media/${slug}/${encodedFilename}`;
     }
 
   } catch (error) {
@@ -116,14 +130,6 @@ function transformImageUrl(absolutePath: string | null, slug: string, originalFo
   }
 }
 
-// Initialize database on first use
-let dbInitialized = false;
-async function ensureDbInitialized() {
-  if (!dbInitialized) {
-    await db.initialize();
-    dbInitialized = true;
-  }
-}
 
 /**
  * GET /api/content/collections
@@ -132,7 +138,13 @@ async function ensureDbInitialized() {
  */
 router.get('/collections', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await ensureDbInitialized();
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+        code: 'DB_NOT_INITIALIZED'
+      });
+    }
     await logger.info('ContentRoutes', 'GET /collections');
 
     const { status } = req.query;
@@ -142,10 +154,17 @@ router.get('/collections', async (req: Request, res: Response, next: NextFunctio
 
     const directories = await db.getDirectories(filter);
 
+    // Filter to only top-level collections (parent_category IS NULL)
+    const topLevelDirectories = directories.filter((dir: any) => !dir.parent_category);
+
     // Format as collections per Zara's spec
-    const collections = directories.map((dir: any) => {
+    const collections = await Promise.all(topLevelDirectories.map(async (dir: any) => {
       const tags = JSON.parse(dir.tags || '[]');
       const config = JSON.parse(dir.config || '{}');
+
+      // Get direct subcollections (just slugs)
+      const subcollectionObjects = await db!.getSubdirectoriesByParentId(dir.id) as any[];
+      const subcollections = subcollectionObjects.map((sub: any) => sub.slug);
 
       return {
         id: dir.id,
@@ -155,13 +174,13 @@ router.get('/collections', async (req: Request, res: Response, next: NextFunctio
         hasConfig: Object.keys(config).length > 0,
         imageCount: dir.image_count || 0,
         videoCount: 0, // TODO: Track video count separately
-        subcollections: [], // TODO: Implement hierarchical collections
+        subcollections,
         description: dir.description,
         featured: Boolean(dir.featured),
         tags,
         config,
       };
-    });
+    }));
 
     res.json({
       success: true,
@@ -183,12 +202,18 @@ router.get('/collections', async (req: Request, res: Response, next: NextFunctio
  */
 router.get('/collections/:slug', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await ensureDbInitialized();
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+        code: 'DB_NOT_INITIALIZED'
+      });
+    }
     const { slug } = req.params;
 
     // Pagination parameters
     const requestedPage = parseInt(req.query.page as string) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100); // Max 100 per page
 
     await logger.info('ContentRoutes', 'GET /collections/:slug', { slug, page: requestedPage, limit });
 
@@ -222,6 +247,10 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
     // Format as collection
     const config = JSON.parse((directory as any).config || '{}');
     const tags = JSON.parse((directory as any).tags || '[]');
+
+    // Get direct subcollections (just slugs)
+    const subcollectionObjects = await db!.getSubdirectoriesByParentId((directory as any).id) as any[];
+    const subcollections = subcollectionObjects.map((sub: any) => sub.slug);
 
     const collection = {
       id: (directory as any).id,
@@ -262,7 +291,7 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
         hasNext,
         hasPrev,
       },
-      subcollections: [], // TODO: Implement hierarchical structure
+      subcollections,
     };
 
     res.json({
@@ -283,12 +312,18 @@ router.get('/collections/:slug', async (req: Request, res: Response, next: NextF
  */
 router.get('/collections/:slug/images', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await ensureDbInitialized();
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+        code: 'DB_NOT_INITIALIZED'
+      });
+    }
     const { slug } = req.params;
 
     // Pagination parameters
     const requestedPage = parseInt(req.query.page as string) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Max 50 per page
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100); // Max 100 per page
 
     await logger.info('ContentRoutes', 'GET /collections/:slug/images', { slug, page: requestedPage, limit });
 
@@ -367,6 +402,13 @@ router.get('/collections/:slug/images', async (req: Request, res: Response, next
  */
 router.get('/directories', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+        code: 'DB_NOT_INITIALIZED'
+      });
+    }
     await logger.info('ContentRoutes', 'GET /directories');
 
     const { status, featured } = req.query;
@@ -411,6 +453,13 @@ router.get('/directories', async (req: Request, res: Response, next: NextFunctio
  */
 router.get('/directories/:slug', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+        code: 'DB_NOT_INITIALIZED'
+      });
+    }
     const { slug } = req.params;
     await logger.info('ContentRoutes', 'GET /directories/:slug', { slug });
 
@@ -487,6 +536,13 @@ router.get('/directories/:slug', async (req: Request, res: Response, next: NextF
  */
 router.get('/images/:imageId', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!db) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+        code: 'DB_NOT_INITIALIZED'
+      });
+    }
     const { imageId } = req.params;
     await logger.info('ContentRoutes', 'GET /images/:imageId', { imageId });
 

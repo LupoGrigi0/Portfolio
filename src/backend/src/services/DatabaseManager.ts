@@ -104,6 +104,16 @@ export class DatabaseManager {
     return db.prepare('SELECT * FROM directories WHERE slug = ?').get(slug);
   }
 
+  async getDirectoryById(id: string) {
+    const db = this.getDb();
+    return db.prepare('SELECT * FROM directories WHERE id = ?').get(id);
+  }
+
+  async getSubdirectoriesByParentId(parentId: string) {
+    const db = this.getDb();
+    return db.prepare('SELECT * FROM directories WHERE parent_category = ? ORDER BY menu_order ASC, title ASC').all(parentId);
+  }
+
   async createDirectory(data: any) {
     const db = this.getDb();
     const stmt = db.prepare(`
@@ -164,6 +174,12 @@ export class DatabaseManager {
       WHERE id = ?
     `);
     return stmt.run(coverImagePath, directoryId);
+  }
+
+  async deleteDirectory(directoryId: string) {
+    const db = this.getDb();
+    const stmt = db.prepare('DELETE FROM directories WHERE id = ?');
+    return stmt.run(directoryId);
   }
 
   // Image operations
