@@ -68,7 +68,7 @@ export interface CollectionConfig {
     scrollBehavior?: string;
   };
 
-  // Curated layout sections
+  // Curated layout sections (also supports 'hybrid' with dynamic-fill sections)
   sections?: Array<
     | HeroSectionConfig
     | TextSectionConfig
@@ -76,6 +76,7 @@ export interface CollectionConfig {
     | ImageSectionConfig
     | VideoSectionConfig
     | SeparatorSectionConfig
+    | DynamicFillSectionConfig
   >;
 
   // Dynamic layout settings
@@ -83,6 +84,10 @@ export interface CollectionConfig {
     layout: 'single-column' | '2-across' | '3-across' | 'masonry';
     imagesPerCarousel?: number | 'all';
     carouselDefaults?: CarouselOptionsConfig;
+    spacing?: {
+      horizontal?: number; // Gap between carousels (px) - applies to grids
+      vertical?: number;   // Gap between rows (px)
+    };
   };
 
   // DEPRECATED (keeping for backwards compat with Zara's work)
@@ -161,6 +166,18 @@ export interface SeparatorSectionConfig {
   spacing?: number;
 }
 
+export interface DynamicFillSectionConfig {
+  type: 'dynamic-fill';
+  count?: number | 'all'; // Number of images to auto-fill, or 'all' for remaining
+  layout?: 'single-column' | '2-across' | '3-across' | 'masonry';
+  imagesPerCarousel?: number | 'all';
+  carouselDefaults?: CarouselOptionsConfig;
+  spacing?: {
+    horizontal?: number; // Gap between carousels (px)
+    vertical?: number;   // Gap between rows (px)
+  };
+}
+
 // Image query for dynamic image selection
 export interface ImageQuery {
   aspectRatio?: { min?: number; max?: number } | string; // ">2.5" or {min: 2.5}
@@ -227,29 +244,82 @@ export async function getCollections(): Promise<Collection[]> {
 }
 
 /**
- * Fetch a specific collection by slug
+ * Fetch a specific collection by slug with automatic pagination handling
+ *
+ * Fetches all pages in parallel to get complete gallery for large collections.
+ * Small collections (< page size) return in single request.
  */
-export async function getCollection(slug: string): Promise<Collection | null> {
+export async function getCollection(
+  slug: string,
+  options?: { limit?: number; disablePagination?: boolean }
+): Promise<Collection | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/content/collections/${slug}`);
+    const pageSize = options?.limit || 100; // Default to Viktor's new 100/page limit
 
-    if (!response.ok) {
-      if (response.status === 404) {
+    // Fetch first page to get pagination info
+    const firstPageUrl = new URL(`${API_BASE_URL}/api/content/collections/${slug}`);
+    firstPageUrl.searchParams.set('page', '1');
+    firstPageUrl.searchParams.set('limit', pageSize.toString());
+
+    const firstResponse = await fetch(firstPageUrl.toString());
+
+    if (!firstResponse.ok) {
+      if (firstResponse.status === 404) {
         console.warn(`[API Client] Collection not found: ${slug}`);
         return null;
       }
-      throw new Error(`Failed to fetch collection: ${response.statusText}`);
+      throw new Error(`Failed to fetch collection: ${firstResponse.statusText}`);
     }
 
-    const result = await response.json();
+    const firstResult = await firstResponse.json();
 
-    // Viktor's response format: { success: true, data: { collection: {...} } }
-    if (result.success && result.data?.collection) {
-      return result.data.collection;
+    if (!firstResult.success || !firstResult.data?.collection) {
+      return firstResult.collection || null;
     }
 
-    // Fallback for direct format
-    return result.collection || null;
+    const collection = firstResult.data.collection;
+    const pagination = collection.pagination;
+
+    // If no pagination or only 1 page, return immediately
+    if (!pagination || pagination.totalPages <= 1 || options?.disablePagination) {
+      return collection;
+    }
+
+    console.log(`[API Client] Fetching ${pagination.totalPages} pages for ${slug} (${pagination.total} total images)`);
+
+    // Fetch remaining pages in parallel
+    const pagePromises: Promise<MediaItem[]>[] = [];
+    for (let page = 2; page <= pagination.totalPages; page++) {
+      const pageUrl = new URL(`${API_BASE_URL}/api/content/collections/${slug}`);
+      pageUrl.searchParams.set('page', page.toString());
+      pageUrl.searchParams.set('limit', pageSize.toString());
+
+      pagePromises.push(
+        fetch(pageUrl.toString())
+          .then(r => r.json())
+          .then(data => {
+            const gallery = data.data?.collection?.gallery || [];
+            console.log(`[API Client] Page ${page}: ${gallery.length} images`);
+            return gallery;
+          })
+      );
+    }
+
+    // Wait for all pages and concatenate galleries
+    const additionalPages = await Promise.all(pagePromises);
+    const totalFromAdditional = additionalPages.reduce((sum, page) => sum + page.length, 0);
+
+    console.log(`[API Client] Page 1: ${collection.gallery?.length || 0} images`);
+    console.log(`[API Client] Pages 2-${pagination.totalPages}: ${totalFromAdditional} images across ${additionalPages.length} pages`);
+
+    collection.gallery = [
+      ...(collection.gallery || []),
+      ...additionalPages.flat()
+    ];
+
+    console.log(`[API Client] ✅ Total loaded: ${collection.gallery.length} images for ${slug}`);
+
+    return collection;
   } catch (error) {
     console.error('[API Client] Error fetching collection:', error);
     return null;

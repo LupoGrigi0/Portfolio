@@ -24,14 +24,19 @@ interface DynamicLayoutProps {
 export default function DynamicLayout({ collection, config }: DynamicLayoutProps) {
   const settings = config.dynamicSettings || {
     layout: 'single-column',
-    imagesPerCarousel: 'all',
+    imagesPerCarousel: 20, // Default: 20 images per carousel
   };
 
   const defaults = settings.carouselDefaults || {};
 
   // Filter images only (skip videos for now - carousel v1 limitation)
+  // Also exclude hero images (hero.jpg, hero.jfif, etc.) - those are for hero sections only
   const images = (collection.gallery || [])
-    .filter((item) => item.type === 'image' && item.urls.large)
+    .filter((item) =>
+      item.type === 'image' &&
+      item.urls.large &&
+      !/^hero\.(jpg|jfif|jpeg|png|webp)$/i.test(item.filename)
+    )
     .map((item) => ({
       id: item.id,
       src: getAbsoluteMediaUrl(item.urls.large),
@@ -94,25 +99,85 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
   });
 
   /**
-   * Get grid layout classes
+   * Get grid layout classes and inline styles for spacing
    */
-  const getLayoutClasses = () => {
+  const getLayoutConfig = () => {
+    // Default spacing values
+    const horizontalGap = settings.spacing?.horizontal ?? 32; // Default 32px
+    const verticalGap = settings.spacing?.vertical ?? 48;     // Default 48px
+
+    const style: React.CSSProperties = {
+      rowGap: `${verticalGap}px`,
+      columnGap: `${horizontalGap}px`,
+    };
+
     switch (settings.layout) {
       case '2-across':
-        return 'grid grid-cols-1 md:grid-cols-2 gap-8';
+        return {
+          className: 'grid grid-cols-1 md:grid-cols-2',
+          style
+        };
       case '3-across':
-        return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+        return {
+          className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+          style
+        };
       case 'masonry':
         // TODO: Implement proper masonry with varying heights
-        return 'grid grid-cols-1 md:grid-cols-2 gap-8';
+        return {
+          className: 'grid grid-cols-1 md:grid-cols-2',
+          style
+        };
+      case 'zipper':
+        return {
+          className: 'flex flex-col',
+          style: { gap: `${verticalGap}px` }
+        };
       case 'single-column':
       default:
-        return 'flex flex-col gap-12';
+        return {
+          className: 'flex flex-col',
+          style: { gap: `${verticalGap}px` }
+        };
     }
   };
 
+  const layoutConfig = getLayoutConfig();
+
+  // Zipper layout: Alternating left/right carousels
+  if (settings.layout === 'zipper') {
+    return (
+      <div className={layoutConfig.className} style={layoutConfig.style}>
+        {carouselGroups.map((group, index) => {
+          const isLeft = index % 2 === 0;
+          return (
+            <div
+              key={`carousel-${index}`}
+              className="flex flex-row"
+              style={{ justifyContent: isLeft ? 'flex-start' : 'flex-end' }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  minWidth: '400px',
+                  maxWidth: '800px'
+                }}
+              >
+                <Carousel
+                  images={group}
+                  {...mapCarouselOptions()}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Standard layouts
   return (
-    <div className={getLayoutClasses()}>
+    <div className={layoutConfig.className} style={layoutConfig.style}>
       {carouselGroups.map((group, index) => (
         <div key={`carousel-${index}`} className="w-full">
           <Carousel

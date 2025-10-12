@@ -62,7 +62,30 @@ export default function ProjectionDemoPage() {
 function ProjectionDemoContent() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-  const { fadeDistance, maxBlur, projectionScaleX, projectionScaleY, blendMode, setFadeDistance, setMaxBlur, setProjectionScaleX, setProjectionScaleY, setBlendMode } = useMidgroundProjection();
+  const {
+    fadeDistance,
+    maxBlur,
+    projectionScaleX,
+    projectionScaleY,
+    blendMode,
+    vignetteWidth,
+    vignetteStrength,
+    checkerboardEnabled,
+    checkerboardTileSize,
+    checkerboardScatterSpeed,
+    checkerboardBlur,
+    setFadeDistance,
+    setMaxBlur,
+    setProjectionScaleX,
+    setProjectionScaleY,
+    setBlendMode,
+    setVignetteWidth,
+    setVignetteStrength,
+    setCheckerboardEnabled,
+    setCheckerboardTileSize,
+    setCheckerboardScatterSpeed,
+    setCheckerboardBlur,
+  } = useMidgroundProjection();
 
   // Control panel state
   const [showControls, setShowControls] = useState(true);
@@ -84,11 +107,12 @@ function ProjectionDemoContent() {
       const collectionsWithImages = data.filter(c => c.imageCount && c.imageCount > 0);
 
       // Prioritize "couples" and "mixed-collection" for side-by-side demo
+      // Exclude "scientists" as it's currently broken
       const priorityCollections = collectionsWithImages.filter(
         c => c.slug === 'couples' || c.slug === 'mixed-collection'
       );
       const otherCollections = collectionsWithImages.filter(
-        c => c.slug !== 'couples' && c.slug !== 'mixed-collection'
+        c => c.slug !== 'couples' && c.slug !== 'mixed-collection' && c.slug !== 'scientists'
       );
       const orderedCollections = [...priorityCollections, ...otherCollections].slice(0, 5);
 
@@ -376,6 +400,124 @@ function ProjectionDemoContent() {
               </p>
             </div>
 
+            {/* Vignette Width */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Vignette Width: {vignetteWidth}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="5"
+                value={vignetteWidth}
+                onChange={(e) => setVignetteWidth(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Edge fade width (0 = no vignette, 50 = full fade)
+              </p>
+            </div>
+
+            {/* Vignette Strength */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Vignette Strength: {(vignetteStrength * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={vignetteStrength}
+                onChange={(e) => setVignetteStrength(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Fade intensity (0 = transparent, 100 = opaque center)
+              </p>
+            </div>
+
+            {/* Checkerboard Vignette Toggle */}
+            <div className="mb-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/50">
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-white/90 text-sm font-semibold">
+                  🎨 Checkerboard Vignette
+                </label>
+                <button
+                  onClick={() => setCheckerboardEnabled(!checkerboardEnabled)}
+                  className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
+                    checkerboardEnabled
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-white/20 text-white/70'
+                  }`}
+                >
+                  {checkerboardEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              {checkerboardEnabled && (
+                <>
+                  {/* Tile Size */}
+                  <div className="mb-4">
+                    <label className="block text-white/70 text-xs mb-2">
+                      Tile Size: {checkerboardTileSize}px
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={checkerboardTileSize}
+                      onChange={(e) => setCheckerboardTileSize(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-white/40 mt-1">
+                      Size of checker squares (10 = fine, 100 = chunky)
+                    </p>
+                  </div>
+
+                  {/* Scatter Speed */}
+                  <div className="mb-4">
+                    <label className="block text-white/70 text-xs mb-2">
+                      Scatter Speed: {(checkerboardScatterSpeed * 100).toFixed(0)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={checkerboardScatterSpeed}
+                      onChange={(e) => setCheckerboardScatterSpeed(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-white/40 mt-1">
+                      Animation speed (0 = static, 100 = fast scatter)
+                    </p>
+                  </div>
+
+                  {/* Checker Blur */}
+                  <div className="mb-2">
+                    <label className="block text-white/70 text-xs mb-2">
+                      Edge Blur: {checkerboardBlur.toFixed(1)}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      step="0.5"
+                      value={checkerboardBlur}
+                      onChange={(e) => setCheckerboardBlur(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-white/40 mt-1">
+                      Softness of checker edges (0 = crisp, 10 = dreamy)
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Reset Button */}
             <button
               onClick={() => {
@@ -384,6 +526,12 @@ function ProjectionDemoContent() {
                 setProjectionScaleX(1.2);
                 setProjectionScaleY(1.2);
                 setBlendMode('normal');
+                setVignetteWidth(20);
+                setVignetteStrength(0.8);
+                setCheckerboardEnabled(false);
+                setCheckerboardTileSize(30);
+                setCheckerboardScatterSpeed(0.3);
+                setCheckerboardBlur(0);
               }}
               className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded font-semibold"
             >

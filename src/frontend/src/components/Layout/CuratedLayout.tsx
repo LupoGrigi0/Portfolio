@@ -34,6 +34,9 @@ interface CuratedLayoutProps {
 export default function CuratedLayout({ collection, config }: CuratedLayoutProps) {
   const sections = config.sections || [];
 
+  // Track which images have been used by explicit sections (for dynamic-fill)
+  const usedImageFilenames = new Set<string>();
+
   /**
    * Variable substitution for template configs
    * Replaces $CollectionName, $ImageCount, etc. with actual values
@@ -144,10 +147,10 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
       // Explicit array of filenames
       filenames = section.images;
     } else if (section.images === 'auto') {
-      // Auto-fill: all remaining images not used in other sections
-      // For now, use all gallery images (TODO: track used images)
+      // Auto-fill: first 20 images (to prevent 500+ image carousels with silly pagination)
       filenames = collection.gallery
         ?.filter((item) => item.type === 'image')
+        .slice(0, 20)
         .map((item) => item.filename) || [];
     } else if (typeof section.images === 'object') {
       // Image query
@@ -200,13 +203,34 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
     }
   };
 
+  /**
+   * Auto-detect hero image from collection gallery
+   * Looks for hero.jpg, hero.jfif, hero.png, hero.webp
+   */
+  const detectHeroImage = (): string | undefined => {
+    const heroItem = collection.gallery?.find((item) =>
+      item.type === 'image' && /^hero\.(jpg|jfif|jpeg|png|webp)$/i.test(item.filename)
+    );
+
+    if (heroItem) {
+      return getAbsoluteMediaUrl(heroItem.urls.large);
+    }
+
+    return undefined;
+  };
+
   return (
     <div className="space-y-8 sm:space-y-12">
       {sections.map((section, index) => {
         const key = `section-${index}`;
 
         switch (section.type) {
-          case 'hero':
+          case 'hero': {
+            // Auto-detect hero image if not explicitly provided
+            const heroImageUrl = section.backgroundImage
+              ? resolveImageUrl(section.backgroundImage)
+              : detectHeroImage();
+
             return (
               <HeroSection
                 key={key}
@@ -215,8 +239,13 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                 textPosition={section.textPosition}
                 containerOpacity={section.containerOpacity}
                 separator={section.separator}
+                backgroundImage={heroImageUrl}
+                backgroundPosition={section.backgroundPosition}
+                backgroundSize={section.backgroundSize}
+                minHeight={section.minHeight}
               />
             );
+          }
 
           case 'text':
             return (
@@ -233,6 +262,11 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             if (images.length === 0) {
               console.warn(`Carousel section ${index} has no images`);
               return null;
+            }
+
+            // Track which images are used (for dynamic-fill tracking)
+            if (Array.isArray(section.images)) {
+              section.images.forEach(filename => usedImageFilenames.add(filename));
             }
 
             return (
@@ -280,6 +314,106 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                 spacing={section.spacing}
               />
             );
+
+          case 'row': {
+            // Render multiple sections in a flex row (for side-by-side layouts)
+            return (
+              <div key={key} className="flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 items-stretch">
+                {section.sections?.map((subsection: any, subIndex: number) => {
+                  const subKey = `${key}-${subIndex}`;
+
+                  if (subsection.type === 'carousel') {
+                    const images = resolveSectionImages(subsection);
+                    if (images.length === 0) return null;
+
+                    return (
+                      <div key={subKey} className={getWidthClass(subsection.width)}>
+                        <Carousel
+                          images={images}
+                          {...mapCarouselOptions(subsection.carouselOptions)}
+                        />
+                      </div>
+                    );
+                  }
+
+                  if (subsection.type === 'text') {
+                    return (
+                      <div key={subKey} className={getWidthClass(subsection.width)}>
+                        <TextSection
+                          content={substituteVariables(subsection.content)}
+                          position={subsection.position}
+                        />
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })}
+              </div>
+            );
+          }
+
+          case 'dynamic-fill': {
+            // Get all remaining unused images (excluding hero images)
+            const allImages = collection.gallery?.filter(item =>
+              item.type === 'image' &&
+              !/^hero\.(jpg|jfif|jpeg|png|webp)$/i.test(item.filename)
+            ) || [];
+            const remainingImages = allImages.filter(item => !usedImageFilenames.has(item.filename));
+
+            // Determine how many images to use
+            const count = section.count === 'all' ? remainingImages.length : (section.count || remainingImages.length);
+            const imagesToUse = remainingImages.slice(0, count);
+
+            // Mark these as used
+            imagesToUse.forEach(img => usedImageFilenames.add(img.filename));
+
+            // Group into carousels
+            const perCarousel = section.imagesPerCarousel === 'all' ? imagesToUse.length : (section.imagesPerCarousel || 5);
+            const carouselGroups: CarouselImage[][] = [];
+
+            for (let i = 0; i < imagesToUse.length; i += perCarousel) {
+              const group = imagesToUse.slice(i, i + perCarousel).map((item, idx) => ({
+                id: `dynamic-${i}-${idx}`,
+                src: getAbsoluteMediaUrl(item.urls.large),
+                alt: item.altText || item.title || item.filename,
+              }));
+              carouselGroups.push(group);
+            }
+
+            // Render with layout and spacing
+            const layout = section.layout || 'single-column';
+            const spacing = section.spacing || {};
+            const horizontalGap = spacing.horizontal ?? 32;
+            const verticalGap = spacing.vertical ?? 48;
+
+            // Use inline CSS for dynamic spacing (Tailwind arbitrary values don't work with runtime values)
+            const layoutStyle: React.CSSProperties = {
+              rowGap: `${verticalGap}px`,
+              columnGap: `${horizontalGap}px`,
+            };
+
+            let layoutClass = '';
+            if (layout === '2-across') {
+              layoutClass = 'grid grid-cols-1 md:grid-cols-2';
+            } else if (layout === '3-across') {
+              layoutClass = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+            } else {
+              layoutClass = 'flex flex-col';
+            }
+
+            const carouselOptions = mapCarouselOptions(section.carouselDefaults);
+
+            return (
+              <div key={key} className={layoutClass} style={layoutStyle}>
+                {carouselGroups.map((group, idx) => (
+                  <div key={`dynamic-carousel-${idx}`} className="w-full">
+                    <Carousel images={group} {...carouselOptions} />
+                  </div>
+                ))}
+              </div>
+            );
+          }
 
           default:
             console.warn(`Unknown section type: ${(section as any).type}`);

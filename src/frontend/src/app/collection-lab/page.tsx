@@ -27,10 +27,10 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
   'dynamic-single-column': {
     layoutType: 'dynamic',
     title: 'Single Column (Mobile Style)',
-    subtitle: 'One carousel per row',
+    subtitle: 'One carousel per row, 20 images each',
     dynamicSettings: {
       layout: 'single-column',
-      imagesPerCarousel: 'all', // All images in one carousel, or set to number
+      imagesPerCarousel: 20, // Images per carousel (20 is a good default)
       carouselDefaults: {
         transition: 'slide-horizontal',
         reservedSpace: { bottom: 80 },
@@ -46,6 +46,19 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
       imagesPerCarousel: 5,
       carouselDefaults: {
         transition: 'fade',
+        reservedSpace: { bottom: 60 },
+      },
+    },
+  },
+  'dynamic-zipper': {
+    layoutType: 'dynamic',
+    title: 'Zipper Layout',
+    subtitle: 'Alternating left-right carousels (magazine style)',
+    dynamicSettings: {
+      layout: 'zipper',
+      imagesPerCarousel: 5,
+      carouselDefaults: {
+        transition: 'slide-horizontal',
         reservedSpace: { bottom: 60 },
       },
     },
@@ -143,16 +156,143 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
         spacing: 40,
       },
       {
-        type: 'carousel',
-        images: { limit: 5, skip: 0 }, // First 5 images
-        width: 'half',
-        carouselOptions: { transition: 'fade' },
+        type: 'row', // Group carousels in a row
+        sections: [
+          {
+            type: 'carousel',
+            images: { limit: 5, skip: 0 }, // First 5 images
+            width: 'half',
+            carouselOptions: { transition: 'fade' },
+          },
+          {
+            type: 'carousel',
+            images: { limit: 5, skip: 5 }, // Next 5 images (skip first 5)
+            width: 'half',
+            carouselOptions: { transition: 'fade' },
+          },
+        ],
+      },
+    ],
+  },
+  'hybrid-demo': {
+    layoutType: 'curated',
+    sections: [
+      {
+        type: 'hero',
+        title: 'HYBRID LAYOUT',
+        subtitle: 'Curated header + dynamic auto-fill = best of both worlds',
+        containerOpacity: 0.35,
+        textPosition: 'center',
+        separator: true,
       },
       {
-        type: 'carousel',
-        images: { limit: 5, skip: 5 }, // Next 5 images (skip first 5)
-        width: 'half',
-        carouselOptions: { transition: 'fade' },
+        type: 'row',
+        sections: [
+          {
+            type: 'text',
+            content: `
+              <div style="padding: 2rem;">
+                <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Story Section One</h3>
+                <p style="opacity: 0.8; line-height: 1.6;">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  This text sits alongside the carousel, creating a magazine-style layout.
+                </p>
+              </div>
+            `,
+            position: 'left',
+            width: 'half',
+          },
+          {
+            type: 'carousel',
+            images: { limit: 3, skip: 0 },
+            width: 'half',
+            carouselOptions: {
+              transition: 'fade',
+              reservedSpace: { bottom: 60 },
+            },
+          },
+        ],
+      },
+      {
+        type: 'row',
+        sections: [
+          {
+            type: 'carousel',
+            images: { limit: 3, skip: 3 },
+            width: 'half',
+            carouselOptions: {
+              transition: 'fade',
+              reservedSpace: { bottom: 60 },
+            },
+          },
+          {
+            type: 'text',
+            content: `
+              <div style="padding: 2rem;">
+                <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Story Section Two</h3>
+                <p style="opacity: 0.8; line-height: 1.6;">
+                  Now the carousel is on the left, and text on the right.
+                  This alternating pattern creates visual rhythm and keeps the layout dynamic and engaging.
+                </p>
+              </div>
+            `,
+            position: 'right',
+            width: 'half',
+          },
+        ],
+      },
+      {
+        type: 'separator',
+        style: 'gradient',
+        opacity: 0.3,
+        spacing: 50,
+      },
+      {
+        type: 'text',
+        content: `
+          <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+            <h3 style="font-size: 1.3rem; margin-bottom: 1rem;">Auto-Generated Gallery</h3>
+            <p style="opacity: 0.8;">
+              The next 15 images are auto-filled in a 2-across grid.
+              Dynamic-fill only uses images not already shown above!
+            </p>
+          </div>
+        `,
+        position: 'center',
+        width: 'full',
+      },
+      {
+        type: 'dynamic-fill',
+        count: 15, // Next 15 images
+        layout: '2-across',
+        imagesPerCarousel: 5,
+        carouselDefaults: {
+          transition: 'slide-horizontal',
+          reservedSpace: { bottom: 60 },
+        },
+      },
+      {
+        type: 'separator',
+        style: 'dots',
+        opacity: 0.4,
+        spacing: 60,
+      },
+      {
+        type: 'text',
+        content: '<p style="text-align: center; opacity: 0.7;">Everything below = all remaining images auto-filled (20 per carousel)</p>',
+        position: 'center',
+        width: 'full',
+      },
+      {
+        type: 'dynamic-fill',
+        count: 'all', // All remaining images
+        layout: 'single-column',
+        imagesPerCarousel: 20, // 20 images per carousel
+        carouselDefaults: {
+          transition: 'slide-horizontal',
+          reservedSpace: { bottom: 80 },
+        },
       },
     ],
   },
@@ -169,6 +309,11 @@ export default function CollectionLabPage() {
   const [configJson, setConfigJson] = useState('');
   const [parsedConfig, setParsedConfig] = useState<CollectionConfig | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const [showReference, setShowReference] = useState(false);
+
+  // Spacing controls (for dynamic layouts)
+  const [spacingHorizontal, setSpacingHorizontal] = useState(32);
+  const [spacingVertical, setSpacingVertical] = useState(48);
 
   // Load available collections from backend
   useEffect(() => {
@@ -190,6 +335,7 @@ export default function CollectionLabPage() {
       setLoading(true);
       setError(null);
 
+      // getCollection now handles pagination automatically
       const data = await getCollection(selectedCollection);
 
       if (!data) {
@@ -239,6 +385,43 @@ export default function CollectionLabPage() {
       handleLoadExample('dynamic-simple');
     }
     setJsonError(null);
+  };
+
+  // Update spacing in config
+  const handleSpacingChange = (horizontal: number, vertical: number) => {
+    setSpacingHorizontal(horizontal);
+    setSpacingVertical(vertical);
+
+    if (!parsedConfig) return;
+
+    if (parsedConfig.layoutType === 'dynamic') {
+      // Update dynamic layout spacing
+      const updated = {
+        ...parsedConfig,
+        dynamicSettings: {
+          ...parsedConfig.dynamicSettings,
+          spacing: { horizontal, vertical }
+        }
+      };
+      setConfigJson(JSON.stringify(updated, null, 2));
+      setParsedConfig(updated);
+    } else if (parsedConfig.layoutType === 'curated' && parsedConfig.sections) {
+      // Update spacing in all dynamic-fill sections
+      const updated = {
+        ...parsedConfig,
+        sections: parsedConfig.sections.map((section: any) => {
+          if (section.type === 'dynamic-fill') {
+            return {
+              ...section,
+              spacing: { horizontal, vertical }
+            };
+          }
+          return section;
+        })
+      };
+      setConfigJson(JSON.stringify(updated, null, 2));
+      setParsedConfig(updated);
+    }
   };
 
   if (loading) {
@@ -318,6 +501,12 @@ export default function CollectionLabPage() {
                 2-Across
               </button>
               <button
+                onClick={() => handleLoadExample('dynamic-zipper')}
+                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+              >
+                Zipper
+              </button>
+              <button
                 onClick={() => handleLoadExample('template-demo')}
                 className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
               >
@@ -335,8 +524,57 @@ export default function CollectionLabPage() {
               >
                 Grid
               </button>
+              <button
+                onClick={() => handleLoadExample('hybrid-demo')}
+                className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/40 px-3 py-1 rounded"
+              >
+                Hybrid (Auto-Fill)
+              </button>
             </div>
           </div>
+
+          {/* Spacing Controls (Dynamic Layouts + Hybrid with Dynamic-Fill) */}
+          {(layoutType === 'dynamic' || (layoutType === 'curated' && parsedConfig?.sections?.some((s: any) => s.type === 'dynamic-fill'))) && (
+            <div className="space-y-3 pb-3 border-b border-white/10">
+              <label className="text-sm text-white/70 font-semibold">📏 Spacing Controls</label>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-white/60">Horizontal Gap</span>
+                  <span className="text-xs text-white/80 font-mono">{spacingHorizontal}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="-80"
+                  max="100"
+                  step="4"
+                  value={spacingHorizontal}
+                  onChange={(e) => handleSpacingChange(parseInt(e.target.value), spacingVertical)}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-white/60">Vertical Gap</span>
+                  <span className="text-xs text-white/80 font-mono">{spacingVertical}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="-80"
+                  max="120"
+                  step="4"
+                  value={spacingVertical}
+                  onChange={(e) => handleSpacingChange(spacingHorizontal, parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
+
+              <p className="text-xs text-white/50 italic">
+                Adjust gaps between carousels • Negative values = overlapping
+              </p>
+            </div>
+          )}
 
           {/* JSON Editor */}
           <div className="space-y-2">
@@ -378,8 +616,98 @@ export default function CollectionLabPage() {
           {/* Info */}
           <div className="text-xs text-white/50 space-y-1 pt-2 border-t border-white/10">
             <p>Edit JSON, click Apply to see changes</p>
-            <p>See docs/CONFIG_SCHEMA_GUIDE.md for reference</p>
+            <button
+              onClick={() => setShowReference(!showReference)}
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              {showReference ? 'Hide' : 'Show'} Config Reference
+            </button>
           </div>
+
+          {/* Quick Reference (Collapsible) */}
+          {showReference && (
+            <div className="text-xs text-white/90 space-y-3 pt-3 border-t border-white/10 max-h-96 overflow-y-auto">
+              <h3 className="font-bold text-sm text-white">📚 Config Quick Reference</h3>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Layout Types:</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">curated</code> - Manual section-by-section design</li>
+                  <li><code className="bg-white/10 px-1">dynamic</code> - Auto-generate from all images</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Template Variables:</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">$CollectionName</code> - Collection slug</li>
+                  <li><code className="bg-white/10 px-1">$CollectionTitle</code> - Display title</li>
+                  <li><code className="bg-white/10 px-1">$ImageCount</code> - Number of images</li>
+                  <li><code className="bg-white/10 px-1">$VideoCount</code> - Number of videos</li>
+                  <li><code className="bg-white/10 px-1">$TotalCount</code> - Total media items</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Section Types (Curated):</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">hero</code> - Title/subtitle banner</li>
+                  <li><code className="bg-white/10 px-1">text</code> - HTML/markdown content</li>
+                  <li><code className="bg-white/10 px-1">carousel</code> - Image slideshow</li>
+                  <li><code className="bg-white/10 px-1">image</code> - Single image</li>
+                  <li><code className="bg-white/10 px-1">video</code> - Single video</li>
+                  <li><code className="bg-white/10 px-1">separator</code> - Visual divider</li>
+                  <li><code className="bg-white/10 px-1">dynamic-fill</code> - Auto-fill remaining images</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Image Queries:</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">{'{ limit: 10 }'}</code> - First 10 images</li>
+                  <li><code className="bg-white/10 px-1">{'{ skip: 5, limit: 10 }'}</code> - Skip first 5, get next 10</li>
+                  <li><code className="bg-white/10 px-1">{'{ aspectRatio: ">2.5" }'}</code> - Wide images only</li>
+                  <li><code className="bg-white/10 px-1">{'{ filename: "pattern" }'}</code> - Regex filename match</li>
+                  <li><code className="bg-white/10 px-1">{'{ sortBy: "random" }'}</code> - Random order</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Carousel Options:</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">transition</code> - fade, slide-horizontal, zoom, flipbook</li>
+                  <li><code className="bg-white/10 px-1">autoplay</code> - true/false</li>
+                  <li><code className="bg-white/10 px-1">interval</code> - ms between slides (8000)</li>
+                  <li><code className="bg-white/10 px-1">speed</code> - transition duration ms (800)</li>
+                  <li><code className="bg-white/10 px-1">reservedSpace</code> - top, bottom, left, right (px)</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Layout Options (Dynamic):</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">single-column</code> - One carousel per row</li>
+                  <li><code className="bg-white/10 px-1">2-across</code> - Two carousels side-by-side</li>
+                  <li><code className="bg-white/10 px-1">3-across</code> - Three carousels in grid</li>
+                  <li><code className="bg-white/10 px-1">masonry</code> - Varying heights (TODO)</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-semibold text-white/80">Width Options:</p>
+                <ul className="list-disc list-inside space-y-1 text-white/70">
+                  <li><code className="bg-white/10 px-1">full</code> - 100% width</li>
+                  <li><code className="bg-white/10 px-1">half</code> - 50% width (side-by-side)</li>
+                  <li><code className="bg-white/10 px-1">third</code> - 33% width</li>
+                  <li><code className="bg-white/10 px-1">quarter</code> - 25% width</li>
+                </ul>
+              </div>
+
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-white/60">See <code className="bg-white/10 px-1">docs/CONFIG_SCHEMA_GUIDE.md</code> for full details</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
