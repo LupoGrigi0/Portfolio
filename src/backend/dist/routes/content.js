@@ -7,12 +7,17 @@
  */
 import { Router } from 'express';
 import { createLogger } from '../utils/logger-wrapper.js';
+import path from 'path';
 const logger = createLogger('backend-content.log');
 const router = Router();
 // Database manager instance (injected by index.ts on startup)
 export let db = null;
+export let scanner = null;
 export function setDatabaseManager(manager) {
     db = manager;
+}
+export function setContentScanner(contentScanner) {
+    scanner = contentScanner;
 }
 // Content directory for URL transformation
 const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
@@ -24,7 +29,7 @@ const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/conte
  * To: "/api/media/couples/Hero-image.jpg?size=thumbnail"
  *
  * @param absolutePath - Absolute path to file
- * @param slug - Collection slug
+ * @param slug - Collection slug (unused - extracted from path instead)
  * @param originalFormat - Original file extension (jpg, gif, png, etc.)
  */
 function transformImageUrl(absolutePath, slug, originalFormat = 'jpg') {
@@ -49,6 +54,9 @@ function transformImageUrl(absolutePath, slug, originalFormat = 'jpg') {
         }
         // Parse the path to determine if it's a thumbnail or original
         const parts = relativePath.split('/');
+        // Extract the top-level slug from the filesystem path (first part)
+        // E.g., "Gynoids/Bugs/hero.jfif" → topLevelSlug = "gynoids"
+        const topLevelSlug = parts[0].toLowerCase().replace(/[^a-z0-9]+/g, '-');
         // Check if path contains .thumbnails directory
         const isThumbnail = parts.includes('.thumbnails');
         if (isThumbnail) {
@@ -79,9 +87,9 @@ function transformImageUrl(absolutePath, slug, originalFormat = 'jpg') {
             // Construct API URL with size parameter (URL-encode filename)
             const encodedName = encodeURIComponent(originalName);
             if (subdirectory) {
-                return `/api/media/${slug}/${subdirectory}/${encodedName}?size=${size}`;
+                return `/api/media/${topLevelSlug}/${subdirectory}/${encodedName}?size=${size}`;
             }
-            return `/api/media/${slug}/${encodedName}?size=${size}`;
+            return `/api/media/${topLevelSlug}/${encodedName}?size=${size}`;
         }
         else {
             // Original file - no thumbnail
@@ -93,9 +101,9 @@ function transformImageUrl(absolutePath, slug, originalFormat = 'jpg') {
             const subdirectory = subdirectoryParts.length > 0 ? subdirectoryParts.join('/') : '';
             // Construct API URL (URL-encode filename)
             if (subdirectory) {
-                return `/api/media/${slug}/${subdirectory}/${encodedFilename}`;
+                return `/api/media/${topLevelSlug}/${subdirectory}/${encodedFilename}`;
             }
-            return `/api/media/${slug}/${encodedFilename}`;
+            return `/api/media/${topLevelSlug}/${encodedFilename}`;
         }
     }
     catch (error) {
@@ -128,25 +136,32 @@ router.get('/collections', async (req, res, next) => {
         if (status)
             filter.status = status;
         const directories = await db.getDirectories(filter);
+        // Filter to only top-level collections (parent_category IS NULL)
+        const topLevelDirectories = directories.filter((dir) => !dir.parent_category);
         // Format as collections per Zara's spec
-        const collections = directories.map((dir) => {
+        const collections = await Promise.all(topLevelDirectories.map(async (dir) => {
             const tags = JSON.parse(dir.tags || '[]');
             const config = JSON.parse(dir.config || '{}');
+            // Get direct subcollections (just slugs)
+            const subcollectionObjects = await db.getSubdirectoriesByParentId(dir.id);
+            const subcollections = subcollectionObjects.map((sub) => sub.slug);
+            // Transform hero image path to API URL
+            const heroImageUrl = dir.cover_image ? transformImageUrl(dir.cover_image, dir.slug, path.extname(dir.cover_image).slice(1) || 'jpg') : null;
             return {
                 id: dir.id,
                 name: dir.title,
                 slug: dir.slug,
-                heroImage: dir.cover_image,
+                heroImage: heroImageUrl,
                 hasConfig: Object.keys(config).length > 0,
                 imageCount: dir.image_count || 0,
                 videoCount: 0, // TODO: Track video count separately
-                subcollections: [], // TODO: Implement hierarchical collections
+                subcollections,
                 description: dir.description,
                 featured: Boolean(dir.featured),
                 tags,
                 config,
             };
-        });
+        }));
         res.json({
             success: true,
             data: {
@@ -202,11 +217,17 @@ router.get('/collections/:slug', async (req, res, next) => {
         // Format as collection
         const config = JSON.parse(directory.config || '{}');
         const tags = JSON.parse(directory.tags || '[]');
+        // Get direct subcollections (just slugs)
+        const subcollectionObjects = await db.getSubdirectoriesByParentId(directory.id);
+        const subcollections = subcollectionObjects.map((sub) => sub.slug);
+        // Transform hero image path to API URL
+        const coverImage = directory.cover_image;
+        const heroImageUrl = coverImage ? transformImageUrl(coverImage, slug, path.extname(coverImage).slice(1) || 'jpg') : null;
         const collection = {
             id: directory.id,
             name: directory.title,
             slug: directory.slug,
-            heroImage: directory.cover_image,
+            heroImage: heroImageUrl,
             description: directory.description,
             imageCount: totalImages,
             videoCount: 0, // TODO: Track video count separately
@@ -241,7 +262,7 @@ router.get('/collections/:slug', async (req, res, next) => {
                 hasNext,
                 hasPrev,
             },
-            subcollections: [], // TODO: Implement hierarchical structure
+            subcollections,
         };
         res.json({
             success: true,
