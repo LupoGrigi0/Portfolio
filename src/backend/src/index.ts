@@ -14,9 +14,9 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 
 // Route imports
-import contentRoutes from './routes/content.js';
-import socialRoutes from './routes/social.js';
-import adminRoutes, { setContentScanner } from './routes/admin.js';
+import contentRoutes, { setDatabaseManager as setContentDb, setContentScanner as setContentScannerForContent } from './routes/content.js';
+import socialRoutes, { setDatabaseManager as setSocialDb } from './routes/social.js';
+import adminRoutes, { setContentScanner, setDatabaseManager as setAdminDb } from './routes/admin.js';
 import healthRoutes from './routes/health.js';
 import mediaRoutes from './routes/media.js';
 
@@ -29,7 +29,7 @@ import { createLogger } from './utils/logger-wrapper.js';
 
 // Middleware imports
 import { errorHandler } from './middleware/errorHandler.js';
-import { rateLimiterMiddleware } from './middleware/rateLimiter.js';
+import { rateLimiterMiddleware, adminRateLimiterMiddleware } from './middleware/rateLimiter.js';
 
 // Load environment variables
 dotenv.config();
@@ -86,14 +86,18 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
-app.use(rateLimiterMiddleware);
+// Apply rate limiting to specific routes (not globally)
+// Admin endpoints get separate rate limiter with higher limits
+app.use('/api/admin', adminRateLimiterMiddleware);
+app.use('/api/content', rateLimiterMiddleware);
+app.use('/api/social', rateLimiterMiddleware);
+app.use('/api/media', rateLimiterMiddleware);
 
-// Routes
+// Routes (rate limiting already applied above)
 app.use('/api/content', contentRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/health', healthRoutes);
+app.use('/api/health', healthRoutes); // No rate limiting on health checks
 app.use('/api/media', mediaRoutes);
 
 // Graceful shutdown endpoint (development only)
@@ -133,10 +137,16 @@ async function startServer() {
     await dbManager.initialize();
     console.log('✅ Database initialized');
 
+    // Inject DatabaseManager into route modules
+    setContentDb(dbManager);
+    setSocialDb(dbManager);
+    setAdminDb(dbManager);
+    console.log('✅ Database manager injected into routes');
+
     // Initialize content scanner
     const contentDir = process.env.CONTENT_DIRECTORY || '../content';
     const imageSizes = process.env.IMAGE_SIZES || '640,750,828,1080,1200,1920,2048,3840';
-    const supportedFormats = process.env.SUPPORTED_FORMATS || 'jpg,jpeg,png,webp,avif,gif,tiff,bmp';
+    const supportedFormats = process.env.SUPPORTED_FORMATS || 'jpg,jpeg,jfif,png,webp,avif,gif,tiff,bmp';
 
     contentScanner = new ContentScanner(
       logger,
@@ -146,6 +156,7 @@ async function startServer() {
       supportedFormats
     );
     setContentScanner(contentScanner);
+    setContentScannerForContent(contentScanner);
     console.log('✅ Content scanner initialized');
 
     // Start directory watcher
