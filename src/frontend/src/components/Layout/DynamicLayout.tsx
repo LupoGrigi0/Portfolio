@@ -31,22 +31,43 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
 
   // Filter images only (skip videos for now - carousel v1 limitation)
   // Also exclude hero images (hero.jpg, hero.jfif, etc.) - those are for hero sections only
+  console.log(`[DynamicLayout] Collection "${collection.slug}" gallery:`, collection.gallery?.length || 0, 'items');
+  console.log(`[DynamicLayout] First gallery item:`, collection.gallery?.[0]);
+
   const images = (collection.gallery || [])
-    .filter((item) =>
-      item.type === 'image' &&
-      item.urls.large &&
-      !/^hero\.(jpg|jfif|jpeg|png|webp)$/i.test(item.filename)
-    )
-    .map((item) => ({
-      id: item.id,
-      src: getAbsoluteMediaUrl(item.urls.large),
-      alt: item.altText || item.title || item.filename,
-    }));
+    .filter((item) => {
+      // Must be an image type
+      if (item.type !== 'image') return false;
+
+      // Exclude hero images (used for hero sections only)
+      if (/^hero[.-]/i.test(item.filename)) return false;
+
+      // Must have at least one valid URL (large, medium, or original as fallback)
+      const hasValidUrl = item.urls && (item.urls.large || item.urls.medium || item.urls.original);
+      if (!hasValidUrl) {
+        console.warn(`[DynamicLayout] Skipping image with no valid URL:`, item.filename);
+      }
+
+      return hasValidUrl;
+    })
+    .map((item) => {
+      // Use large, or fallback to medium, or fallback to original
+      const imageUrl = item.urls.large || item.urls.medium || item.urls.original;
+      return {
+        id: item.id,
+        src: getAbsoluteMediaUrl(imageUrl),
+        alt: item.altText || item.title || item.filename,
+      };
+    });
+
+  console.log(`[DynamicLayout] Filtered images:`, images.length);
 
   if (images.length === 0) {
     return (
       <div className="text-center text-white/60 py-12">
         <p>No images found in this collection</p>
+        <p className="text-xs text-white/40 mt-2">Gallery has {collection.gallery?.length || 0} items total</p>
+        <p className="text-xs text-white/40">Check browser console for debug info</p>
       </div>
     );
   }

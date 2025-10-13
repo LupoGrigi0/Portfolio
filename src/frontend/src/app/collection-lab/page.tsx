@@ -17,7 +17,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getCollection, getCollections, type Collection, type CollectionConfig } from '@/lib/api-client';
+import { getCollection, getCollections, resetRateLimit, type Collection, type CollectionConfig } from '@/lib/api-client';
 import CuratedLayout from '@/components/Layout/CuratedLayout';
 import DynamicLayout from '@/components/Layout/DynamicLayout';
 import { MidgroundProjectionProvider } from '@/components/Layout';
@@ -424,6 +424,16 @@ export default function CollectionLabPage() {
     }
   };
 
+  // Reset rate limit for testing large collections
+  const handleResetRateLimit = async () => {
+    const result = await resetRateLimit();
+    if (result.success) {
+      alert('✓ Rate limit reset successfully!\n\n' + (result.message || 'You can now fetch large collections without hitting rate limits.'));
+    } else {
+      alert('✗ Error resetting rate limit:\n\n' + result.error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -482,6 +492,13 @@ export default function CollectionLabPage() {
             <p className="text-xs text-white/60">
               {collection ? `${collection.imageCount} images • ${collection.videoCount} videos` : 'Loading...'}
             </p>
+            <button
+              onClick={handleResetRateLimit}
+              className="w-full mt-2 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/40 text-orange-300 text-xs font-semibold px-3 py-2 rounded transition-colors"
+              title="Reset rate limit for testing large collections"
+            >
+              🔄 Reset Rate Limit
+            </button>
           </div>
 
           {/* Example Configs */}

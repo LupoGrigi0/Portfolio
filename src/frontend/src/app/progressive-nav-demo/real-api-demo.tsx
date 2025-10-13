@@ -133,9 +133,9 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
     setCurrentPath(`/collections/${slug}`);
     setCurrentCollection(collectionData);
 
-    // Find collection in tree to determine if it has subcollections
-    const collectionInTree = findCollectionBySlug(slug);
-    const hasSubcollections = collectionInTree && collectionInTree.subcollections && collectionInTree.subcollections.length > 0;
+    // Check if this collection has subcollections (from the API response, not the tree)
+    const hasSubcollections = collectionData.subcollections && collectionData.subcollections.length > 0;
+    console.log('[Real API Nav] Collection has subcollections?', hasSubcollections, collectionData.subcollections);
 
     if (hasSubcollections) {
       // If clicking from breadcrumb, open drawer and expand
@@ -354,7 +354,45 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
       >
         <div className="h-full overflow-y-auto p-4">
           <nav className="space-y-1">
-            {renderCollectionTree(collections)}
+            {/* Home link (always at top when viewing a collection) */}
+            {currentCollection && (
+              <>
+                <button
+                  onClick={() => navigateTo('/')}
+                  className="w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-white/80 hover:bg-white/5 hover:text-white flex items-center gap-2"
+                >
+                  <span>🏠</span> Home
+                </button>
+                <div className="border-b border-white/10 my-2" />
+              </>
+            )}
+
+            {/* Contextual menu: show subcollections if current collection has them, otherwise show all */}
+            {currentCollection && currentCollection.subcollections && currentCollection.subcollections.length > 0 ? (
+              // Show current collection's subcollections
+              <>
+                <div className="text-xs text-white/50 px-4 py-2">{currentCollection.name}</div>
+                {renderCollectionTree(
+                  (currentCollection.subcollections as any[]).map((sub, index) => {
+                    const slug = typeof sub === 'string' ? sub : sub.slug;
+                    const name = typeof sub === 'string'
+                      ? sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                      : sub.name;
+                    return {
+                      slug,
+                      name,
+                      id: slug,
+                      imageCount: typeof sub === 'string' ? 0 : sub.imageCount,
+                      videoCount: 0,
+                      subcollections: typeof sub === 'string' ? [] : sub.subcollections || [],
+                    };
+                  })
+                )}
+              </>
+            ) : (
+              // Show all top-level collections
+              renderCollectionTree(collections)
+            )}
           </nav>
         </div>
       </div>
@@ -388,16 +426,23 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
                       <div>
                         <p><strong>Subcollections:</strong></p>
                         <ul className="list-disc list-inside ml-4 mt-2">
-                          {currentCollection.subcollections.map(sub => (
-                            <li key={sub.slug}>
-                              <button
-                                onClick={() => navigateTo(sub.slug)}
-                                className="hover:text-white transition-colors underline"
-                              >
-                                {sub.name} ({sub.imageCount} images)
-                              </button>
-                            </li>
-                          ))}
+                          {currentCollection.subcollections.map((sub, index) => {
+                            // Handle both string slugs and full objects
+                            const slug = typeof sub === 'string' ? sub : sub.slug;
+                            const name = typeof sub === 'string' ? sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : sub.name;
+                            const imageCount = typeof sub === 'string' ? 0 : sub.imageCount;
+
+                            return (
+                              <li key={`${slug}-${index}`}>
+                                <button
+                                  onClick={() => navigateTo(slug)}
+                                  className="hover:text-white transition-colors underline"
+                                >
+                                  {name} ({imageCount} images)
+                                </button>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     )}

@@ -32,6 +32,17 @@ export interface MediaItem {
   altText?: string;
 }
 
+export interface Subcollection {
+  id: string;
+  title: string;  // Display name
+  slug: string;   // URL-safe identifier
+  description?: string;
+  coverImage?: string | null;
+  imageCount: number;
+  featured: boolean;
+  subcollections: Subcollection[];  // Recursive up to 4 levels
+}
+
 export interface Collection {
   id: string;
   name: string;
@@ -40,9 +51,20 @@ export interface Collection {
   hasConfig: boolean;
   imageCount: number;
   videoCount: number;
-  subcollections?: Collection[];
+  description?: string;
+  featured?: boolean;
+  tags?: string[];
+  subcollections?: Subcollection[];  // New: Full nested subcollection objects
   gallery?: MediaItem[];
   config?: CollectionConfig;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface CollectionConfig {
@@ -413,5 +435,92 @@ export async function checkBackendHealth(): Promise<boolean> {
   } catch (error) {
     console.error('[API Client] Backend health check failed:', error);
     return false;
+  }
+}
+
+/**
+ * Reset rate limit for current IP (useful for testing large collections)
+ */
+export async function resetRateLimit(ip?: string): Promise<{
+  success: boolean;
+  message?: string;
+  error?: string;
+}> {
+  try {
+    const url = new URL(`${API_BASE_URL}/api/admin/reset-rate-limit`);
+    if (ip) {
+      url.searchParams.set('ip', ip);
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Rate limit reset failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return {
+      success: data.success,
+      message: data.message,
+    };
+  } catch (error) {
+    console.error('[API Client] Error resetting rate limit:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Update collection config (both filesystem and database)
+ *
+ * @param slug Collection slug
+ * @param config New configuration object (replaces existing config entirely)
+ * @returns Success status and updated config
+ */
+export async function updateCollectionConfig(
+  slug: string,
+  config: CollectionConfig
+): Promise<{
+  success: boolean;
+  config?: CollectionConfig;
+  error?: string;
+  updatedAt?: string;
+  path?: string;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/admin/config/${slug}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(config),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Config update failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Config update failed');
+    }
+
+    return {
+      success: true,
+      config: data.data.config,
+      updatedAt: data.data.updatedAt,
+      path: data.data.path,
+    };
+  } catch (error) {
+    console.error('[API Client] Error updating config:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }

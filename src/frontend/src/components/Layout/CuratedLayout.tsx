@@ -59,11 +59,13 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
 
     // Find in gallery
     const item = collection.gallery?.find(
-      (g) => g.filename === filename || g.urls.large.includes(filename)
+      (g) => g.filename === filename || g.urls?.large?.includes(filename) || g.urls?.original?.includes(filename)
     );
 
     if (item) {
-      return getAbsoluteMediaUrl(item.urls.large);
+      // Use large, or fallback to medium, or fallback to original
+      const imageUrl = item.urls.large || item.urls.medium || item.urls.original;
+      return getAbsoluteMediaUrl(imageUrl);
     }
 
     // Fallback: assume it's in collection directory
@@ -204,19 +206,12 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
   };
 
   /**
-   * Auto-detect hero image from collection gallery
-   * Looks for hero.jpg, hero.jfif, hero.png, hero.webp
+   * Get hero image URL from collection metadata
+   * Backend provides heroImage path directly at collection level
    */
-  const detectHeroImage = (): string | undefined => {
-    const heroItem = collection.gallery?.find((item) =>
-      item.type === 'image' && /^hero\.(jpg|jfif|jpeg|png|webp)$/i.test(item.filename)
-    );
-
-    if (heroItem) {
-      return getAbsoluteMediaUrl(heroItem.urls.large);
-    }
-
-    return undefined;
+  const getHeroImageUrl = (): string | undefined => {
+    if (!collection.heroImage) return undefined;
+    return getAbsoluteMediaUrl(collection.heroImage);
   };
 
   return (
@@ -226,10 +221,10 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
 
         switch (section.type) {
           case 'hero': {
-            // Auto-detect hero image if not explicitly provided
+            // Use explicit backgroundImage from config, or fall back to collection's hero image
             const heroImageUrl = section.backgroundImage
               ? resolveImageUrl(section.backgroundImage)
-              : detectHeroImage();
+              : getHeroImageUrl();
 
             return (
               <HeroSection
@@ -355,10 +350,12 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
 
           case 'dynamic-fill': {
             // Get all remaining unused images (excluding hero images)
-            const allImages = collection.gallery?.filter(item =>
-              item.type === 'image' &&
-              !/^hero\.(jpg|jfif|jpeg|png|webp)$/i.test(item.filename)
-            ) || [];
+            const allImages = collection.gallery?.filter(item => {
+              if (item.type !== 'image') return false;
+              if (/^hero[.-]/i.test(item.filename)) return false;
+              const hasValidUrl = item.urls && (item.urls.large || item.urls.medium || item.urls.original);
+              return hasValidUrl;
+            }) || [];
             const remainingImages = allImages.filter(item => !usedImageFilenames.has(item.filename));
 
             // Determine how many images to use
@@ -373,11 +370,14 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             const carouselGroups: CarouselImage[][] = [];
 
             for (let i = 0; i < imagesToUse.length; i += perCarousel) {
-              const group = imagesToUse.slice(i, i + perCarousel).map((item, idx) => ({
-                id: `dynamic-${i}-${idx}`,
-                src: getAbsoluteMediaUrl(item.urls.large),
-                alt: item.altText || item.title || item.filename,
-              }));
+              const group = imagesToUse.slice(i, i + perCarousel).map((item, idx) => {
+                const imageUrl = item.urls.large || item.urls.medium || item.urls.original;
+                return {
+                  id: `dynamic-${i}-${idx}`,
+                  src: getAbsoluteMediaUrl(imageUrl),
+                  alt: item.altText || item.title || item.filename,
+                };
+              });
               carouselGroups.push(group);
             }
 
