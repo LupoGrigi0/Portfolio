@@ -31,6 +31,13 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
   const [currentCollection, setCurrentCollection] = useState<Collection | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Settings panel
+  const [showSettings, setShowSettings] = useState(false);
+  const [rollbackDelay, setRollbackDelay] = useState(300); // ms before drawer closes when clicking Home
+  const [rollbackSpeed, setRollbackSpeed] = useState(300); // ms for close animation
+  const [indentSpacing, setIndentSpacing] = useState(16); // px for each indent level
+  const [itemVerticalSpacing, setItemVerticalSpacing] = useState(4); // px between items
+
   // Load all collections on mount
   useEffect(() => {
     async function loadCollections() {
@@ -113,8 +120,9 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
       setCurrentPath('/');
       setCurrentCollection(null);
       setExpandedCollections(new Set());
+      // Use rollback delay and speed settings
       if (!isMobile) {
-        setTimeout(() => setIsDrawerOpen(false), 300);
+        setTimeout(() => setIsDrawerOpen(false), rollbackDelay);
       }
       return;
     }
@@ -228,7 +236,7 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
       }
 
       return (
-        <div key={collection.slug} style={{ marginLeft: depth > 0 ? '1rem' : '0' }}>
+        <div key={collection.slug} style={{ marginLeft: depth > 0 ? `${indentSpacing}px` : '0' }}>
           {/* Collection button */}
           <button
             onClick={() => navigateTo(collection.slug)}
@@ -316,6 +324,22 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
             Lupo Grigio
           </button>
 
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Settings Button */}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-all"
+            aria-label="Settings"
+            title="Navigation Settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+
           {/* Breadcrumbs (Desktop) */}
           {!isMobile && breadcrumbs.length > 1 && (
             <div className="flex items-center gap-2 text-sm text-white/70 ml-4">
@@ -347,13 +371,16 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
 
       {/* Drawer */}
       <div
-        className={`fixed top-16 bottom-0 left-0 z-40 bg-black/80 backdrop-blur-lg border-r border-white/20 transition-all duration-300 ${
+        className={`fixed top-16 bottom-0 left-0 z-40 bg-black/80 backdrop-blur-lg border-r border-white/20 transition-all ${
           isDrawerOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
         }`}
-        style={{ width: `${drawerWidth}px` }}
+        style={{
+          width: `${drawerWidth}px`,
+          transitionDuration: `${rollbackSpeed}ms`,
+        }}
       >
         <div className="h-full overflow-y-auto p-4">
-          <nav className="space-y-1">
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: `${itemVerticalSpacing}px` }}>
             {/* Home link (always at top when viewing a collection) */}
             {currentCollection && (
               <>
@@ -396,6 +423,109 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
           </nav>
         </div>
       </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="fixed top-20 right-4 z-50 w-80 bg-black/90 backdrop-blur-lg border border-white/20 rounded-lg p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold">Navigation Settings</h3>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="text-white/60 hover:text-white transition-colors"
+              aria-label="Close settings"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Rollback Delay */}
+            <div>
+              <label className="text-white/80 text-sm block mb-2">
+                Rollback Delay: <span className="text-white font-mono">{rollbackDelay}ms</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2000"
+                step="50"
+                value={rollbackDelay}
+                onChange={(e) => setRollbackDelay(Number(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-white/50 text-xs mt-1">Time before drawer closes after clicking Home</p>
+            </div>
+
+            {/* Rollback Speed */}
+            <div>
+              <label className="text-white/80 text-sm block mb-2">
+                Rollback Speed: <span className="text-white font-mono">{rollbackSpeed}ms</span>
+              </label>
+              <input
+                type="range"
+                min="100"
+                max="1000"
+                step="50"
+                value={rollbackSpeed}
+                onChange={(e) => setRollbackSpeed(Number(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-white/50 text-xs mt-1">Animation duration for drawer transitions</p>
+            </div>
+
+            {/* Indent Spacing */}
+            <div>
+              <label className="text-white/80 text-sm block mb-2">
+                Indent Spacing: <span className="text-white font-mono">{indentSpacing}px</span>
+              </label>
+              <input
+                type="range"
+                min="8"
+                max="32"
+                step="2"
+                value={indentSpacing}
+                onChange={(e) => setIndentSpacing(Number(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-white/50 text-xs mt-1">Horizontal indent per hierarchy level</p>
+            </div>
+
+            {/* Vertical Spacing */}
+            <div>
+              <label className="text-white/80 text-sm block mb-2">
+                Vertical Spacing: <span className="text-white font-mono">{itemVerticalSpacing}px</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="16"
+                step="1"
+                value={itemVerticalSpacing}
+                onChange={(e) => setItemVerticalSpacing(Number(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-white/50 text-xs mt-1">Gap between navigation items</p>
+            </div>
+
+            {/* Reset to Defaults */}
+            <div className="pt-4 border-t border-white/10">
+              <button
+                onClick={() => {
+                  setRollbackDelay(300);
+                  setRollbackSpeed(300);
+                  setIndentSpacing(16);
+                  setItemVerticalSpacing(4);
+                }}
+                className="w-full px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+              >
+                Reset to Defaults
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content Area */}
       <div className="pt-16">

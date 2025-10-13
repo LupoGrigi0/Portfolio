@@ -358,9 +358,13 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             }) || [];
             const remainingImages = allImages.filter(item => !usedImageFilenames.has(item.filename));
 
+            // Apply skip parameter (skip N images from the REMAINING images, not all images)
+            const skip = section.skip || 0;
+            const afterSkip = remainingImages.slice(skip);
+
             // Determine how many images to use
-            const count = section.count === 'all' ? remainingImages.length : (section.count || remainingImages.length);
-            const imagesToUse = remainingImages.slice(0, count);
+            const count = section.count === 'all' ? afterSkip.length : (section.count || afterSkip.length);
+            const imagesToUse = afterSkip.slice(0, count);
 
             // Mark these as used
             imagesToUse.forEach(img => usedImageFilenames.add(img.filename));

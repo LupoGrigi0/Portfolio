@@ -17,7 +17,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getCollection, getCollections, resetRateLimit, type Collection, type CollectionConfig } from '@/lib/api-client';
+import { getCollection, getCollections, resetRateLimit, updateCollectionConfig, type Collection, type CollectionConfig } from '@/lib/api-client';
 import CuratedLayout from '@/components/Layout/CuratedLayout';
 import DynamicLayout from '@/components/Layout/DynamicLayout';
 import { MidgroundProjectionProvider } from '@/components/Layout';
@@ -306,10 +306,12 @@ export default function CollectionLabPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Config editor state
+  const [configSource, setConfigSource] = useState<'current' | 'templates' | 'custom'>('templates');
   const [configJson, setConfigJson] = useState('');
   const [parsedConfig, setParsedConfig] = useState<CollectionConfig | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [showReference, setShowReference] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Spacing controls (for dynamic layouts)
   const [spacingHorizontal, setSpacingHorizontal] = useState(32);
@@ -346,10 +348,19 @@ export default function CollectionLabPage() {
 
       setCollection(data);
 
-      // Initialize config editor with collection's config or default
-      const initialConfig = data.config || EXAMPLE_CONFIGS['dynamic-simple'];
-      setConfigJson(JSON.stringify(initialConfig, null, 2));
-      setParsedConfig(initialConfig);
+      // Initialize config editor based on whether collection has a config
+      if (data.config) {
+        // Collection has a config - show it in "current" mode
+        setConfigSource('current');
+        setConfigJson(JSON.stringify(data.config, null, 2));
+        setParsedConfig(data.config);
+      } else {
+        // No config - default to templates mode with single-column layout
+        setConfigSource('templates');
+        const defaultTemplate = EXAMPLE_CONFIGS['dynamic-single-column'];
+        setConfigJson(JSON.stringify(defaultTemplate, null, 2));
+        setParsedConfig(defaultTemplate);
+      }
 
       setLoading(false);
     }
@@ -374,6 +385,7 @@ export default function CollectionLabPage() {
     setConfigJson(JSON.stringify(example, null, 2));
     setParsedConfig(example);
     setJsonError(null);
+    setConfigSource('templates');
   };
 
   // Reset to collection's original config
@@ -431,6 +443,67 @@ export default function CollectionLabPage() {
       alert('✓ Rate limit reset successfully!\n\n' + (result.message || 'You can now fetch large collections without hitting rate limits.'));
     } else {
       alert('✗ Error resetting rate limit:\n\n' + result.error);
+    }
+  };
+
+  // Load collection's current config from backend
+  const handleLoadCurrentConfig = () => {
+    if (collection?.config) {
+      setConfigJson(JSON.stringify(collection.config, null, 2));
+      setParsedConfig(collection.config);
+      setConfigSource('current');
+      setJsonError(null);
+    } else {
+      alert('This collection does not have a saved config yet.\n\nYou can create one by selecting a template or writing custom JSON, then clicking "Save to Gallery".');
+    }
+  };
+
+  // Switch to custom editing mode
+  const handleSwitchToCustom = () => {
+    setConfigSource('custom');
+  };
+
+  // Save config to gallery (backend)
+  const handleSaveToGallery = async () => {
+    if (!collection) return;
+
+    // Validate JSON first
+    try {
+      const configToSave = JSON.parse(configJson);
+
+      const confirmed = confirm(
+        `Save this config to ${collection.name}?\n\n` +
+        `This will overwrite the collection's config.json file.\n\n` +
+        `Layout: ${configToSave.layoutType || 'dynamic'}\n` +
+        `Continue?`
+      );
+
+      if (!confirmed) return;
+
+      setSaving(true);
+      const result = await updateCollectionConfig(collection.slug, configToSave);
+
+      if (result.success) {
+        alert(
+          `✓ Config saved successfully!\n\n` +
+          `Collection: ${collection.name}\n` +
+          `File: ${result.path || 'config.json'}\n` +
+          `Updated: ${result.updatedAt || 'now'}`
+        );
+
+        // Reload collection to get updated config
+        const updated = await getCollection(collection.slug);
+        if (updated) {
+          setCollection(updated);
+          setConfigSource('current');
+        }
+      } else {
+        alert(`✗ Error saving config:\n\n${result.error}`);
+      }
+    } catch (err: any) {
+      alert(`✗ Invalid JSON:\n\n${err.message}\n\nPlease fix the JSON before saving.`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -501,54 +574,98 @@ export default function CollectionLabPage() {
             </button>
           </div>
 
-          {/* Example Configs */}
-          <div className="space-y-2">
-            <label className="text-sm text-white/70 font-semibold">Load Example</label>
-            <div className="flex gap-2 flex-wrap">
+          {/* Config Source Selector */}
+          <div className="space-y-3 pb-3 border-b border-white/10">
+            <label className="text-sm text-white/70 font-semibold">Config Source</label>
+            <div className="flex gap-2">
               <button
-                onClick={() => handleLoadExample('dynamic-single-column')}
-                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+                onClick={() => handleLoadCurrentConfig()}
+                className={`flex-1 text-xs font-semibold px-3 py-2 rounded transition-colors ${
+                  configSource === 'current'
+                    ? 'bg-cyan-500/30 border-2 border-cyan-500/60 text-cyan-200'
+                    : 'bg-white/10 border border-white/20 text-white/60 hover:bg-white/20'
+                }`}
               >
-                Single Column
+                Current
               </button>
               <button
-                onClick={() => handleLoadExample('dynamic-2-across')}
-                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+                onClick={() => setConfigSource('templates')}
+                className={`flex-1 text-xs font-semibold px-3 py-2 rounded transition-colors ${
+                  configSource === 'templates'
+                    ? 'bg-blue-500/30 border-2 border-blue-500/60 text-blue-200'
+                    : 'bg-white/10 border border-white/20 text-white/60 hover:bg-white/20'
+                }`}
               >
-                2-Across
+                Templates
               </button>
               <button
-                onClick={() => handleLoadExample('dynamic-zipper')}
-                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+                onClick={() => handleSwitchToCustom()}
+                className={`flex-1 text-xs font-semibold px-3 py-2 rounded transition-colors ${
+                  configSource === 'custom'
+                    ? 'bg-purple-500/30 border-2 border-purple-500/60 text-purple-200'
+                    : 'bg-white/10 border border-white/20 text-white/60 hover:bg-white/20'
+                }`}
               >
-                Zipper
-              </button>
-              <button
-                onClick={() => handleLoadExample('template-demo')}
-                className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
-              >
-                Template (Variables)
-              </button>
-              <button
-                onClick={() => handleLoadExample('curated-hero')}
-                className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
-              >
-                Hero
-              </button>
-              <button
-                onClick={() => handleLoadExample('curated-grid')}
-                className="text-xs bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 px-3 py-1 rounded"
-              >
-                Grid
-              </button>
-              <button
-                onClick={() => handleLoadExample('hybrid-demo')}
-                className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/40 px-3 py-1 rounded"
-              >
-                Hybrid (Auto-Fill)
+                Custom
               </button>
             </div>
+            <p className="text-xs text-white/50">
+              {configSource === 'current' && (collection?.config ? '📄 Viewing saved config' : '⚠️ No saved config yet')}
+              {configSource === 'templates' && '📋 Choose a pre-designed template'}
+              {configSource === 'custom' && '✏️ Edit JSON directly'}
+            </p>
           </div>
+
+          {/* Template Selector (only show in templates mode) */}
+          {configSource === 'templates' && (
+            <div className="space-y-2">
+              <label className="text-sm text-white/70 font-semibold">Load Template</label>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => handleLoadExample('dynamic-single-column')}
+                  className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+                >
+                  Single Column
+                </button>
+                <button
+                  onClick={() => handleLoadExample('dynamic-2-across')}
+                  className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+                >
+                  2-Across
+                </button>
+                <button
+                  onClick={() => handleLoadExample('dynamic-zipper')}
+                  className="text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 px-3 py-1 rounded"
+                >
+                  Zipper
+                </button>
+                <button
+                  onClick={() => handleLoadExample('template-demo')}
+                  className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
+                >
+                  Template (Variables)
+                </button>
+                <button
+                  onClick={() => handleLoadExample('curated-hero')}
+                  className="text-xs bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 px-3 py-1 rounded"
+                >
+                  Hero
+                </button>
+                <button
+                  onClick={() => handleLoadExample('curated-grid')}
+                  className="text-xs bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 px-3 py-1 rounded"
+                >
+                  Grid
+                </button>
+                <button
+                  onClick={() => handleLoadExample('hybrid-demo')}
+                  className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/40 px-3 py-1 rounded"
+                >
+                  Hybrid (Auto-Fill)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Spacing Controls (Dynamic Layouts + Hybrid with Dynamic-Fill) */}
           {(layoutType === 'dynamic' || (layoutType === 'curated' && parsedConfig?.sections?.some((s: any) => s.type === 'dynamic-fill'))) && (
@@ -604,6 +721,12 @@ export default function CollectionLabPage() {
             <textarea
               value={configJson}
               onChange={(e) => setConfigJson(e.target.value)}
+              onKeyDown={(e) => {
+                // Prevent space bar from being captured by parent handlers
+                if (e.key === ' ') {
+                  e.stopPropagation();
+                }
+              }}
               className="w-full h-64 bg-black/60 border border-white/20 rounded px-3 py-2 text-white text-xs font-mono resize-none"
               spellCheck={false}
             />
@@ -615,19 +738,46 @@ export default function CollectionLabPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2">
-            <button
-              onClick={handleApplyConfig}
-              className="flex-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 font-semibold px-4 py-2 rounded transition-colors"
-            >
-              Apply
-            </button>
-            <button
-              onClick={handleReset}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 rounded transition-colors"
-            >
-              Reset
-            </button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleApplyConfig}
+                className="flex-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/40 text-green-300 font-semibold px-4 py-2 rounded transition-colors"
+              >
+                Apply Preview
+              </button>
+              <button
+                onClick={handleReset}
+                className="bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 rounded transition-colors"
+              >
+                Reset
+              </button>
+            </div>
+
+            {/* Save to Gallery Button - only show when NOT viewing current config */}
+            {configSource !== 'current' && (
+              <button
+                onClick={handleSaveToGallery}
+                disabled={saving || !!jsonError}
+                className={`w-full font-semibold px-4 py-2 rounded transition-colors ${
+                  saving || jsonError
+                    ? 'bg-gray-500/20 border border-gray-500/40 text-gray-400 cursor-not-allowed'
+                    : 'bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300'
+                }`}
+              >
+                {saving ? '💾 Saving...' : '💾 Save to Gallery'}
+              </button>
+            )}
+
+            {/* Edit button when viewing current config */}
+            {configSource === 'current' && collection?.config && (
+              <button
+                onClick={handleSwitchToCustom}
+                className="w-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 font-semibold px-4 py-2 rounded transition-colors"
+              >
+                ✏️ Edit Config
+              </button>
+            )}
           </div>
 
           {/* Info */}

@@ -191,6 +191,7 @@ export interface SeparatorSectionConfig {
 export interface DynamicFillSectionConfig {
   type: 'dynamic-fill';
   count?: number | 'all'; // Number of images to auto-fill, or 'all' for remaining
+  skip?: number; // Number of remaining images to skip before filling (default: 0)
   layout?: 'single-column' | '2-across' | '3-across' | 'masonry';
   imagesPerCarousel?: number | 'all';
   carouselDefaults?: CarouselOptionsConfig;
