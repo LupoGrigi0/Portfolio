@@ -250,6 +250,31 @@ export class DatabaseManager {
     );
   }
 
+  /**
+   * Update only thumbnail URLs for an image (partial update)
+   * Used by thumbnail regeneration to avoid NOT NULL constraint errors
+   */
+  async updateImageThumbnails(id: string, data: { thumbnailUrl?: string | null; mediumUrl?: string | null; largeUrl?: string | null; exifData?: any }) {
+    const db = this.getDb();
+    const stmt = db.prepare(`
+      UPDATE images SET
+        thumbnail_url = ?,
+        medium_url = ?,
+        large_url = ?,
+        exif_data = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+
+    return stmt.run(
+      data.thumbnailUrl !== undefined ? data.thumbnailUrl : null,
+      data.mediumUrl !== undefined ? data.mediumUrl : null,
+      data.largeUrl !== undefined ? data.largeUrl : null,
+      JSON.stringify(data.exifData || {}),
+      id
+    );
+  }
+
   async createImage(data: any) {
     const db = this.getDb();
     const stmt = db.prepare(`
