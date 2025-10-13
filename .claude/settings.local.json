@@ -3,7 +3,9 @@
     "allow": [
       "Bash(python:*)",
       "Read(//c/Users/LupoG/Downloads/**)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

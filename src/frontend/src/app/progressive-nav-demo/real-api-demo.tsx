@@ -202,6 +202,39 @@ export default function ProgressiveNavRealAPI() {
     return 240 + (maxDepth > 0 ? 40 : 0);
   };
 
+  // Helper function to recursively normalize subcollections from API format to Collection format
+  const normalizeSubcollection = (sub: any): Collection => {
+    // Recursively normalize any nested subcollections
+    let normalizedSubcollections: Collection[] = [];
+    if (sub.subcollections && Array.isArray(sub.subcollections) && sub.subcollections.length > 0) {
+      const firstNestedSub = sub.subcollections[0];
+      if (typeof firstNestedSub === 'string') {
+        // String slugs - convert to minimal Collection objects
+        normalizedSubcollections = (sub.subcollections as string[]).map((slug: string) => ({
+          slug,
+          name: slug.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          id: slug,
+          imageCount: 0,
+          videoCount: 0,
+          subcollections: [],
+        }));
+      } else {
+        // Full objects - recursively normalize them too
+        normalizedSubcollections = sub.subcollections.map((nestedSub: any) => normalizeSubcollection(nestedSub));
+      }
+    }
+
+    // Return normalized Collection object
+    return {
+      slug: sub.slug,
+      name: sub.title || sub.name || sub.slug, // Viktor's API uses "title" instead of "name"
+      id: sub.id || sub.slug,
+      imageCount: sub.imageCount || 0,
+      videoCount: 0,
+      subcollections: normalizedSubcollections,
+    };
+  };
+
   // Recursive collection tree renderer
   const renderCollectionTree = (cols: Collection[], depth = 0) => {
     if (depth === 0) {
@@ -231,16 +264,9 @@ export default function ProgressiveNavRealAPI() {
             subcollections: [],
           }));
         } else {
-          // Full object format - normalize to Collection format
+          // Full object format - normalize to Collection format recursively
           hasSubcollections = true;
-          subcollectionsList = (collection.subcollections as any[]).map(sub => ({
-            slug: sub.slug,
-            name: sub.title || sub.name || sub.slug, // Viktor's API uses "title" instead of "name"
-            id: sub.id || sub.slug,
-            imageCount: sub.imageCount || 0,
-            videoCount: 0,
-            subcollections: sub.subcollections || [],
-          }));
+          subcollectionsList = (collection.subcollections as any[]).map(sub => normalizeSubcollection(sub));
         }
       }
 
@@ -416,16 +442,20 @@ export default function ProgressiveNavRealAPI() {
                 <div className="text-xs text-white/50 px-4 py-2">{currentCollection.name}</div>
                 {renderCollectionTree(
                   (currentCollection.subcollections as any[]).map((sub) => {
-                    // Viktor's API returns full Subcollection objects
-                    // But they use "title" instead of "name"
-                    return {
-                      slug: sub.slug,
-                      name: sub.title || sub.name || sub.slug,
-                      id: sub.id || sub.slug,
-                      imageCount: sub.imageCount || 0,
-                      videoCount: 0,
-                      subcollections: sub.subcollections || [],
-                    };
+                    // Handle both string slugs and full Subcollection objects
+                    if (typeof sub === 'string') {
+                      return {
+                        slug: sub,
+                        name: sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                        id: sub,
+                        imageCount: 0,
+                        videoCount: 0,
+                        subcollections: [],
+                      };
+                    }
+                    // Viktor's API returns full Subcollection objects with "title" instead of "name"
+                    // Use recursive normalization to handle nested subcollections
+                    return normalizeSubcollection(sub);
                   })
                 )}
               </>

@@ -20,7 +20,7 @@ import { useEffect, useState } from 'react';
 import { getCollection, getCollections, resetRateLimit, updateCollectionConfig, type Collection, type CollectionConfig } from '@/lib/api-client';
 import CuratedLayout from '@/components/Layout/CuratedLayout';
 import DynamicLayout from '@/components/Layout/DynamicLayout';
-import { MidgroundProjectionProvider } from '@/components/Layout';
+import { MidgroundProjectionProvider, useMidgroundProjection } from '@/components/Layout';
 
 // Example configs for quick testing
 const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
@@ -383,6 +383,14 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
 };
 
 export default function CollectionLabPage() {
+  return (
+    <MidgroundProjectionProvider>
+      <CollectionLabContent />
+    </MidgroundProjectionProvider>
+  );
+}
+
+function CollectionLabContent() {
   const [availableCollections, setAvailableCollections] = useState<Collection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState('couples');
   const [collection, setCollection] = useState<Collection | null>(null);
@@ -400,6 +408,35 @@ export default function CollectionLabPage() {
   // Spacing controls (for dynamic layouts)
   const [spacingHorizontal, setSpacingHorizontal] = useState(32);
   const [spacingVertical, setSpacingVertical] = useState(48);
+
+  // Projection control panel state
+  const [showProjectionControls, setShowProjectionControls] = useState(false);
+
+  // Projection context
+  const {
+    fadeDistance,
+    maxBlur,
+    projectionScaleX,
+    projectionScaleY,
+    blendMode,
+    vignetteWidth,
+    vignetteStrength,
+    checkerboardEnabled,
+    checkerboardTileSize,
+    checkerboardScatterSpeed,
+    checkerboardBlur,
+    setFadeDistance,
+    setMaxBlur,
+    setProjectionScaleX,
+    setProjectionScaleY,
+    setBlendMode,
+    setVignetteWidth,
+    setVignetteStrength,
+    setCheckerboardEnabled,
+    setCheckerboardTileSize,
+    setCheckerboardScatterSpeed,
+    setCheckerboardBlur,
+  } = useMidgroundProjection();
 
   // Load available collections from backend
   useEffect(() => {
@@ -632,8 +669,7 @@ export default function CollectionLabPage() {
   const layoutType = parsedConfig?.layoutType || 'dynamic';
 
   return (
-    <MidgroundProjectionProvider>
-      <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white">
       {/* Config Editor Panel (Fixed Right) */}
       <div className="fixed top-4 right-4 w-96 max-h-[calc(100vh-2rem)] bg-black/80 backdrop-blur-lg border border-white/20 rounded-lg overflow-hidden shadow-2xl z-50">
         <div className="p-4 border-b border-white/10">
@@ -1026,7 +1062,269 @@ export default function CollectionLabPage() {
           )}
         </div>
       </div>
+
+      {/* Floating Projection Control Panel (Bottom Left) */}
+      <div className="fixed bottom-6 left-6 z-40">
+        <button
+          onClick={() => setShowProjectionControls(!showProjectionControls)}
+          className="bg-cyan-500/90 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg shadow-lg font-semibold mb-2 w-full"
+        >
+          {showProjectionControls ? '← Hide Projection' : '🎬 Show Projection Controls'}
+        </button>
+
+        {showProjectionControls && (
+          <div className="bg-black/90 backdrop-blur-md rounded-lg p-6 shadow-2xl border border-cyan-500/30 w-96 max-h-[calc(100vh-8rem)] overflow-y-auto">
+            <h3 className="text-white font-bold text-xl mb-4">🎬 Projection Settings</h3>
+            <p className="text-white/60 text-sm mb-6">
+              Adjust the projection behavior in real-time!
+            </p>
+
+            {/* Fade Distance */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Fade Distance: {(fadeDistance * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.05"
+                value={fadeDistance}
+                onChange={(e) => setFadeDistance(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Distance from viewport center where fade starts
+              </p>
+            </div>
+
+            {/* Max Blur */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Max Blur: {maxBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.5"
+                value={maxBlur}
+                onChange={(e) => setMaxBlur(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Blur intensity at edge of fade zone
+              </p>
+            </div>
+
+            {/* Projection Scale X (Width) */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Projection Width: {projectionScaleX.toFixed(2)}x
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.05"
+                value={projectionScaleX}
+                onChange={(e) => setProjectionScaleX(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Horizontal scale (0.5 = narrow, 2.0 = wide)
+              </p>
+            </div>
+
+            {/* Projection Scale Y (Height) */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Projection Height: {projectionScaleY.toFixed(2)}x
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.05"
+                value={projectionScaleY}
+                onChange={(e) => setProjectionScaleY(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Vertical scale (0.5 = short, 2.0 = tall)
+              </p>
+            </div>
+
+            {/* Blend Mode */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Blend Mode: {blendMode}
+              </label>
+              <select
+                value={blendMode}
+                onChange={(e) => setBlendMode(e.target.value)}
+                className="w-full bg-white/10 text-white border border-white/20 rounded px-3 py-2"
+              >
+                <option value="normal">Normal (no blend)</option>
+                <option value="multiply">Multiply (darken)</option>
+                <option value="screen">Screen (lighten)</option>
+                <option value="overlay">Overlay (contrast)</option>
+                <option value="soft-light">Soft Light (subtle)</option>
+                <option value="hard-light">Hard Light (vivid)</option>
+                <option value="color-dodge">Color Dodge (bright)</option>
+                <option value="color-burn">Color Burn (intense)</option>
+                <option value="lighten">Lighten Only</option>
+                <option value="darken">Darken Only</option>
+              </select>
+              <p className="text-xs text-white/50 mt-1">
+                How overlapping projections blend together
+              </p>
+            </div>
+
+            {/* Vignette Width */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Vignette Width: {vignetteWidth}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="5"
+                value={vignetteWidth}
+                onChange={(e) => setVignetteWidth(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Edge fade width (0 = no vignette, 50 = full fade)
+              </p>
+            </div>
+
+            {/* Vignette Strength */}
+            <div className="mb-6">
+              <label className="block text-white/80 text-sm mb-2">
+                Vignette Strength: {(vignetteStrength * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={vignetteStrength}
+                onChange={(e) => setVignetteStrength(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <p className="text-xs text-white/50 mt-1">
+                Fade intensity (0 = transparent, 100 = opaque center)
+              </p>
+            </div>
+
+            {/* Checkerboard Vignette Toggle */}
+            <div className="mb-6 p-4 bg-purple-900/30 rounded-lg border border-purple-500/50">
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-white/90 text-sm font-semibold">
+                  🎨 Checkerboard Vignette
+                </label>
+                <button
+                  onClick={() => setCheckerboardEnabled(!checkerboardEnabled)}
+                  className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
+                    checkerboardEnabled
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-white/20 text-white/70'
+                  }`}
+                >
+                  {checkerboardEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              {checkerboardEnabled && (
+                <>
+                  {/* Tile Size */}
+                  <div className="mb-4">
+                    <label className="block text-white/70 text-xs mb-2">
+                      Tile Size: {checkerboardTileSize}px
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={checkerboardTileSize}
+                      onChange={(e) => setCheckerboardTileSize(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-white/40 mt-1">
+                      Size of checker squares (10 = fine, 100 = chunky)
+                    </p>
+                  </div>
+
+                  {/* Scatter Speed */}
+                  <div className="mb-4">
+                    <label className="block text-white/70 text-xs mb-2">
+                      Scatter Speed: {(checkerboardScatterSpeed * 100).toFixed(0)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={checkerboardScatterSpeed}
+                      onChange={(e) => setCheckerboardScatterSpeed(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-white/40 mt-1">
+                      Animation speed (0 = static, 100 = fast scatter)
+                    </p>
+                  </div>
+
+                  {/* Checker Blur */}
+                  <div className="mb-2">
+                    <label className="block text-white/70 text-xs mb-2">
+                      Edge Blur: {checkerboardBlur.toFixed(1)}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      step="0.5"
+                      value={checkerboardBlur}
+                      onChange={(e) => setCheckerboardBlur(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-white/40 mt-1">
+                      Softness of checker edges (0 = crisp, 10 = dreamy)
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={() => {
+                setFadeDistance(0.5);
+                setMaxBlur(4);
+                setProjectionScaleX(1.2);
+                setProjectionScaleY(1.2);
+                setBlendMode('normal');
+                setVignetteWidth(20);
+                setVignetteStrength(0.8);
+                setCheckerboardEnabled(false);
+                setCheckerboardTileSize(30);
+                setCheckerboardScatterSpeed(0.3);
+                setCheckerboardBlur(0);
+              }}
+              className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded font-semibold"
+            >
+              Reset to Defaults
+            </button>
+
+            <div className="mt-4 p-3 bg-white/5 rounded text-xs text-white/60">
+              <strong className="text-white/80">Tip:</strong> Each carousel is a projector shining its first image onto the midground layer. The brightness (opacity) increases as the carousel moves toward viewport center.
+            </div>
+          </div>
+        )}
       </div>
-    </MidgroundProjectionProvider>
+    </div>
   );
 }
