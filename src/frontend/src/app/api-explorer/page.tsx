@@ -10,6 +10,7 @@ interface CollectionData {
   imageCount: number;
   videoCount: number;
   subcollections: string[]; // Array of slug names
+  config?: any; // Config.json data (if exists)
   pagination?: {
     page: number;
     limit: number;
@@ -63,6 +64,7 @@ export default function APIExplorer() {
             imageCount: c.imageCount,
             videoCount: c.videoCount,
             subcollections: c.subcollections || [],
+            config: c.config, // Store config if present
           });
         });
         setCollectionData(newData);
@@ -104,6 +106,7 @@ export default function APIExplorer() {
           imageCount: collection.imageCount,
           videoCount: collection.videoCount,
           subcollections: collection.subcollections || [],
+          config: collection.config, // Store config if present
           pagination: collection.pagination,
         }));
       }
@@ -143,8 +146,9 @@ export default function APIExplorer() {
     });
   }
 
-  function openHeroImage(slug: string) {
-    const url = `${API_BASE}/api/media/${slug}/Hero-image.jpg`;
+  function openHeroImage(heroImagePath: string) {
+    // heroImagePath already contains the full API path like "/api/media/scientists/hero.jfif"
+    const url = `${API_BASE}${heroImagePath}`;
     console.log(`[API Explorer] Opening hero image: ${url}`);
     window.open(url, '_blank');
   }
@@ -153,6 +157,46 @@ export default function APIExplorer() {
     const url = `${API_BASE}/api/content/collections/${slug}?page=${page}&limit=100`;
     console.log(`[API Explorer] Opening page ${page}: ${url}`);
     window.open(url, '_blank');
+  }
+
+  function openGalleryView(slug: string, page: number = 1) {
+    const url = `/api-explorer/gallery?slug=${slug}&page=${page}`;
+    console.log(`[API Explorer] Opening gallery view for page ${page}: ${url}`);
+    window.open(url, '_blank');
+  }
+
+  function openConfig(slug: string, config: any) {
+    // Open a new tab with formatted JSON
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <html>
+          <head>
+            <title>Config: ${slug}</title>
+            <style>
+              body {
+                background: #000;
+                color: #00ff00;
+                font-family: monospace;
+                padding: 20px;
+              }
+              pre {
+                background: #001100;
+                border: 1px solid #00ff00;
+                padding: 20px;
+                overflow: auto;
+              }
+            </style>
+          </head>
+          <body>
+            <h1 style="color: #00ffff;">Config: ${slug}</h1>
+            <pre>${JSON.stringify(config, null, 2)}</pre>
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+    }
+    console.log(`[API Explorer] Opening config for ${slug}:`, config);
   }
 
   function renderCollection(slug: string, depth: number = 0) {
@@ -170,6 +214,7 @@ export default function APIExplorer() {
     const isExpanded = expandedSlugs.has(slug);
     const hasSubcollections = data.subcollections && data.subcollections.length > 0;
     const hasHero = data.heroImage !== null && data.heroImage !== undefined;
+    const hasConfig = data.config !== null && data.config !== undefined;
 
     return (
       <div key={slug} style={{ fontFamily: 'monospace', fontSize: '14px', marginBottom: '4px' }}>
@@ -203,12 +248,54 @@ export default function APIExplorer() {
         </div>
 
         {/* Collection info row */}
-        <div style={{ marginLeft: `${depth * 20 + 30}px`, display: 'flex', gap: '16px', alignItems: 'center', marginTop: '4px' }}>
+        <div style={{ marginLeft: `${depth * 20 + 30}px`, display: 'flex', gap: '16px', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap' }}>
           {/* Hero image indicator */}
-          <span style={{ color: hasHero ? '#00ff00' : '#ff1493', fontSize: '16px' }}>
-            {hasHero ? '✓' : '✗'}
-          </span>
-          <span style={{ color: '#888', fontSize: '12px' }}>Hero</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ color: hasHero ? '#00ff00' : '#ff1493', fontSize: '16px' }}>
+              {hasHero ? '✓' : '✗'}
+            </span>
+            <span style={{ color: '#888', fontSize: '12px' }}>Hero</span>
+            {hasHero && data.heroImage && (
+              <button
+                onClick={() => openHeroImage(data.heroImage!)}
+                style={{
+                  background: 'none',
+                  border: '1px solid #00ff00',
+                  color: '#00ff00',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '2px 6px',
+                  textDecoration: 'underline',
+                }}
+              >
+                View Hero
+              </button>
+            )}
+          </div>
+
+          {/* Config indicator */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ color: hasConfig ? '#00ff00' : '#ff1493', fontSize: '16px' }}>
+              {hasConfig ? '✓' : '✗'}
+            </span>
+            <span style={{ color: '#888', fontSize: '12px' }}>Config</span>
+            {hasConfig && data.config && (
+              <button
+                onClick={() => openConfig(slug, data.config)}
+                style={{
+                  background: 'none',
+                  border: '1px solid #00ff00',
+                  color: '#00ff00',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '2px 6px',
+                  textDecoration: 'underline',
+                }}
+              >
+                View Config
+              </button>
+            )}
+          </div>
 
           {/* Image count */}
           <span style={{ color: '#ffff00' }}>
@@ -221,48 +308,85 @@ export default function APIExplorer() {
               {data.videoCount} videos
             </span>
           )}
-
-          {/* Action buttons */}
-          {hasHero && (
-            <button
-              onClick={() => openHeroImage(slug)}
-              style={{
-                background: 'none',
-                border: '1px solid #00ff00',
-                color: '#00ff00',
-                cursor: 'pointer',
-                fontSize: '11px',
-                padding: '2px 6px',
-                textDecoration: 'underline',
-              }}
-            >
-              View Hero
-            </button>
-          )}
         </div>
 
-        {/* Pagination links (if expanded and pagination loaded) */}
-        {isExpanded && data.pagination && (
+        {/* Pagination links with per-page gallery view */}
+        {isExpanded && (
           <div style={{ marginLeft: `${depth * 20 + 30}px`, marginTop: '8px' }}>
             <span style={{ color: '#888', fontSize: '12px' }}>Pages: </span>
-            {Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
-              <button
-                key={pageNum}
-                onClick={() => openPage(slug, pageNum)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#4488ff',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  padding: '0 4px',
-                  textDecoration: 'underline',
-                  marginRight: '4px',
-                }}
-              >
-                {pageNum}
-              </button>
-            ))}
+            {data.pagination ? (
+              // Has pagination data - show all pages
+              Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
+                <span key={pageNum} style={{ marginRight: '8px', display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
+                  <button
+                    onClick={() => openPage(slug, pageNum)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#4488ff',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      padding: '0 2px',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                  {data.imageCount > 0 && (
+                    <button
+                      onClick={() => openGalleryView(slug, pageNum)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#00ff00',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        padding: '0',
+                        lineHeight: '1',
+                      }}
+                      title={`View gallery for page ${pageNum}`}
+                    >
+                      📷
+                    </button>
+                  )}
+                </span>
+              ))
+            ) : (
+              // No pagination data yet - show default "1" with gallery link
+              <span style={{ marginRight: '8px', display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
+                <button
+                  onClick={() => openPage(slug, 1)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#4488ff',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    padding: '0 2px',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  1
+                </button>
+                {data.imageCount > 0 && (
+                  <button
+                    onClick={() => openGalleryView(slug, 1)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#00ff00',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '0',
+                      lineHeight: '1',
+                    }}
+                    title="View gallery for page 1"
+                  >
+                    📷
+                  </button>
+                )}
+              </span>
+            )}
           </div>
         )}
 
@@ -352,10 +476,12 @@ export default function APIExplorer() {
         fontSize: '12px',
       }}>
         <div style={{ color: '#00ffff', marginBottom: '8px' }}>LEGEND:</div>
-        <div><span style={{ color: '#00ff00' }}>✓</span> Has hero image</div>
-        <div><span style={{ color: '#ff1493' }}>✗</span> No hero image</div>
+        <div><span style={{ color: '#00ff00' }}>✓</span> Has hero image / config.json</div>
+        <div><span style={{ color: '#ff1493' }}>✗</span> Missing hero image / config.json</div>
         <div><span style={{ color: '#ffff00' }}>Yellow</span> - Image counts</div>
         <div><span style={{ color: '#4488ff', textDecoration: 'underline' }}>Blue underline</span> - Clickable page links (open API response in new tab)</div>
+        <div><span style={{ color: '#00ff00', border: '1px solid #00ff00', padding: '2px 4px' }}>Green buttons</span> - View Hero/Config/Gallery</div>
+        <div>📷 - Open gallery view for that page</div>
         <div style={{ marginTop: '8px' }}>
           <span style={{ color: '#888' }}>▶/▼</span> Click to expand/collapse subcollections
         </div>
