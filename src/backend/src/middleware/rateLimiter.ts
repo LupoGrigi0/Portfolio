@@ -13,16 +13,17 @@ import { createLogger } from '../utils/logger-wrapper.js';
 const logger = createLogger('backend-ratelimit.log');
 
 // Create rate limiter for public endpoints (content, social, media)
+// Increased limits to support large galleries (100+ images per page)
 export const rateLimiter = new RateLimiterMemory({
-  points: parseInt(process.env.RATE_LIMIT_MAX || '100'), // Number of requests
-  duration: parseInt(process.env.RATE_LIMIT_WINDOW || '15') * 60, // Time window in seconds
+  points: parseInt(process.env.RATE_LIMIT_MAX || '1000'), // Number of requests (was 100)
+  duration: parseInt(process.env.RATE_LIMIT_WINDOW || '15') * 60, // Time window in seconds (15 min)
   blockDuration: 60, // Block for 60 seconds if limit exceeded
 });
 
 // Create separate rate limiter for admin endpoints (much higher limit)
 export const adminRateLimiter = new RateLimiterMemory({
-  points: parseInt(process.env.ADMIN_RATE_LIMIT_MAX || '1000'), // 10x higher limit
-  duration: parseInt(process.env.ADMIN_RATE_LIMIT_WINDOW || '15') * 60, // Same window
+  points: parseInt(process.env.ADMIN_RATE_LIMIT_MAX || '5000'), // Higher limit for admin/diagnostic tools
+  duration: parseInt(process.env.ADMIN_RATE_LIMIT_WINDOW || '15') * 60, // Same window (15 min)
   blockDuration: 30, // Shorter block duration
 });
 
@@ -66,7 +67,7 @@ export async function rateLimiterMiddleware(
       code: 'RATE_LIMIT_EXCEEDED',
       details: {
         retryAfter: Math.round(rejRes.msBeforeNext / 1000) || 60,
-        limit: parseInt(process.env.RATE_LIMIT_MAX || '100'),
+        limit: parseInt(process.env.RATE_LIMIT_MAX || '1000'),
         windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || '15') * 60 * 1000,
       },
       timestamp: new Date().toISOString(),
@@ -107,7 +108,7 @@ export async function adminRateLimiterMiddleware(
       code: 'ADMIN_RATE_LIMIT_EXCEEDED',
       details: {
         retryAfter: Math.round(rejRes.msBeforeNext / 1000) || 30,
-        limit: parseInt(process.env.ADMIN_RATE_LIMIT_MAX || '1000'),
+        limit: parseInt(process.env.ADMIN_RATE_LIMIT_MAX || '5000'),
         windowMs: parseInt(process.env.ADMIN_RATE_LIMIT_WINDOW || '15') * 60 * 1000,
       },
       timestamp: new Date().toISOString(),

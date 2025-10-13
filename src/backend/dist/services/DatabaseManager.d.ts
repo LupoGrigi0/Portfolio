@@ -27,10 +27,13 @@ export declare class DatabaseManager {
         featured?: boolean;
     }): Promise<unknown[]>;
     getDirectoryBySlug(slug: string): Promise<unknown>;
+    getDirectoryById(id: string): Promise<unknown>;
+    getSubdirectoriesByParentId(parentId: string): Promise<unknown[]>;
     createDirectory(data: any): Promise<Database.RunResult>;
     updateDirectoryMetadata(directoryId: string, metadata: any): Promise<Database.RunResult>;
     updateDirectoryImageCount(directoryId: string, imageCount: number): Promise<Database.RunResult>;
     updateDirectoryCoverImage(directoryId: string, coverImagePath: string): Promise<Database.RunResult>;
+    deleteDirectory(directoryId: string): Promise<Database.RunResult>;
     getImagesByDirectory(directoryId: string, limit?: number, offset?: number): Promise<unknown[]>;
     getImageById(id: string): Promise<unknown>;
     getImageByPath(path: string): Promise<unknown>;

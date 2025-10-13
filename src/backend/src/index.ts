@@ -17,6 +17,8 @@ import { WebSocketServer } from 'ws';
 import contentRoutes, { setDatabaseManager as setContentDb, setContentScanner as setContentScannerForContent } from './routes/content.js';
 import socialRoutes, { setDatabaseManager as setSocialDb } from './routes/social.js';
 import adminRoutes, { setContentScanner, setDatabaseManager as setAdminDb } from './routes/admin.js';
+import thumbnailRoutes, { setDatabaseManager as setThumbnailDb } from './routes/thumbnails.js';
+import siteRoutes from './routes/site.js';
 import healthRoutes from './routes/health.js';
 import mediaRoutes from './routes/media.js';
 
@@ -89,6 +91,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Apply rate limiting to specific routes (not globally)
 // Admin endpoints get separate rate limiter with higher limits
 app.use('/api/admin', adminRateLimiterMiddleware);
+app.use('/api/thumbnails', adminRateLimiterMiddleware); // Thumbnails use admin rate limits
 app.use('/api/content', rateLimiterMiddleware);
 app.use('/api/social', rateLimiterMiddleware);
 app.use('/api/media', rateLimiterMiddleware);
@@ -97,6 +100,8 @@ app.use('/api/media', rateLimiterMiddleware);
 app.use('/api/content', contentRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/thumbnails', thumbnailRoutes);
+app.use('/api/site', siteRoutes); // No rate limiting on site config
 app.use('/api/health', healthRoutes); // No rate limiting on health checks
 app.use('/api/media', mediaRoutes);
 
@@ -112,6 +117,31 @@ app.post('/api/admin/shutdown', async (req, res) => {
   }
 
   await logger.info('Graceful shutdown initiated via API');
+
+  res.json({
+    success: true,
+    message: 'Server shutting down...'
+  });
+
+  // Give response time to send, then exit
+  setTimeout(() => {
+    console.log('🔄 Shutting down gracefully...');
+    process.exit(0);
+  }, 500);
+});
+
+// Dev convenience: GET version of shutdown for browser testing
+app.get('/api/admin/shutdown', async (req, res) => {
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  if (!isDev) {
+    return res.status(403).json({
+      success: false,
+      error: 'Shutdown endpoint only available in development mode'
+    });
+  }
+
+  await logger.info('Graceful shutdown initiated via API (dev convenience)');
 
   res.json({
     success: true,
@@ -141,6 +171,7 @@ async function startServer() {
     setContentDb(dbManager);
     setSocialDb(dbManager);
     setAdminDb(dbManager);
+    setThumbnailDb(dbManager);
     console.log('✅ Database manager injected into routes');
 
     // Initialize content scanner
