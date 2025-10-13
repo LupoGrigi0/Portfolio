@@ -4,8 +4,15 @@
  * Connected to Viktor's backend API with real subcollections.
  * Demonstrates full navigation hierarchy with actual collections.
  *
+ * Features:
+ * - Triangle pips for subcollections
+ * - Favicon Home icon
+ * - Configurable timing and spacing
+ * - Fixed third-level navigation
+ *
  * @author Kai v3 (Carousel & Animation Specialist)
  * @created 2025-10-06
+ * @updated 2025-10-12
  */
 
 'use client';
@@ -14,11 +21,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getCollections, getCollection, type Collection } from '@/lib/api-client';
 
-interface ProgressiveNavRealAPIProps {
-  className?: string;
-}
-
-export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNavRealAPIProps) {
+export default function ProgressiveNavRealAPI() {
   // Navigation state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('/');
@@ -50,7 +53,7 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
       // Log subcollections for each
       data.forEach(col => {
         if (col.subcollections && col.subcollections.length > 0) {
-          console.log(`[Real API Nav] ${col.name} has ${col.subcollections.length} subcollections:`, col.subcollections.map(s => s.name));
+          console.log(`[Real API Nav] ${col.name} has ${col.subcollections.length} subcollections:`, col.subcollections.map(s => s.title || s.name || s.slug));
         }
       });
 
@@ -177,11 +180,14 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
         }, 300);
       }
     } else {
-      // No subcollections: close drawer
-      setTimeout(() => {
-        setIsDrawerOpen(false);
-        setExpandedCollections(new Set());
-      }, 300);
+      // No subcollections: keep drawer open on mobile, use rollback delay on desktop
+      if (!isMobile) {
+        setTimeout(() => {
+          setIsDrawerOpen(false);
+          setExpandedCollections(new Set());
+        }, rollbackDelay);
+      }
+      // On mobile, keep drawer open so user can navigate back
     }
   };
 
@@ -225,9 +231,16 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
             subcollections: [],
           }));
         } else {
-          // Full object format
+          // Full object format - normalize to Collection format
           hasSubcollections = true;
-          subcollectionsList = collection.subcollections as Collection[];
+          subcollectionsList = (collection.subcollections as any[]).map(sub => ({
+            slug: sub.slug,
+            name: sub.title || sub.name || sub.slug, // Viktor's API uses "title" instead of "name"
+            id: sub.id || sub.slug,
+            imageCount: sub.imageCount || 0,
+            videoCount: 0,
+            subcollections: sub.subcollections || [],
+          }));
         }
       }
 
@@ -240,16 +253,16 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
           {/* Collection button */}
           <button
             onClick={() => navigateTo(collection.slug)}
-            className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 ${
+            className={`w-full text-left px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-between ${
               isActive
                 ? 'bg-white/10 border border-white/20 text-white font-semibold'
                 : 'text-white/80 hover:bg-white/5 hover:text-white'
             }`}
           >
-            {collection.name}
+            <span>{collection.name}</span>
             {hasSubcollections && (
-              <span className="ml-2 text-xs text-white/50">
-                ({subcollectionsList.length})
+              <span className="ml-2 text-white/50">
+                ▸
               </span>
             )}
           </button>
@@ -257,9 +270,10 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
           {/* Subcollections (if expanded) */}
           {isExpanded && hasSubcollections && (
             <div
-              className={`mt-1 space-y-1 transition-all duration-300 ${
+              className={`mt-1 transition-all duration-300 ${
                 isAutoCollapsing ? 'animate-ghost-out' : ''
               }`}
+              style={{ display: 'flex', flexDirection: 'column', gap: `${itemVerticalSpacing}px` }}
             >
               {renderCollectionTree(subcollectionsList, depth + 1)}
             </div>
@@ -285,7 +299,7 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className="relative">
       {/* Top Navigation Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center h-16 px-4 gap-4">
@@ -388,7 +402,8 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
                   onClick={() => navigateTo('/')}
                   className="w-full text-left px-4 py-2 rounded-lg transition-all duration-200 text-white/80 hover:bg-white/5 hover:text-white flex items-center gap-2"
                 >
-                  <span>🏠</span> Home
+                  <img src="/favicon.ico" alt="Home" className="w-4 h-4" />
+                  <span>Home</span>
                 </button>
                 <div className="border-b border-white/10 my-2" />
               </>
@@ -400,18 +415,16 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
               <>
                 <div className="text-xs text-white/50 px-4 py-2">{currentCollection.name}</div>
                 {renderCollectionTree(
-                  (currentCollection.subcollections as any[]).map((sub, index) => {
-                    const slug = typeof sub === 'string' ? sub : sub.slug;
-                    const name = typeof sub === 'string'
-                      ? sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                      : sub.name;
+                  (currentCollection.subcollections as any[]).map((sub) => {
+                    // Viktor's API returns full Subcollection objects
+                    // But they use "title" instead of "name"
                     return {
-                      slug,
-                      name,
-                      id: slug,
-                      imageCount: typeof sub === 'string' ? 0 : sub.imageCount,
+                      slug: sub.slug,
+                      name: sub.title || sub.name || sub.slug,
+                      id: sub.id || sub.slug,
+                      imageCount: sub.imageCount || 0,
                       videoCount: 0,
-                      subcollections: typeof sub === 'string' ? [] : sub.subcollections || [],
+                      subcollections: sub.subcollections || [],
                     };
                   })
                 )}
@@ -559,7 +572,7 @@ export default function ProgressiveNavRealAPI({ className = '' }: ProgressiveNav
                           {currentCollection.subcollections.map((sub, index) => {
                             // Handle both string slugs and full objects
                             const slug = typeof sub === 'string' ? sub : sub.slug;
-                            const name = typeof sub === 'string' ? sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : sub.name;
+                            const name = typeof sub === 'string' ? sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : (sub.title || sub.name || sub.slug);
                             const imageCount = typeof sub === 'string' ? 0 : sub.imageCount;
 
                             return (

@@ -174,6 +174,90 @@ const EXAMPLE_CONFIGS: Record<string, CollectionConfig> = {
       },
     ],
   },
+  'projection-every-2nd': {
+    layoutType: 'dynamic',
+    title: 'Projection Demo (Every 2nd)',
+    subtitle: 'Every other carousel projects onto midground',
+    projection: {
+      enabled: true,
+      pattern: 'every-2nd',
+      patternOffset: 0,
+      fadeDistance: 0.5,
+      maxBlur: 4,
+      scaleX: 1.2,
+      scaleY: 1.2,
+      blendMode: 'normal',
+      vignette: {
+        width: 20,
+        strength: 0.8,
+      },
+    },
+    dynamicSettings: {
+      layout: 'single-column',
+      imagesPerCarousel: 5,
+      carouselDefaults: {
+        transition: 'fade',
+        reservedSpace: { bottom: 60 },
+      },
+    },
+  },
+  'projection-all-soft-light': {
+    layoutType: 'dynamic',
+    title: 'Projection All (Soft Light Blend)',
+    subtitle: 'All carousels project with soft-light blending',
+    projection: {
+      enabled: true,
+      pattern: 'all',
+      fadeDistance: 0.6,
+      maxBlur: 6,
+      scaleX: 1.4,
+      scaleY: 1.4,
+      blendMode: 'soft-light',
+      vignette: {
+        width: 25,
+        strength: 0.7,
+      },
+    },
+    dynamicSettings: {
+      layout: 'single-column',
+      imagesPerCarousel: 8,
+      carouselDefaults: {
+        transition: 'slide-horizontal',
+        reservedSpace: { bottom: 80 },
+      },
+      spacing: {
+        vertical: 60,
+      },
+    },
+  },
+  'projection-checkerboard': {
+    layoutType: 'dynamic',
+    title: 'Checkerboard Vignette',
+    subtitle: 'Artistic checkerboard projection effect',
+    projection: {
+      enabled: true,
+      pattern: 'every-2nd',
+      fadeDistance: 0.5,
+      maxBlur: 3,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      blendMode: 'multiply',
+      checkerboard: {
+        enabled: true,
+        tileSize: 40,
+        scatterSpeed: 0.2,
+        blur: 2,
+      },
+    },
+    dynamicSettings: {
+      layout: 'single-column',
+      imagesPerCarousel: 6,
+      carouselDefaults: {
+        transition: 'fade',
+        reservedSpace: { bottom: 70 },
+      },
+    },
+  },
   'hybrid-demo': {
     layoutType: 'curated',
     sections: [
@@ -408,10 +492,10 @@ export default function CollectionLabPage() {
 
     if (parsedConfig.layoutType === 'dynamic') {
       // Update dynamic layout spacing
-      const updated = {
+      const updated: CollectionConfig = {
         ...parsedConfig,
         dynamicSettings: {
-          ...parsedConfig.dynamicSettings,
+          ...parsedConfig.dynamicSettings!,
           spacing: { horizontal, vertical }
         }
       };
@@ -672,6 +756,24 @@ export default function CollectionLabPage() {
                   className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/40 px-3 py-1 rounded"
                 >
                   Hybrid (Auto-Fill)
+                </button>
+                <button
+                  onClick={() => handleLoadExample('projection-every-2nd')}
+                  className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 px-3 py-1 rounded"
+                >
+                  🎬 Projection (Every 2nd)
+                </button>
+                <button
+                  onClick={() => handleLoadExample('projection-all-soft-light')}
+                  className="text-xs bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 px-3 py-1 rounded"
+                >
+                  🎬 Projection (All)
+                </button>
+                <button
+                  onClick={() => handleLoadExample('projection-checkerboard')}
+                  className="text-xs bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 px-3 py-1 rounded"
+                >
+                  🎨 Checkerboard
                 </button>
               </div>
             </div>

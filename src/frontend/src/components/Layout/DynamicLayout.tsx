@@ -29,6 +29,32 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
 
   const defaults = settings.carouselDefaults || {};
 
+  // Projection settings
+  const projectionEnabled = config.projection?.enabled ?? false;
+  const projectionPattern = config.projection?.pattern ?? 'none';
+  const projectionOffset = config.projection?.patternOffset ?? 0;
+
+  /**
+   * Determine if a carousel at given index should have projection enabled
+   */
+  const shouldEnableProjection = (carouselIndex: number): boolean => {
+    // Global projection disabled
+    if (!projectionEnabled) return false;
+
+    // Apply pattern
+    switch (projectionPattern) {
+      case 'all':
+        return true;
+      case 'every-2nd':
+        return (carouselIndex - projectionOffset) % 2 === 0;
+      case 'every-3rd':
+        return (carouselIndex - projectionOffset) % 3 === 0;
+      case 'none':
+      default:
+        return false;
+    }
+  };
+
   // Filter images only (skip videos for now - carousel v1 limitation)
   // Also exclude hero images (hero.jpg, hero.jfif, etc.) - those are for hero sections only
   console.log(`[DynamicLayout] Collection "${collection.slug}" gallery:`, collection.gallery?.length || 0, 'items');
@@ -171,6 +197,8 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
       <div className={layoutConfig.className} style={layoutConfig.style}>
         {carouselGroups.map((group, index) => {
           const isLeft = index % 2 === 0;
+          const enableProjection = shouldEnableProjection(index);
+
           return (
             <div
               key={`carousel-${index}`}
@@ -187,6 +215,8 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
                 <Carousel
                   images={group}
                   {...mapCarouselOptions()}
+                  enableProjection={enableProjection}
+                  projectionId={`dynamic-zipper-${collection.slug}-${index}`}
                 />
               </div>
             </div>
@@ -199,14 +229,20 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
   // Standard layouts
   return (
     <div className={layoutConfig.className} style={layoutConfig.style}>
-      {carouselGroups.map((group, index) => (
-        <div key={`carousel-${index}`} className="w-full">
-          <Carousel
-            images={group}
-            {...mapCarouselOptions()}
-          />
-        </div>
-      ))}
+      {carouselGroups.map((group, index) => {
+        const enableProjection = shouldEnableProjection(index);
+
+        return (
+          <div key={`carousel-${index}`} className="w-full">
+            <Carousel
+              images={group}
+              {...mapCarouselOptions()}
+              enableProjection={enableProjection}
+              projectionId={`dynamic-${collection.slug}-${index}`}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

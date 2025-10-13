@@ -37,6 +37,11 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
   // Track which images have been used by explicit sections (for dynamic-fill)
   const usedImageFilenames = new Set<string>();
 
+  // Projection settings
+  const projectionEnabled = config.projection?.enabled ?? false;
+  const projectionPattern = config.projection?.pattern ?? 'none';
+  const projectionOffset = config.projection?.patternOffset ?? 0;
+
   /**
    * Variable substitution for template configs
    * Replaces $CollectionName, $ImageCount, etc. with actual values
@@ -214,10 +219,37 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
     return getAbsoluteMediaUrl(collection.heroImage);
   };
 
+  /**
+   * Determine if a carousel at given index should have projection enabled
+   */
+  const shouldEnableProjection = (carouselIndex: number, sectionOverride?: boolean): boolean => {
+    // Explicit section override takes precedence
+    if (sectionOverride !== undefined) return sectionOverride;
+
+    // Global projection disabled
+    if (!projectionEnabled) return false;
+
+    // Apply pattern
+    switch (projectionPattern) {
+      case 'all':
+        return true;
+      case 'every-2nd':
+        return (carouselIndex - projectionOffset) % 2 === 0;
+      case 'every-3rd':
+        return (carouselIndex - projectionOffset) % 3 === 0;
+      case 'none':
+      default:
+        return false;
+    }
+  };
+
+  // Track carousel index across sections
+  let carouselIndex = 0;
+
   return (
     <div className="space-y-8 sm:space-y-12">
-      {sections.map((section, index) => {
-        const key = `section-${index}`;
+      {sections.map((section, sectionIndex) => {
+        const key = `section-${sectionIndex}`;
 
         switch (section.type) {
           case 'hero': {
@@ -255,7 +287,7 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
           case 'carousel': {
             const images = resolveSectionImages(section);
             if (images.length === 0) {
-              console.warn(`Carousel section ${index} has no images`);
+              console.warn(`Carousel section ${sectionIndex} has no images`);
               return null;
             }
 
@@ -264,11 +296,17 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
               section.images.forEach(filename => usedImageFilenames.add(filename));
             }
 
+            // Determine projection for this carousel
+            const currentCarouselIndex = carouselIndex++;
+            const enableProjection = shouldEnableProjection(currentCarouselIndex, section.enableProjection);
+
             return (
               <div key={key} className={getWidthClass(section.width)}>
                 <Carousel
                   images={images}
                   {...mapCarouselOptions(section.carouselOptions)}
+                  enableProjection={enableProjection}
+                  projectionId={`curated-carousel-${collection.slug}-${currentCarouselIndex}`}
                 />
               </div>
             );
@@ -321,11 +359,17 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                     const images = resolveSectionImages(subsection);
                     if (images.length === 0) return null;
 
+                    // Determine projection for this carousel
+                    const currentCarouselIndex = carouselIndex++;
+                    const enableProjection = shouldEnableProjection(currentCarouselIndex, subsection.enableProjection);
+
                     return (
                       <div key={subKey} className={getWidthClass(subsection.width)}>
                         <Carousel
                           images={images}
                           {...mapCarouselOptions(subsection.carouselOptions)}
+                          enableProjection={enableProjection}
+                          projectionId={`curated-row-carousel-${collection.slug}-${currentCarouselIndex}`}
                         />
                       </div>
                     );
@@ -410,11 +454,22 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
 
             return (
               <div key={key} className={layoutClass} style={layoutStyle}>
-                {carouselGroups.map((group, idx) => (
-                  <div key={`dynamic-carousel-${idx}`} className="w-full">
-                    <Carousel images={group} {...carouselOptions} />
-                  </div>
-                ))}
+                {carouselGroups.map((group, idx) => {
+                  // Determine projection for this carousel
+                  const currentCarouselIndex = carouselIndex++;
+                  const enableProjection = shouldEnableProjection(currentCarouselIndex);
+
+                  return (
+                    <div key={`dynamic-carousel-${idx}`} className="w-full">
+                      <Carousel
+                        images={group}
+                        {...carouselOptions}
+                        enableProjection={enableProjection}
+                        projectionId={`curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             );
           }

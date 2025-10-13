@@ -118,7 +118,7 @@ export default function AdminPanel({ onRefresh, collectionData, topLevelSlugs }:
 
     // Build tree structure
     function buildTree(slug: string): any {
-      const data = collectionData.get(slug);
+      const data = collectionData!.get(slug);
       if (!data) return null;
 
       const node: any = {

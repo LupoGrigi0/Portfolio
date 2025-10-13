@@ -40,13 +40,17 @@ import {
 // Helper to convert collection to simple reference carousel images
 function collectionToReferenceImages(collection: Collection, maxImages: number = 10) {
   return (collection.gallery || [])
-    .filter((item: MediaItem) =>
-      item.type === 'image' && item.urls.large && item.urls.large !== ''
-    )
+    .filter((item: MediaItem) => {
+      // Accept images with either large or original URL
+      const hasLarge = item.urls.large && item.urls.large !== '';
+      const hasOriginal = item.urls.original && item.urls.original !== '';
+      return item.type === 'image' && (hasLarge || hasOriginal);
+    })
     .slice(0, maxImages)
     .map((item: MediaItem) => ({
       id: item.id,
-      src: getAbsoluteMediaUrl(item.urls.large),
+      // Prefer large, fallback to original if large is not available
+      src: getAbsoluteMediaUrl(item.urls.large || item.urls.original),
       alt: item.altText || item.title || item.filename
     }));
 }

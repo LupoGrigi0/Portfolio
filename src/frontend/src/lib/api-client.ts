@@ -75,6 +75,12 @@ export interface CollectionConfig {
   title?: string;
   subtitle?: string;
   description?: string;
+  tags?: string[];
+
+  // Styling
+  styling?: {
+    accentColor?: string;
+  };
 
   // Background (static image, not carousel)
   background?: {
@@ -83,6 +89,9 @@ export interface CollectionConfig {
     blur?: number;
     parallax?: boolean;
   };
+
+  // Projection settings (midground image projection from carousels)
+  projection?: ProjectionConfig;
 
   // Parallax config (for sister's multi-layer system)
   parallaxConfig?: {
@@ -99,11 +108,12 @@ export interface CollectionConfig {
     | VideoSectionConfig
     | SeparatorSectionConfig
     | DynamicFillSectionConfig
+    | RowSectionConfig
   >;
 
   // Dynamic layout settings
   dynamicSettings?: {
-    layout: 'single-column' | '2-across' | '3-across' | 'masonry';
+    layout: 'single-column' | '2-across' | '3-across' | 'masonry' | 'zipper';
     imagesPerCarousel?: number | 'all';
     carouselDefaults?: CarouselOptionsConfig;
     spacing?: {
@@ -159,6 +169,7 @@ export interface CarouselSectionConfig {
   videos?: string[];
   width?: 'full' | 'half' | 'third' | 'quarter';
   carouselOptions?: CarouselOptionsConfig;
+  enableProjection?: boolean; // Override global projection setting for this carousel
 }
 
 export interface ImageSectionConfig {
@@ -192,13 +203,52 @@ export interface DynamicFillSectionConfig {
   type: 'dynamic-fill';
   count?: number | 'all'; // Number of images to auto-fill, or 'all' for remaining
   skip?: number; // Number of remaining images to skip before filling (default: 0)
-  layout?: 'single-column' | '2-across' | '3-across' | 'masonry';
+  layout?: 'single-column' | '2-across' | '3-across' | 'masonry' | 'zipper';
   imagesPerCarousel?: number | 'all';
   carouselDefaults?: CarouselOptionsConfig;
   spacing?: {
     horizontal?: number; // Gap between carousels (px)
     vertical?: number;   // Gap between rows (px)
   };
+}
+
+export interface RowSectionConfig {
+  type: 'row';
+  sections: Array<
+    | TextSectionConfig
+    | CarouselSectionConfig
+    | ImageSectionConfig
+    | VideoSectionConfig
+  >;
+}
+
+// Projection configuration for midground image effects
+export interface ProjectionConfig {
+  // Global settings (applied to all projections in this collection)
+  enabled?: boolean; // Master toggle (default: false)
+  fadeDistance?: number; // 0-1, distance from viewport center where fade starts (default: 0.5)
+  maxBlur?: number; // 0-10px, blur intensity at edge of fade zone (default: 4)
+  scaleX?: number; // 0.5-2, horizontal scale of projection (default: 1.2)
+  scaleY?: number; // 0.5-2, vertical scale of projection (default: 1.2)
+  blendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light' | 'hard-light' | 'color-dodge' | 'color-burn' | 'lighten' | 'darken';
+
+  // Vignette settings (radial fade from center)
+  vignette?: {
+    width?: number; // 0-50%, edge fade width (default: 20)
+    strength?: number; // 0-1, fade opacity (default: 0.8)
+  };
+
+  // Checkerboard vignette (alternative to radial, more artistic)
+  checkerboard?: {
+    enabled?: boolean; // Use checkerboard instead of radial (default: false)
+    tileSize?: number; // 10-100px, checker square size (default: 30)
+    scatterSpeed?: number; // 0-1, animation speed (default: 0.3)
+    blur?: number; // 0-10px, blur for checker edges (default: 0)
+  };
+
+  // Pattern for auto-generated layouts (dynamic/dynamic-fill sections)
+  pattern?: 'all' | 'every-2nd' | 'every-3rd' | 'none'; // Which carousels get projection
+  patternOffset?: number; // Start index (0-based, default: 0)
 }
 
 // Image query for dynamic image selection

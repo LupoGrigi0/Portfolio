@@ -26,14 +26,10 @@ export default function Home() {
       const data = await getCollections();
       setCollections(data);
 
-      // Filter for featured collections and sort by displayOrder
+      // Filter for featured collections and sort by slug (alphabetically)
       const featured = data
-        .filter((c) => c.config?.featured === true)
-        .sort((a, b) => {
-          const orderA = a.config?.displayOrder || 999;
-          const orderB = b.config?.displayOrder || 999;
-          return orderA - orderB;
-        });
+        .filter((c) => c.featured === true)
+        .sort((a, b) => a.slug.localeCompare(b.slug));
 
       setFeaturedCollections(featured);
 

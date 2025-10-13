@@ -13,14 +13,35 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ResponsiveContainer, Grid, ContentBlock, useBackground } from '@/components/Layout';
+import { ResponsiveContainer, Grid, ContentBlock, useBackground, MidgroundProjectionProvider, useMidgroundProjection } from '@/components/Layout';
 import ReferenceCarousel from '@/components/ReferenceCarousel/ReferenceCarousel';
 import { getCollection, getAbsoluteMediaUrl, type Collection, type MediaItem } from '@/lib/api-client';
 
 export default function CollectionDetailPage() {
+  return (
+    <MidgroundProjectionProvider>
+      <CollectionDetailContent />
+    </MidgroundProjectionProvider>
+  );
+}
+
+function CollectionDetailContent() {
   const params = useParams();
   const slug = params.slug as string;
   const { setBackground } = useBackground();
+  const {
+    setFadeDistance,
+    setMaxBlur,
+    setProjectionScaleX,
+    setProjectionScaleY,
+    setBlendMode,
+    setVignetteWidth,
+    setVignetteStrength,
+    setCheckerboardEnabled,
+    setCheckerboardTileSize,
+    setCheckerboardScatterSpeed,
+    setCheckerboardBlur,
+  } = useMidgroundProjection();
 
   const [collection, setCollection] = useState<Collection | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,11 +69,27 @@ export default function CollectionDetailPage() {
         setBackground(firstImage);
       }
 
+      // Apply projection config settings if provided
+      if (data.config?.projection) {
+        const p = data.config.projection;
+        if (p.fadeDistance !== undefined) setFadeDistance(p.fadeDistance);
+        if (p.maxBlur !== undefined) setMaxBlur(p.maxBlur);
+        if (p.scaleX !== undefined) setProjectionScaleX(p.scaleX);
+        if (p.scaleY !== undefined) setProjectionScaleY(p.scaleY);
+        if (p.blendMode !== undefined) setBlendMode(p.blendMode);
+        if (p.vignette?.width !== undefined) setVignetteWidth(p.vignette.width);
+        if (p.vignette?.strength !== undefined) setVignetteStrength(p.vignette.strength);
+        if (p.checkerboard?.enabled !== undefined) setCheckerboardEnabled(p.checkerboard.enabled);
+        if (p.checkerboard?.tileSize !== undefined) setCheckerboardTileSize(p.checkerboard.tileSize);
+        if (p.checkerboard?.scatterSpeed !== undefined) setCheckerboardScatterSpeed(p.checkerboard.scatterSpeed);
+        if (p.checkerboard?.blur !== undefined) setCheckerboardBlur(p.checkerboard.blur);
+      }
+
       setLoading(false);
     }
 
     loadCollection();
-  }, [slug, setBackground]);
+  }, [slug, setBackground, setFadeDistance, setMaxBlur, setProjectionScaleX, setProjectionScaleY, setBlendMode, setVignetteWidth, setVignetteStrength, setCheckerboardEnabled, setCheckerboardTileSize, setCheckerboardScatterSpeed, setCheckerboardBlur]);
 
   if (loading) {
     return (
@@ -157,7 +194,7 @@ export default function CollectionDetailPage() {
                   href={`/collections/${sub.slug}`}
                   className="block bg-black/20 hover:bg-black/40 rounded-lg p-6 transition-all"
                 >
-                  <h3 className="text-xl font-semibold text-white mb-2">{sub.name}</h3>
+                  <h3 className="text-xl font-semibold text-white mb-2">{sub.title}</h3>
                   <p className="text-white/60 text-sm">{sub.imageCount} images</p>
                 </Link>
               ))}
@@ -168,3 +205,9 @@ export default function CollectionDetailPage() {
     </ResponsiveContainer>
   );
 }
+
+/**
+ * Note: MidgroundProjectionProvider wraps this component.
+ * Projection settings are controlled via collection.config.projection.
+ * The provider sets global defaults, and individual carousels can override.
+ */

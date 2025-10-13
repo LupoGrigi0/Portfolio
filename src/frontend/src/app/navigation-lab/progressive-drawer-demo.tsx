@@ -44,11 +44,7 @@ const MOCK_COLLECTIONS = [
   { id: 'the-menagerie', name: 'The Menagerie', slug: '/collections/the-menagerie', subcollections: [] },
 ];
 
-interface ProgressiveDrawerDemoProps {
-  className?: string;
-}
-
-export default function ProgressiveDrawerDemo({ className = '' }: ProgressiveDrawerDemoProps) {
+export default function ProgressiveDrawerDemo() {
   // Navigation state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('/');
@@ -173,7 +169,7 @@ export default function ProgressiveDrawerDemo({ className = '' }: ProgressiveDra
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <div className={`relative ${className}`}>
+    <div className="relative">
       {/* Top Navigation Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center h-16 px-4 gap-4">
