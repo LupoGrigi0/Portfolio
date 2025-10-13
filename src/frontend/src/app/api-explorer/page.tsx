@@ -310,52 +310,15 @@ export default function APIExplorer() {
           )}
         </div>
 
-        {/* Pagination links with per-page gallery view */}
-        {isExpanded && (
-          <div style={{ marginLeft: `${depth * 20 + 30}px`, marginTop: '8px' }}>
-            <span style={{ color: '#888', fontSize: '12px' }}>Pages: </span>
-            {data.pagination ? (
-              // Has pagination data - show all pages
-              Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
-                <span key={pageNum} style={{ marginRight: '8px', display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
-                  <button
-                    onClick={() => openPage(slug, pageNum)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#4488ff',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      padding: '0 2px',
-                      textDecoration: 'underline',
-                    }}
-                  >
-                    {pageNum}
-                  </button>
-                  {data.imageCount > 0 && (
-                    <button
-                      onClick={() => openGalleryView(slug, pageNum)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#00ff00',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        padding: '0',
-                        lineHeight: '1',
-                      }}
-                      title={`View gallery for page ${pageNum}`}
-                    >
-                      📷
-                    </button>
-                  )}
-                </span>
-              ))
-            ) : (
-              // No pagination data yet - show default "1" with gallery link
-              <span style={{ marginRight: '8px', display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
+        {/* Pagination links with per-page gallery view - ALWAYS shown */}
+        <div style={{ marginLeft: `${depth * 20 + 30}px`, marginTop: '8px' }}>
+          <span style={{ color: '#888', fontSize: '12px' }}>Pages: </span>
+          {data.pagination ? (
+            // Has pagination data - show all pages
+            Array.from({ length: data.pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
+              <span key={pageNum} style={{ marginRight: '8px', display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
                 <button
-                  onClick={() => openPage(slug, 1)}
+                  onClick={() => openPage(slug, pageNum)}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -366,11 +329,11 @@ export default function APIExplorer() {
                     textDecoration: 'underline',
                   }}
                 >
-                  1
+                  {pageNum}
                 </button>
                 {data.imageCount > 0 && (
                   <button
-                    onClick={() => openGalleryView(slug, 1)}
+                    onClick={() => openGalleryView(slug, pageNum)}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -380,15 +343,50 @@ export default function APIExplorer() {
                       padding: '0',
                       lineHeight: '1',
                     }}
-                    title="View gallery for page 1"
+                    title={`View gallery for page ${pageNum}`}
                   >
                     📷
                   </button>
                 )}
               </span>
-            )}
-          </div>
-        )}
+            ))
+          ) : (
+            // No pagination data yet - show default "1" with gallery link
+            <span style={{ marginRight: '8px', display: 'inline-flex', gap: '2px', alignItems: 'center' }}>
+              <button
+                onClick={() => openPage(slug, 1)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#4488ff',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  padding: '0 2px',
+                  textDecoration: 'underline',
+                }}
+              >
+                1
+              </button>
+              {data.imageCount > 0 && (
+                <button
+                  onClick={() => openGalleryView(slug, 1)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#00ff00',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    padding: '0',
+                    lineHeight: '1',
+                  }}
+                  title="View gallery for page 1"
+                >
+                  📷
+                </button>
+              )}
+            </span>
+          )}
+        </div>
 
         {/* Subcollections (if expanded) */}
         {isExpanded && hasSubcollections && (
