@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AdminPanel from './admin-panel';
 
 interface CollectionData {
   id: string;
@@ -30,6 +31,7 @@ export default function APIExplorer() {
   const [error, setError] = useState<string | null>(null);
   const [expandedSlugs, setExpandedSlugs] = useState<Set<string>>(new Set());
   const [fetchingSet, setFetchingSet] = useState<Set<string>>(new Set());
+  const [collapsedDetails, setCollapsedDetails] = useState<Set<string>>(new Set()); // Track collapsed collection details
 
   // Fetch all top-level collections on mount
   useEffect(() => {
@@ -68,6 +70,15 @@ export default function APIExplorer() {
           });
         });
         setCollectionData(newData);
+
+        // Start with all collections collapsed for clean initial view
+        setCollapsedDetails(new Set(slugs));
+
+        // Fetch detailed data (including pagination) for all top-level collections
+        console.log(`[API Explorer] Fetching pagination data for ${slugs.length} collections...`);
+        slugs.forEach((slug: string) => {
+          fetchCollectionDetails(slug);
+        });
       } else {
         setError(data.message || 'Failed to fetch collections');
       }
@@ -146,6 +157,18 @@ export default function APIExplorer() {
     });
   }
 
+  function toggleCollapsedDetails(slug: string) {
+    setCollapsedDetails(prev => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  }
+
   function openHeroImage(heroImagePath: string) {
     // heroImagePath already contains the full API path like "/api/media/scientists/hero.jfif"
     const url = `${API_BASE}${heroImagePath}`;
@@ -166,9 +189,10 @@ export default function APIExplorer() {
   }
 
   function openConfig(slug: string, config: any) {
-    // Open a new tab with formatted JSON
+    // Open a new tab with formatted JSON and download button
     const newWindow = window.open('', '_blank');
     if (newWindow) {
+      const configJson = JSON.stringify(config, null, 2);
       newWindow.document.write(`
         <html>
           <head>
@@ -186,17 +210,83 @@ export default function APIExplorer() {
                 padding: 20px;
                 overflow: auto;
               }
+              button {
+                background: #003300;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                cursor: pointer;
+                font-family: monospace;
+                font-size: 14px;
+                padding: 8px 16px;
+                margin-top: 16px;
+              }
+              button:hover {
+                background: #004400;
+              }
             </style>
           </head>
           <body>
             <h1 style="color: #00ffff;">Config: ${slug}</h1>
-            <pre>${JSON.stringify(config, null, 2)}</pre>
+            <button onclick="downloadConfig()">💾 Download config.json</button>
+            <pre>${configJson}</pre>
+            <script>
+              function downloadConfig() {
+                const blob = new Blob([${JSON.stringify(configJson)}], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '${slug}-config.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }
+            </script>
           </body>
         </html>
       `);
       newWindow.document.close();
     }
     console.log(`[API Explorer] Opening config for ${slug}:`, config);
+  }
+
+  function downloadConfig(slug: string, config: any) {
+    const json = JSON.stringify(config, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slug}-config.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log(`[API Explorer] Downloaded config for ${slug}`);
+  }
+
+  async function rescanCollection(slug: string, mode: 'full' | 'lightweight') {
+    console.log(`[API Explorer] POST ${API_BASE}/api/admin/scan/${slug}?mode=${mode}`);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/scan/${slug}?mode=${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+
+      console.log(`[API Explorer] Rescan response:`, data);
+
+      if (data.success) {
+        alert(`✓ ${mode === 'full' ? 'Full' : 'Lightweight'} rescan initiated for ${slug}`);
+        // Refresh collection data after a delay
+        setTimeout(() => fetchCollectionDetails(slug), 2000);
+      } else {
+        alert(`Error: ${data.message || 'Scan failed'}`);
+      }
+    } catch (err) {
+      console.error(`[API Explorer] Error rescanning ${slug}:`, err);
+      alert(`Network error: ${err}`);
+    }
   }
 
   function renderCollection(slug: string, depth: number = 0) {
@@ -215,28 +305,45 @@ export default function APIExplorer() {
     const hasSubcollections = data.subcollections && data.subcollections.length > 0;
     const hasHero = data.heroImage !== null && data.heroImage !== undefined;
     const hasConfig = data.config !== null && data.config !== undefined;
+    const isDetailsCollapsed = collapsedDetails.has(slug);
 
     return (
       <div key={slug} style={{ fontFamily: 'monospace', fontSize: '14px', marginBottom: '4px' }}>
         {/* Collection name and toggle */}
         <div style={{ marginLeft: `${depth * 20}px`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Details collapse twistie - ALWAYS shown */}
+          <button
+            onClick={() => toggleCollapsedDetails(slug)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#00ff00',
+              cursor: 'pointer',
+              fontSize: '12px',
+              padding: '2px 4px',
+            }}
+            title={isDetailsCollapsed ? 'Expand details' : 'Collapse details'}
+          >
+            {isDetailsCollapsed ? '▶' : '▼'}
+          </button>
+
+          {/* Subcollections expand twistie - only for collections with subcollections */}
           {hasSubcollections && (
             <button
               onClick={() => toggleExpanded(slug)}
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#00ff00',
+                color: '#ffaa00',
                 cursor: 'pointer',
                 fontSize: '12px',
                 padding: '2px 4px',
               }}
+              title={isExpanded ? 'Collapse subcollections' : 'Expand subcollections'}
             >
               {isExpanded ? '▼' : '▶'}
             </button>
           )}
-
-          {!hasSubcollections && <span style={{ width: '20px' }}></span>}
 
           <span style={{ color: '#00ffff' }}>
             {depth > 0 ? '├─ ' : ''}{data.name}
@@ -247,7 +354,29 @@ export default function APIExplorer() {
           </span>
         </div>
 
-        {/* Collection info row */}
+        {/* Collection info row - only shown when NOT collapsed */}
+        {!isDetailsCollapsed && (
+        <>
+          {/* Hero image thumbnail - shown when expanded and has hero */}
+          {hasHero && data.heroImage && (
+            <div style={{ marginLeft: `${depth * 20 + 30}px`, marginTop: '8px', marginBottom: '8px' }}>
+              <img
+                src={`${API_BASE}${data.heroImage}?size=thumbnail`}
+                alt={`${data.name} hero`}
+                style={{
+                  maxWidth: '120px',
+                  maxHeight: '80px',
+                  border: '2px solid #00ff00',
+                  borderRadius: '4px',
+                  objectFit: 'cover',
+                  cursor: 'pointer',
+                }}
+                onClick={() => openHeroImage(data.heroImage!)}
+                title="Click to open full-resolution hero image"
+              />
+            </div>
+          )}
+
         <div style={{ marginLeft: `${depth * 20 + 30}px`, display: 'flex', gap: '16px', alignItems: 'center', marginTop: '4px', flexWrap: 'wrap' }}>
           {/* Hero image indicator */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -280,20 +409,36 @@ export default function APIExplorer() {
             </span>
             <span style={{ color: '#888', fontSize: '12px' }}>Config</span>
             {hasConfig && data.config && (
-              <button
-                onClick={() => openConfig(slug, data.config)}
-                style={{
-                  background: 'none',
-                  border: '1px solid #00ff00',
-                  color: '#00ff00',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  padding: '2px 6px',
-                  textDecoration: 'underline',
-                }}
-              >
-                View Config
-              </button>
+              <>
+                <button
+                  onClick={() => openConfig(slug, data.config)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #00ff00',
+                    color: '#00ff00',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '2px 6px',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  View Config
+                </button>
+                <button
+                  onClick={() => downloadConfig(slug, data.config)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #00ff00',
+                    color: '#00ff00',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    padding: '2px 6px',
+                  }}
+                  title="Download config.json"
+                >
+                  💾
+                </button>
+              </>
             )}
           </div>
 
@@ -308,6 +453,44 @@ export default function APIExplorer() {
               {data.videoCount} videos
             </span>
           )}
+
+          {/* Rescan buttons */}
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                rescanCollection(slug, 'full');
+              }}
+              style={{
+                background: '#330033',
+                border: '1px solid #ff00ff',
+                color: '#ff00ff',
+                cursor: 'pointer',
+                fontSize: '10px',
+                padding: '2px 6px',
+              }}
+              title="Full rescan - purges and rebuilds database"
+            >
+              🔄 Full
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                rescanCollection(slug, 'lightweight');
+              }}
+              style={{
+                background: '#003333',
+                border: '1px solid #00ffff',
+                color: '#00ffff',
+                cursor: 'pointer',
+                fontSize: '10px',
+                padding: '2px 6px',
+              }}
+              title="Lightweight scan - minimal metadata"
+            >
+              ⚡ Light
+            </button>
+          </div>
         </div>
 
         {/* Pagination links with per-page gallery view - ALWAYS shown */}
@@ -387,6 +570,8 @@ export default function APIExplorer() {
             </span>
           )}
         </div>
+        </>
+        )}
 
         {/* Subcollections (if expanded) */}
         {isExpanded && hasSubcollections && (
@@ -415,6 +600,13 @@ export default function APIExplorer() {
           Backend API Diagnostic Tool
         </p>
       </div>
+
+      {/* Admin Panel */}
+      <AdminPanel
+        onRefresh={fetchTopLevelCollections}
+        collectionData={collectionData}
+        topLevelSlugs={topLevelSlugs}
+      />
 
       {/* Refresh button */}
       <div style={{ marginBottom: '20px' }}>
