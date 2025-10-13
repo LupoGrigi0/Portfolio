@@ -638,6 +638,39 @@ function CollectionLabContent() {
     }
   };
 
+  // Sync current projection context settings to config JSON
+  const handleSyncProjectionToConfig = () => {
+    if (!parsedConfig) return;
+
+    const updatedConfig: CollectionConfig = {
+      ...parsedConfig,
+      projection: {
+        enabled: true,
+        pattern: parsedConfig.projection?.pattern || 'all',
+        patternOffset: parsedConfig.projection?.patternOffset || 0,
+        fadeDistance,
+        maxBlur,
+        scaleX: projectionScaleX,
+        scaleY: projectionScaleY,
+        blendMode: blendMode as any,
+        vignette: {
+          width: vignetteWidth,
+          strength: vignetteStrength,
+        },
+        checkerboard: {
+          enabled: checkerboardEnabled,
+          tileSize: checkerboardTileSize,
+          scatterSpeed: checkerboardScatterSpeed,
+          blur: checkerboardBlur,
+        },
+      },
+    };
+
+    setConfigJson(JSON.stringify(updatedConfig, null, 2));
+    setParsedConfig(updatedConfig);
+    alert('✓ Projection settings synced to config!\n\nYou can now save this config to the gallery.');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -1299,28 +1332,36 @@ function CollectionLabContent() {
               )}
             </div>
 
-            {/* Reset Button */}
-            <button
-              onClick={() => {
-                setFadeDistance(0.5);
-                setMaxBlur(4);
-                setProjectionScaleX(1.2);
-                setProjectionScaleY(1.2);
-                setBlendMode('normal');
-                setVignetteWidth(20);
-                setVignetteStrength(0.8);
-                setCheckerboardEnabled(false);
-                setCheckerboardTileSize(30);
-                setCheckerboardScatterSpeed(0.3);
-                setCheckerboardBlur(0);
-              }}
-              className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded font-semibold"
-            >
-              Reset to Defaults
-            </button>
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={handleSyncProjectionToConfig}
+                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 py-2 rounded font-semibold"
+              >
+                💾 Sync to Config
+              </button>
+              <button
+                onClick={() => {
+                  setFadeDistance(0.5);
+                  setMaxBlur(4);
+                  setProjectionScaleX(1.2);
+                  setProjectionScaleY(1.2);
+                  setBlendMode('normal');
+                  setVignetteWidth(20);
+                  setVignetteStrength(0.8);
+                  setCheckerboardEnabled(false);
+                  setCheckerboardTileSize(30);
+                  setCheckerboardScatterSpeed(0.3);
+                  setCheckerboardBlur(0);
+                }}
+                className="w-full bg-white/20 hover:bg-white/30 text-white py-2 rounded font-semibold"
+              >
+                Reset to Defaults
+              </button>
+            </div>
 
             <div className="mt-4 p-3 bg-white/5 rounded text-xs text-white/60">
-              <strong className="text-white/80">Tip:</strong> Each carousel is a projector shining its first image onto the midground layer. The brightness (opacity) increases as the carousel moves toward viewport center.
+              <strong className="text-white/80">Tip:</strong> Adjust settings live, then click "Sync to Config" to save them. Each carousel is a projector shining its first image onto the midground layer.
             </div>
           </div>
         )}
