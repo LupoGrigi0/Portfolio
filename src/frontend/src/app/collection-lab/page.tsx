@@ -507,6 +507,16 @@ export default function CollectionLabPage() {
     }
   };
 
+  // Copy config JSON to clipboard
+  const handleCopyJSON = async () => {
+    try {
+      await navigator.clipboard.writeText(configJson);
+      alert('✓ Config copied to clipboard!\n\nYou can now paste it into EXAMPLE_CONFIGS to create a new template.');
+    } catch (err) {
+      alert('✗ Failed to copy to clipboard.\n\nPlease select and copy the JSON manually.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -735,6 +745,12 @@ export default function CollectionLabPage() {
                 {jsonError}
               </p>
             )}
+            <button
+              onClick={handleCopyJSON}
+              className="w-full text-xs bg-gray-500/20 hover:bg-gray-500/30 border border-gray-500/40 text-gray-300 px-3 py-1.5 rounded transition-colors"
+            >
+              📋 Copy JSON to Clipboard
+            </button>
           </div>
 
           {/* Actions */}
