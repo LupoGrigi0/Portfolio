@@ -1,0 +1,27 @@
+{
+  "layoutType": "dynamic",
+  "title": "Curating",
+  "subtitle": "A collection of explorations",
+  "background": {
+    "image": "curating-hero.jpg",
+    "opacity": 0.5,
+    "parallax": true
+  },
+  "dynamicSettings": {
+    "layout": "2-across",
+    "imagesPerCarousel": 4,
+    "carouselDefaults": {
+      "transition": "fade",
+      "autoplay": false,
+      "reservedSpace": {
+        "bottom": 60
+      },
+      "styling": {
+        "borderWidth": 2,
+        "borderColor": "#ffffff",
+        "borderOpacity": 0.2,
+        "borderRadius": 8
+      }
+    }
+  }
+}
