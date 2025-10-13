@@ -56,7 +56,7 @@ Implement only features needed RIGHT NOW. Prevents over-engineering, keeps codeb
 ### 4. Separation of Concerns
 Divide system into distinct sections with separate responsibilities. Enhances modularity.
 
-**For this project**:
+**For this project**:(THIS IS JUST A METAPHORICAL EXAMPLE Dont take the following as literal instructions )
 - CollectionPage fetches data (one job)
 - Carousel displays images (one job)
 - Background updates on change (one job)

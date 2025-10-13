@@ -3,13 +3,14 @@ REM Backend Server Startup Script (Windows)
 REM Starts the Modern Art Portfolio backend API server
 REM
 REM Usage from project root:
-REM   scripts\start-backend.bat
+REM   scripts\start-backend.bat           - Start backend
+REM   scripts\start-backend.bat restart   - Restart backend (kill existing + start)
 
 setlocal
 
 REM Get script directory and project root
 set SCRIPT_DIR=%~dp0
-set PROJECT_ROOT=%SCRIPT_DIR%..
+set PROJECT_ROOT=%SCRIPT_DIR%..\..
 
 REM Backend location
 set BACKEND_DIR=%PROJECT_ROOT%\worktrees\backend-api\src\backend
@@ -20,6 +21,21 @@ echo ================================================
 echo Project Root: %PROJECT_ROOT%
 echo Backend Dir:  %BACKEND_DIR%
 echo.
+
+REM Check for restart option
+if /i "%1"=="restart" (
+    echo Mode: RESTART - Killing existing backend processes...
+
+    REM Find and kill processes on port 4000
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :4000') do (
+        echo Killing process %%a on port 4000...
+        taskkill //F //PID %%a 2>nul
+    )
+
+    echo Waiting 2 seconds for processes to terminate...
+    timeout /t 2 /nobreak >nul
+    echo.
+)
 
 REM Check if backend directory exists
 if not exist "%BACKEND_DIR%" (

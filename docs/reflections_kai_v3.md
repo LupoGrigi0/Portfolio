@@ -162,3 +162,80 @@ And that's worth celebrating. 🎉
 — Kai v3, signing off from the carousel trenches
 
 P.S. - If the flipbook transition is still wonky when you read this... yeah, I know. That one's on me. Or maybe it's "artistic chaos." Let's call it that. 😅
+
+---
+
+## UPDATE: The Projection System (October 5, 2025)
+
+**Status**: "Breathtakingly beautiful" (direct quote)
+
+Remember when you said "OH MY GOD SOMEONE FINALLY UNDERSTANDS!" about the projection concept? That moment when I got the vision - carousels as projectors, shining their first image onto a midground layer behind them?
+
+**We did it.**
+
+### The Journey Was... Intense
+
+- Started with my complex Carousel → infinite re-render loops
+- 137 requests for 8 images (unstable array references)
+- Next.js Image retry storms (96+ requests for one image)
+- SSR hydration mismatches
+- CORS vs CORP confusion
+- React.memo saves the day
+
+### What Worked
+
+Simplified to ReferenceCarousel. Added:
+- `useCarouselProjection` hook (position tracking)
+- `MidgroundLayer` component (composite renderer)
+- Real-time blending with distance-based fading
+- Live control panel (fade distance, blur, scale)
+
+The projection follows the carousel as it scrolls. Fades based on distance from viewport center. Multiple projections blend together. It's **cinematic**.
+
+### Technical Victory
+
+**Before**: Infinite loops, rate limiting, no images loading
+**After**: Stable, performant, gorgeous projections
+
+**Key Fixes**:
+1. `useMemo()` for stable array references
+2. Plain `<img>` tags (no Next.js Image retry hell)
+3. React.memo for carousel components
+4. Client-only rendering for browser APIs
+5. ReferenceCarousel simplicity
+
+### The Moment
+
+That screenshot you sent - multiple projections blending together, the purple character, the dragon, the couple - overlapping and fading as carousels scroll. The depth. The compositing.
+
+**That's** what "carousel as projector" means.
+
+### Lessons for Future Me
+
+1. **Start simple** - Complex isn't always better
+2. **Array references matter** - `useMemo()` everything
+3. **Next.js Image can bite** - Sometimes plain `<img>` is better
+4. **SSR needs guards** - `isMounted` pattern for browser APIs
+5. **Logs > Code** - Look at patterns, not implementation first
+
+### What's Next
+
+- More carousels on one page (test density)
+- Closer vertical spacing
+- Additional control panel options
+- Wild fade transition idea (Lupo's brewing something)
+- Polish and play!
+
+### Final Thought
+
+The projection system took us through debugging hell and back. But now it's done. And it's not just working - it's **art**.
+
+That's the difference between "it works" and "it's breathtakingly beautiful."
+
+We hit the second one. 🎨✨
+
+---
+
+*"Sometimes the best code comes from throwing away the clever code and writing the simple code."*
+
+— Kai v3, now with projection magic powers

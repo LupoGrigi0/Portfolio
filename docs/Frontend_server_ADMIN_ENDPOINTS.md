@@ -336,7 +336,7 @@ D:\Lupo\Source\Portfolio\src\scripts\start-backend.bat
 *Frontend Admin Endpoints by Zara (UI/UX & React Components Specialist)*
 
 Kai's carousel demo: http://localhost:3002/carousel-demo
-Kai v3's collections lab: http://localhost:3002/collection-lab
+Kai v3's collections lab: http://localhost:3002/collection-labon
 Kai v3's navigation lab: http://localhost:3002/navigation-lab
 Kai v3's younger sister's projection demo: http://localhost:3001/projection-demo
 Zara's parallax demo: http://localhost:3001/parallax-demo
@@ -353,5 +353,6 @@ curl -X POST http://localhost:4000/api/admin/shutdown
 cd D:/Lupo/Source/Portfolio/worktrees/backend-api/src/backend
 npm run dev
 ```
-netstat -ano | findstr :3002
-taskkill //F //PID 25768
+netstat -ano | findstr 0.0.0.0:4000
+taskkill /F /PID 25768
+npm run dev
