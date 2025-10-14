@@ -183,6 +183,58 @@ export class DatabaseManager {
     return stmt.run(coverImagePath, directoryId);
   }
 
+  async updateDirectoryCachedFields(directoryId: string, fields: {
+    title?: string;
+    description?: string;
+    coverImage?: string;
+    featured?: boolean;
+    menuOrder?: number;
+    status?: string;
+  }) {
+    const db = this.getDb();
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (fields.title !== undefined) {
+      updates.push('title = ?');
+      params.push(fields.title);
+    }
+    if (fields.description !== undefined) {
+      updates.push('description = ?');
+      params.push(fields.description);
+    }
+    if (fields.coverImage !== undefined) {
+      updates.push('cover_image = ?');
+      params.push(fields.coverImage);
+    }
+    if (fields.featured !== undefined) {
+      updates.push('featured = ?');
+      params.push(fields.featured ? 1 : 0);
+    }
+    if (fields.menuOrder !== undefined) {
+      updates.push('menu_order = ?');
+      params.push(fields.menuOrder);
+    }
+    if (fields.status !== undefined) {
+      updates.push('status = ?');
+      params.push(fields.status);
+    }
+
+    if (updates.length === 0) {
+      return; // Nothing to update
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(directoryId);
+
+    const stmt = db.prepare(`
+      UPDATE directories
+      SET ${updates.join(', ')}
+      WHERE id = ?
+    `);
+    return stmt.run(...params);
+  }
+
   async deleteDirectory(directoryId: string) {
     const db = this.getDb();
     const stmt = db.prepare('DELETE FROM directories WHERE id = ?');

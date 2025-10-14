@@ -311,12 +311,66 @@ router.put('/config/:slug', async (req: Request, res: Response, next: NextFuncti
     // Update database with full config JSON
     await logger.info('AdminRoutes', `Updating database cache for ${slug}`, { directoryId: directory.id, configKeys: Object.keys(config) });
     await dbManager.updateDirectoryConfig(directory.id, config);
+
+    // Sync cached fields from config to directory table columns
+    const cachedFields: any = {};
+
+    if (config.title !== undefined) {
+      cachedFields.title = config.title;
+    }
+    if (config.description !== undefined) {
+      cachedFields.description = config.description;
+    }
+    if (config.isFeatured !== undefined) {
+      cachedFields.featured = config.isFeatured;
+    }
+    if (config.order !== undefined) {
+      cachedFields.menuOrder = config.order;
+    }
+    if (config.status !== undefined) {
+      cachedFields.status = config.status;
+    }
+
+    // Handle coverImage - validate it exists in filesystem if provided
+    if (config.coverImage !== undefined && config.coverImage !== null && config.coverImage !== '') {
+      // Validate that the cover image path exists
+      const coverImagePath = path.isAbsolute(config.coverImage)
+        ? config.coverImage
+        : path.join(dirPath, config.coverImage);
+
+      try {
+        await fs.access(coverImagePath);
+        cachedFields.coverImage = coverImagePath;
+        await logger.info('AdminRoutes', `Cover image validated`, { coverImagePath });
+      } catch (error) {
+        await logger.warn('AdminRoutes', `Cover image not found, skipping cache update`, {
+          configCoverImage: config.coverImage,
+          resolvedPath: coverImagePath
+        });
+      }
+    } else if (config.coverImage === null || config.coverImage === '') {
+      // Clear cover image if explicitly set to null or empty string
+      cachedFields.coverImage = null;
+    }
+
+    // Update cached fields if any were changed
+    if (Object.keys(cachedFields).length > 0) {
+      await logger.info('AdminRoutes', `Updating cached directory fields`, { cachedFields });
+      await dbManager.updateDirectoryCachedFields(directory.id, cachedFields);
+      await logger.info('AdminRoutes', `Cached fields updated successfully`);
+    }
+
     await logger.info('AdminRoutes', `Database cache updated successfully for ${slug}`);
 
     // Verify the update by reading back
     const verifyDirectory = await dbManager.getDirectoryBySlug(slug) as any;
     const verifyConfig = JSON.parse(verifyDirectory.config || '{}');
-    await logger.info('AdminRoutes', `Verification read - config keys in DB`, { configKeys: Object.keys(verifyConfig) });
+    await logger.info('AdminRoutes', `Verification read - config keys in DB`, {
+      configKeys: Object.keys(verifyConfig),
+      title: verifyDirectory.title,
+      description: verifyDirectory.description,
+      coverImage: verifyDirectory.cover_image
+    });
 
     const updatedAt = new Date().toISOString();
     await logger.info('AdminRoutes', `Config updated successfully for ${slug}`, { configPath });
