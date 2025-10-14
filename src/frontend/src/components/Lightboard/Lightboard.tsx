@@ -6,6 +6,7 @@ import {
   PageSettingsWidget,
   ProjectionSettingsWidget,
   CarouselSettingsWidget,
+  NavigationSettingsWidget,
 } from './widgets';
 import type { Collection } from '@/lib/api-client';
 
@@ -14,7 +15,7 @@ interface Position {
   y: number;
 }
 
-type TabType = 'site' | 'page' | 'projection' | 'carousel';
+type TabType = 'site' | 'page' | 'navigation' | 'projection' | 'carousel';
 
 interface LightboardProps {
   collection?: Collection | null;
@@ -63,6 +64,22 @@ export default function Lightboard({ collection }: LightboardProps) {
   const [reservedSpaceBottom, setReservedSpaceBottom] = useState(0);
   const [reservedSpaceLeft, setReservedSpaceLeft] = useState(0);
   const [reservedSpaceRight, setReservedSpaceRight] = useState(0);
+
+  // Navigation settings
+  const [navRollbackDelay, setNavRollbackDelay] = useState(300);
+  const [navRollbackSpeed, setNavRollbackSpeed] = useState(300);
+  const [navIndentSpacing, setNavIndentSpacing] = useState(16);
+  const [navVerticalSpacing, setNavVerticalSpacing] = useState(4);
+  const [navFontFamily, setNavFontFamily] = useState('system');
+  const [navFontSize, setNavFontSize] = useState(16);
+  const [navActiveTextColor, setNavActiveTextColor] = useState('#ffffff');
+  const [navHoverTextColor, setNavHoverTextColor] = useState('#ffffff');
+  const [navActiveBackgroundColor, setNavActiveBackgroundColor] = useState('rgba(255, 255, 255, 0.1)');
+  const [navHoverBackgroundColor, setNavHoverBackgroundColor] = useState('rgba(255, 255, 255, 0.05)');
+  const [navDrawerBackgroundColor, setNavDrawerBackgroundColor] = useState('rgba(0, 0, 0, 0.8)');
+  const [navBorderColor, setNavBorderColor] = useState('rgba(255, 255, 255, 0.2)');
+  const [navShowHomeIcon, setNavShowHomeIcon] = useState(true);
+  const [navHighlightStyle, setNavHighlightStyle] = useState('border-bg');
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.lightboard-tab, .lightboard-content')) {
@@ -330,9 +347,60 @@ export default function Lightboard({ collection }: LightboardProps) {
     }
   };
 
+  // Navigation settings handlers
+  const handleSaveNavSettings = async () => {
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const navConfig = {
+        timing: { rollbackDelay: navRollbackDelay, rollbackSpeed: navRollbackSpeed },
+        spacing: { indent: navIndentSpacing, vertical: navVerticalSpacing },
+        typography: { fontFamily: navFontFamily, fontSize: navFontSize },
+        colors: {
+          activeText: navActiveTextColor,
+          hoverText: navHoverTextColor,
+          activeBackground: navActiveBackgroundColor,
+          hoverBackground: navHoverBackgroundColor,
+          drawerBackground: navDrawerBackgroundColor,
+          border: navBorderColor,
+        },
+        visual: { showHomeIcon: navShowHomeIcon, highlightStyle: navHighlightStyle },
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/site/config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ navigation: navConfig }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save navigation settings');
+      alert('Navigation settings saved successfully!');
+    } catch (error) {
+      console.error('Error saving navigation settings:', error);
+      alert('Failed to save navigation settings');
+    }
+  };
+
+  const handleResetNavSettings = () => {
+    setNavRollbackDelay(300);
+    setNavRollbackSpeed(300);
+    setNavIndentSpacing(16);
+    setNavVerticalSpacing(4);
+    setNavFontFamily('system');
+    setNavFontSize(16);
+    setNavActiveTextColor('#ffffff');
+    setNavHoverTextColor('#ffffff');
+    setNavActiveBackgroundColor('rgba(255, 255, 255, 0.1)');
+    setNavHoverBackgroundColor('rgba(255, 255, 255, 0.05)');
+    setNavDrawerBackgroundColor('rgba(0, 0, 0, 0.8)');
+    setNavBorderColor('rgba(255, 255, 255, 0.2)');
+    setNavShowHomeIcon(true);
+    setNavHighlightStyle('border-bg');
+  };
+
   const tabs: { id: TabType; label: string }[] = [
     { id: 'site', label: 'Site' },
     { id: 'page', label: 'Page' },
+    { id: 'navigation', label: 'Navigation' },
     { id: 'projection', label: 'Projection' },
     { id: 'carousel', label: 'Carousel' },
   ];
@@ -368,6 +436,52 @@ export default function Lightboard({ collection }: LightboardProps) {
             onCopyJSON={handleCopyJSON}
             currentCollectionName={collection?.name || currentCollectionName}
             isSaving={isSavingPage}
+          />
+        );
+      case 'navigation':
+        return (
+          <NavigationSettingsWidget
+            // Timing
+            rollbackDelay={navRollbackDelay}
+            rollbackSpeed={navRollbackSpeed}
+            onRollbackDelayChange={setNavRollbackDelay}
+            onRollbackSpeedChange={setNavRollbackSpeed}
+
+            // Spacing
+            indentSpacing={navIndentSpacing}
+            verticalSpacing={navVerticalSpacing}
+            onIndentSpacingChange={setNavIndentSpacing}
+            onVerticalSpacingChange={setNavVerticalSpacing}
+
+            // Typography
+            fontFamily={navFontFamily}
+            fontSize={navFontSize}
+            onFontFamilyChange={setNavFontFamily}
+            onFontSizeChange={setNavFontSize}
+
+            // Colors
+            activeTextColor={navActiveTextColor}
+            hoverTextColor={navHoverTextColor}
+            activeBackgroundColor={navActiveBackgroundColor}
+            hoverBackgroundColor={navHoverBackgroundColor}
+            drawerBackgroundColor={navDrawerBackgroundColor}
+            borderColor={navBorderColor}
+            onActiveTextColorChange={setNavActiveTextColor}
+            onHoverTextColorChange={setNavHoverTextColor}
+            onActiveBackgroundColorChange={setNavActiveBackgroundColor}
+            onHoverBackgroundColorChange={setNavHoverBackgroundColor}
+            onDrawerBackgroundColorChange={setNavDrawerBackgroundColor}
+            onBorderColorChange={setNavBorderColor}
+
+            // Visual
+            showHomeIcon={navShowHomeIcon}
+            highlightStyle={navHighlightStyle}
+            onShowHomeIconChange={setNavShowHomeIcon}
+            onHighlightStyleChange={setNavHighlightStyle}
+
+            // Actions
+            onSave={handleSaveNavSettings}
+            onReset={handleResetNavSettings}
           />
         );
       case 'projection':

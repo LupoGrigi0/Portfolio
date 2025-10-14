@@ -20,3 +20,6 @@ export type { SiteSettingsProps } from './SiteSettingsWidget';
 
 export { CarouselSettingsWidget } from './CarouselSettingsWidget';
 export type { CarouselSettingsProps } from './CarouselSettingsWidget';
+
+export { NavigationSettingsWidget } from './NavigationSettingsWidget';
+export type { NavigationSettingsWidgetProps } from './NavigationSettingsWidget';
