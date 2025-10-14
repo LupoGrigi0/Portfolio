@@ -2,8 +2,7 @@
  * Lightboard Test Page
  *
  * Demonstrates the click-to-select functionality for carousels with Lightboard designer.
- * This page shows multiple carousels that can be clicked to select,
- * with visual feedback and integration with Lightboard settings widgets.
+ * This page loads a real collection from the API and demonstrates live preview functionality.
  *
  * @author Kai v3 (Lightboard Specialist)
  * @created 2025-10-13
@@ -11,66 +10,81 @@
 
 'use client';
 
-import { Lightboard, LightboardProvider, SelectableCarousel } from '@/components/Lightboard';
+import { useEffect, useState } from 'react';
+import { Lightboard, LightboardProvider } from '@/components/Lightboard';
+import { LivePreview } from '@/components/Lightboard/LivePreview';
 import { MidgroundProjectionProvider } from '@/components/Layout';
-import ReferenceCarousel from '@/components/ReferenceCarousel/ReferenceCarousel';
-
-// Sample images for testing
-const sampleImages1 = [
-  {
-    id: '1',
-    src: 'https://picsum.photos/800/600?random=1',
-    alt: 'Sample Image 1',
-  },
-  {
-    id: '2',
-    src: 'https://picsum.photos/800/600?random=2',
-    alt: 'Sample Image 2',
-  },
-  {
-    id: '3',
-    src: 'https://picsum.photos/800/600?random=3',
-    alt: 'Sample Image 3',
-  },
-];
-
-const sampleImages2 = [
-  {
-    id: '4',
-    src: 'https://picsum.photos/800/600?random=4',
-    alt: 'Sample Image 4',
-  },
-  {
-    id: '5',
-    src: 'https://picsum.photos/800/600?random=5',
-    alt: 'Sample Image 5',
-  },
-  {
-    id: '6',
-    src: 'https://picsum.photos/800/600?random=6',
-    alt: 'Sample Image 6',
-  },
-];
-
-const sampleImages3 = [
-  {
-    id: '7',
-    src: 'https://picsum.photos/800/600?random=7',
-    alt: 'Sample Image 7',
-  },
-  {
-    id: '8',
-    src: 'https://picsum.photos/800/600?random=8',
-    alt: 'Sample Image 8',
-  },
-  {
-    id: '9',
-    src: 'https://picsum.photos/800/600?random=9',
-    alt: 'Sample Image 9',
-  },
-];
+import { getCollection, type Collection } from '@/lib/api-client';
 
 export default function LightboardTestPage() {
+  const [collection, setCollection] = useState<Collection | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load home collection on mount
+  useEffect(() => {
+    async function loadCollection() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Try to load "home" collection, fallback to first available
+        let data = await getCollection('home');
+
+        if (!data) {
+          // Try "couples" as fallback
+          data = await getCollection('couples');
+        }
+
+        if (!data) {
+          setError('No collections available. Please ensure backend is running.');
+        } else {
+          setCollection(data);
+        }
+      } catch (err) {
+        console.error('Error loading collection:', err);
+        setError('Failed to load collection from API');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCollection();
+  }, []);
+
+  if (loading) {
+    return (
+      <MidgroundProjectionProvider>
+        <LightboardProvider>
+          <div className="min-h-screen bg-black text-white flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4" />
+              <p className="text-lg">Loading collection...</p>
+            </div>
+          </div>
+        </LightboardProvider>
+      </MidgroundProjectionProvider>
+    );
+  }
+
+  if (error || !collection) {
+    return (
+      <MidgroundProjectionProvider>
+        <LightboardProvider>
+          <div className="min-h-screen bg-black text-white flex items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold mb-4">Error Loading Collection</h2>
+              <p className="text-zinc-400 mb-6">{error}</p>
+              <p className="text-zinc-500 text-sm">
+                Please ensure the backend server is running at http://localhost:4000
+              </p>
+            </div>
+          </div>
+        </LightboardProvider>
+      </MidgroundProjectionProvider>
+    );
+  }
+
   return (
     <MidgroundProjectionProvider>
       <LightboardProvider>
@@ -79,50 +93,16 @@ export default function LightboardTestPage() {
           <div className="p-8 border-b border-zinc-800">
             <h1 className="text-4xl font-bold mb-2">Lightboard Test Page</h1>
             <p className="text-zinc-400">
-              Click any carousel to select it. The selected carousel will glow blue and show in the Lightboard settings.
+              Loaded collection: <strong className="text-white">{collection.name}</strong> ({collection.imageCount} images)
             </p>
             <p className="text-zinc-500 text-sm mt-2">
-              Click the gear icon (top-right) to open Lightboard designer.
+              Click the gear icon (top-right) to open Lightboard designer and modify settings.
             </p>
           </div>
 
-          {/* Test Carousels */}
-          <div className="p-8 space-y-12">
-            {/* Carousel 1 */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4 text-cyan-400">Carousel 1</h2>
-              <SelectableCarousel carouselId="test-carousel-1">
-                <ReferenceCarousel
-                  images={sampleImages1}
-                  enableProjection={true}
-                  projectionId="test-carousel-1"
-                />
-              </SelectableCarousel>
-            </div>
-
-            {/* Carousel 2 */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4 text-cyan-400">Carousel 2</h2>
-              <SelectableCarousel carouselId="test-carousel-2">
-                <ReferenceCarousel
-                  images={sampleImages2}
-                  enableProjection={true}
-                  projectionId="test-carousel-2"
-                />
-              </SelectableCarousel>
-            </div>
-
-            {/* Carousel 3 */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4 text-cyan-400">Carousel 3</h2>
-              <SelectableCarousel carouselId="test-carousel-3">
-                <ReferenceCarousel
-                  images={sampleImages3}
-                  enableProjection={false}
-                  projectionId="test-carousel-3"
-                />
-              </SelectableCarousel>
-            </div>
+          {/* Live Preview Carousels */}
+          <div className="p-8">
+            <LivePreview collection={collection} />
           </div>
 
           {/* Instructions */}
@@ -131,15 +111,16 @@ export default function LightboardTestPage() {
             <ol className="list-decimal list-inside space-y-2 text-zinc-300">
               <li>Click on any carousel to select it (it will glow blue)</li>
               <li>Open Lightboard by clicking the gear icon in the top-right corner</li>
-              <li>Go to the "Projection" tab - you'll see which carousel is selected</li>
-              <li>Go to the "Carousel" tab - settings will apply to the selected carousel</li>
-              <li>Adjust settings and click "Apply" to see changes (coming soon)</li>
-              <li>Click a different carousel to switch selection</li>
+              <li>Go to the "Site" tab to configure site-wide settings</li>
+              <li>Go to the "Page" tab to edit collection configuration</li>
+              <li>Go to the "Projection" tab to adjust midground projection effects</li>
+              <li>Go to the "Carousel" tab to modify carousel behavior</li>
+              <li>Changes will be reflected in real-time in the preview above</li>
             </ol>
           </div>
 
           {/* Lightboard Designer */}
-          <Lightboard />
+          <Lightboard collection={collection} />
         </div>
       </LightboardProvider>
     </MidgroundProjectionProvider>

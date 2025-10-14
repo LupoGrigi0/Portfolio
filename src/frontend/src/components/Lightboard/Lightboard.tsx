@@ -7,6 +7,7 @@ import {
   ProjectionSettingsWidget,
   CarouselSettingsWidget,
 } from './widgets';
+import type { Collection } from '@/lib/api-client';
 
 interface Position {
   x: number;
@@ -15,7 +16,11 @@ interface Position {
 
 type TabType = 'site' | 'page' | 'projection' | 'carousel';
 
-export default function Lightboard() {
+interface LightboardProps {
+  collection?: Collection | null;
+}
+
+export default function Lightboard({ collection }: LightboardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('site');
   const [position, setPosition] = useState<Position>({ x: 100, y: 100 });
@@ -96,29 +101,64 @@ export default function Lightboard() {
     };
   }, [isDragging, dragOffset]);
 
+  // Load collection config when collection is provided
+  useEffect(() => {
+    if (collection) {
+      setCurrentCollectionName(collection.name);
+
+      // If collection has a config, load it into the editor
+      if (collection.config) {
+        setConfigJson(JSON.stringify(collection.config, null, 2));
+      } else {
+        // Set default template if no config
+        setConfigJson(JSON.stringify({
+          layoutType: 'dynamic',
+          title: collection.name,
+          subtitle: `${collection.imageCount} images`,
+          dynamicSettings: {
+            layout: 'single-column',
+            imagesPerCarousel: 20,
+            carouselDefaults: {
+              transition: 'fade',
+              reservedSpace: { bottom: 80 },
+            },
+          },
+        }, null, 2));
+      }
+    }
+  }, [collection]);
+
   // Site Settings Callbacks
   const handleSaveSiteSettings = async () => {
     setIsSavingSite(true);
     try {
-      const response = await fetch('/api/site/config', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_BASE_URL}/api/site/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: siteTitle,
+          siteName: siteTitle,
           tagline: siteTagline,
-          favicon: faviconUrl,
-          logo: logoUrl,
-          backgroundColor,
+          branding: {
+            favicon: faviconUrl,
+            logo: logoUrl,
+            primaryColor: backgroundColor,
+          },
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save site settings');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save site settings');
       }
 
-      console.log('Site settings saved successfully');
+      const result = await response.json();
+      if (result.success) {
+        alert('Site settings saved successfully!');
+      }
     } catch (error) {
       console.error('Error saving site settings:', error);
+      alert(`Error saving settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSavingSite(false);
     }
@@ -126,21 +166,27 @@ export default function Lightboard() {
 
   const handleLoadCurrentSettings = async () => {
     try {
-      const response = await fetch('/api/site/config');
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_BASE_URL}/api/site/config`);
+
       if (!response.ok) {
         throw new Error('Failed to load site settings');
       }
 
-      const data = await response.json();
-      setSiteTitle(data.title || '');
-      setSiteTagline(data.tagline || '');
-      setFaviconUrl(data.favicon || '');
-      setLogoUrl(data.logo || '');
-      setBackgroundColor(data.backgroundColor || '#000000');
+      const result = await response.json();
+      if (result.success && result.data) {
+        const data = result.data;
+        setSiteTitle(data.siteName || '');
+        setSiteTagline(data.tagline || '');
+        setFaviconUrl(data.branding?.favicon || '');
+        setLogoUrl(data.branding?.logo || '');
+        setBackgroundColor(data.branding?.primaryColor || '#000000');
 
-      console.log('Site settings loaded successfully');
+        console.log('Site settings loaded successfully');
+      }
     } catch (error) {
       console.error('Error loading site settings:', error);
+      alert(`Error loading settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -148,33 +194,54 @@ export default function Lightboard() {
   const handleApplyPreview = () => {
     try {
       // Parse and validate JSON
-      JSON.parse(configJson);
-      console.log('Preview applied (local state updated)');
-      // In a real implementation, this would update the page preview
+      const parsed = JSON.parse(configJson);
+      console.log('Preview applied (local state updated):', parsed);
+      alert('Preview applied! Configuration is valid.\n\nNote: Live preview updates will be implemented in the next phase.');
+      // TODO: Trigger LivePreview component re-render with new config
     } catch (error) {
       console.error('Invalid JSON configuration:', error);
+      alert(`Invalid JSON: ${error instanceof Error ? error.message : 'Parse error'}`);
     }
   };
 
   const handleSaveToGallery = async () => {
     setIsSavingPage(true);
     try {
-      // Extract slug from current collection name or use pathname
-      const slug = currentCollectionName || window.location.pathname.split('/').pop() || 'default';
+      // Use collection slug if available
+      const slug = collection?.slug || currentCollectionName || 'home';
 
-      const response = await fetch(`/api/admin/config/${slug}`, {
+      if (!slug) {
+        throw new Error('No collection loaded. Cannot save configuration.');
+      }
+
+      // Validate JSON before sending
+      const configData = JSON.parse(configJson);
+
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${API_BASE_URL}/api/admin/config/${slug}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: configJson,
+        body: JSON.stringify(configData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save page configuration');
+        // Check if response is JSON or HTML
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Failed to save page configuration (HTTP ${response.status})`);
+        } else {
+          throw new Error(`Failed to save page configuration (HTTP ${response.status}). The endpoint may not exist.`);
+        }
       }
 
-      console.log('Page configuration saved to gallery');
+      const result = await response.json();
+      if (result.success) {
+        alert(`Configuration saved successfully!\n\nCollection: ${slug}`);
+      }
     } catch (error) {
       console.error('Error saving page configuration:', error);
+      alert(`Error saving configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSavingPage(false);
     }
@@ -299,7 +366,7 @@ export default function Lightboard() {
             onSaveToGallery={handleSaveToGallery}
             onLoadTemplate={handleLoadTemplate}
             onCopyJSON={handleCopyJSON}
-            currentCollectionName={currentCollectionName}
+            currentCollectionName={collection?.name || currentCollectionName}
             isSaving={isSavingPage}
           />
         );

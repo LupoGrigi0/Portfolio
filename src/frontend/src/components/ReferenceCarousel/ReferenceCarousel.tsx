@@ -32,19 +32,22 @@ export default function ReferenceCarousel({
 }: ReferenceCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Filter out images with empty or invalid src
+  const validImages = images.filter((img) => img.src && img.src.trim() !== '');
+
   // Midground projection (carousel projects first image onto background layer)
   const carouselRef = useCarouselProjection(
-    projectionId || `ref-carousel-${images[0]?.id || 'default'}`,
-    enableProjection && images[0] ? images[0].src : null,
+    projectionId || `ref-carousel-${validImages[0]?.id || 'default'}`,
+    enableProjection && validImages[0] ? validImages[0].src : null,
     enableProjection
   );
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? validImages.length - 1 : prev - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === validImages.length - 1 ? 0 : prev + 1));
   };
 
   const goToSlide = (index: number) => {
@@ -53,11 +56,20 @@ export default function ReferenceCarousel({
 
   console.log('[ReferenceCarousel] Current index:', currentIndex);
 
+  // Handle empty images case
+  if (validImages.length === 0) {
+    return (
+      <div className="relative w-full h-[600px] bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center">
+        <p className="text-gray-500">No valid images to display</p>
+      </div>
+    );
+  }
+
   return (
     <div ref={carouselRef} className="relative w-full h-[600px] bg-gray-900 rounded-lg overflow-hidden">
       {/* Images */}
       <div className="relative w-full h-full">
-        {images.map((image, index) => (
+        {validImages.map((image, index) => (
           <div
             key={image.id}
             className="absolute inset-0 transition-opacity duration-500"
@@ -103,7 +115,7 @@ export default function ReferenceCarousel({
 
       {/* Dot Indicators */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {images.map((_, index) => (
+        {validImages.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
@@ -119,7 +131,7 @@ export default function ReferenceCarousel({
 
       {/* Image Counter */}
       <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded text-sm z-20">
-        {currentIndex + 1} / {images.length}
+        {currentIndex + 1} / {validImages.length}
       </div>
     </div>
   );

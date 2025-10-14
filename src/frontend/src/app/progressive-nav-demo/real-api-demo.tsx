@@ -33,6 +33,7 @@ export default function ProgressiveNavRealAPI() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [currentCollection, setCurrentCollection] = useState<Collection | null>(null);
   const [loading, setLoading] = useState(true);
+  const [breadcrumbHistory, setBreadcrumbHistory] = useState<Array<{ name: string; slug: string }>>([]);
 
   // Settings panel
   const [showSettings, setShowSettings] = useState(false);
@@ -102,17 +103,16 @@ export default function ProgressiveNavRealAPI() {
     return null;
   };
 
-  // Get breadcrumbs from current path
+  // Get breadcrumbs from current path (using history)
   const getBreadcrumbs = () => {
     if (!currentCollection) return [{ name: 'Home', slug: '/' }];
 
-    const crumbs: { name: string; slug: string }[] = [{ name: 'Home', slug: '/' }];
-
-    // Build breadcrumb trail by walking up from current collection
-    // For now, just show current collection (Viktor's API returns flat slugs)
-    crumbs.push({ name: currentCollection.name, slug: currentCollection.slug });
-
-    return crumbs;
+    // Return Home + breadcrumb history + current collection
+    return [
+      { name: 'Home', slug: '/' },
+      ...breadcrumbHistory,
+      { name: currentCollection.name, slug: currentCollection.slug }
+    ];
   };
 
   // Navigate to a collection
@@ -123,6 +123,7 @@ export default function ProgressiveNavRealAPI() {
       setCurrentPath('/');
       setCurrentCollection(null);
       setExpandedCollections(new Set());
+      setBreadcrumbHistory([]);
       // Use rollback delay and speed settings
       if (!isMobile) {
         setTimeout(() => setIsDrawerOpen(false), rollbackDelay);
@@ -140,6 +141,25 @@ export default function ProgressiveNavRealAPI() {
       console.error('[Real API Nav] Failed to load collection:', slug);
       return;
     }
+
+    // Update breadcrumb history
+    if (fromBreadcrumb) {
+      // Clicking on a breadcrumb - truncate history to that point
+      const crumbIndex = breadcrumbHistory.findIndex(c => c.slug === slug);
+      if (crumbIndex >= 0) {
+        setBreadcrumbHistory(breadcrumbHistory.slice(0, crumbIndex + 1));
+      } else {
+        // Not in history, reset to empty (must be top level)
+        setBreadcrumbHistory([]);
+      }
+    } else if (!isAlreadyOnPage && currentCollection) {
+      // Normal forward navigation - add current collection to history
+      setBreadcrumbHistory([
+        ...breadcrumbHistory,
+        { name: currentCollection.name, slug: currentCollection.slug }
+      ]);
+    }
+    // If already on page, don't modify history
 
     setCurrentPath(`/collections/${slug}`);
     setCurrentCollection(collectionData);
@@ -364,6 +384,25 @@ export default function ProgressiveNavRealAPI() {
             Lupo Grigio
           </button>
 
+          {/* Breadcrumbs (Desktop) - positioned right after logo */}
+          {!isMobile && breadcrumbs.length > 1 && (
+            <div className="flex items-center gap-2 text-sm text-white/70">
+              {breadcrumbs.map((crumb, index) => (
+                <div key={`breadcrumb-${index}-${crumb.slug}`} className="flex items-center gap-2">
+                  <span className="text-white/40">/</span>
+                  <button
+                    onClick={() => crumb.slug === '/' ? navigateTo('/') : navigateTo(crumb.slug, true)}
+                    className={`hover:text-white transition-colors ${
+                      index === breadcrumbs.length - 1 ? 'text-white font-semibold' : ''
+                    }`}
+                  >
+                    {crumb.name}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Spacer */}
           <div className="flex-1" />
 
@@ -379,25 +418,6 @@ export default function ProgressiveNavRealAPI() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
-
-          {/* Breadcrumbs (Desktop) */}
-          {!isMobile && breadcrumbs.length > 1 && (
-            <div className="flex items-center gap-2 text-sm text-white/70 ml-4">
-              {breadcrumbs.map((crumb, index) => (
-                <div key={crumb.slug} className="flex items-center gap-2">
-                  {index > 0 && <span className="text-white/40">/</span>}
-                  <button
-                    onClick={() => crumb.slug === '/' ? navigateTo('/') : navigateTo(crumb.slug, true)}
-                    className={`hover:text-white transition-colors ${
-                      index === breadcrumbs.length - 1 ? 'text-white font-semibold' : ''
-                    }`}
-                  >
-                    {crumb.name}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
