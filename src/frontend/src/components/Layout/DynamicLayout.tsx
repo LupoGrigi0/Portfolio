@@ -15,6 +15,7 @@
 import { Collection, CollectionConfig, getAbsoluteMediaUrl } from '@/lib/api-client';
 import Carousel from '@/components/Carousel/Carousel';
 import type { CarouselImage } from '@/components/Carousel/types';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface DynamicLayoutProps {
   collection: Collection;
@@ -120,6 +121,106 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
   const carouselGroups = groupImages();
 
   /**
+   * Progressive Rendering + Bidirectional Virtualization
+   *
+   * Phase 1: Load 4 carousels initially, 4 more as user scrolls
+   * Phase 2: Keep max 10 carousels in DOM (unload ones far offscreen)
+   */
+  const INITIAL_LOAD = 4;
+  const LOAD_INCREMENT = 4;
+  const MAX_ACTIVE_CAROUSELS = 10; // Keep at most 10 in DOM for performance
+
+  const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(INITIAL_LOAD, carouselGroups.length) });
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer to load more when scrolling down
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleRange.end < carouselGroups.length) {
+          // Load more carousels
+          setVisibleRange(prev => ({
+            ...prev,
+            end: Math.min(prev.end + LOAD_INCREMENT, carouselGroups.length)
+          }));
+        }
+      },
+      { rootMargin: '500px' } // Start loading 500px before reaching bottom
+    );
+
+    observer.observe(sentinelRef.current);
+
+    return () => observer.disconnect();
+  }, [visibleRange.end, carouselGroups.length]);
+
+  // Bidirectional virtualization: Unload carousels far offscreen
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const handleScroll = () => {
+      const viewportTop = window.scrollY;
+      const viewportBottom = viewportTop + window.innerHeight;
+
+      // Get all carousel elements
+      const carouselElements = containerRef.current?.querySelectorAll('[data-carousel-index]');
+      if (!carouselElements) return;
+
+      let firstVisible = 0;
+      let lastVisible = visibleRange.end;
+
+      carouselElements.forEach((el, index) => {
+        const rect = el.getBoundingClientRect();
+        const elementTop = rect.top + viewportTop;
+        const elementBottom = elementTop + rect.height;
+
+        // Check if carousel is in or near viewport (with 2000px buffer)
+        const isNearViewport = elementBottom > viewportTop - 2000 && elementTop < viewportBottom + 2000;
+
+        if (isNearViewport) {
+          if (index < firstVisible) firstVisible = index;
+          if (index > lastVisible) lastVisible = index;
+        }
+      });
+
+      // Keep a window of MAX_ACTIVE_CAROUSELS around visible area
+      const rangeSize = lastVisible - firstVisible + 1;
+      if (rangeSize > MAX_ACTIVE_CAROUSELS) {
+        // Center the window on the visible carousels
+        const midpoint = Math.floor((firstVisible + lastVisible) / 2);
+        const halfWindow = Math.floor(MAX_ACTIVE_CAROUSELS / 2);
+
+        setVisibleRange({
+          start: Math.max(0, midpoint - halfWindow),
+          end: Math.min(carouselGroups.length, midpoint + halfWindow)
+        });
+      }
+    };
+
+    // Throttle scroll events
+    let scrollTimeout: NodeJS.Timeout;
+    const throttledScroll = () => {
+      if (scrollTimeout) return;
+      scrollTimeout = setTimeout(() => {
+        handleScroll();
+        scrollTimeout = null as any;
+      }, 200);
+    };
+
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', throttledScroll);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
+  }, [visibleRange, carouselGroups.length]);
+
+  // Get the carousels to actually render (within visible range)
+  const activeCarouselGroups = carouselGroups.slice(visibleRange.start, visibleRange.end);
+
+  /**
    * Map config options to Carousel props
    */
   const mapCarouselOptions = () => ({
@@ -194,14 +295,16 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
   // Zipper layout: Alternating left/right carousels
   if (settings.layout === 'zipper') {
     return (
-      <div className={layoutConfig.className} style={layoutConfig.style}>
-        {carouselGroups.map((group, index) => {
+      <div ref={containerRef} className={layoutConfig.className} style={layoutConfig.style}>
+        {activeCarouselGroups.map((group, relativeIndex) => {
+          const index = visibleRange.start + relativeIndex;
           const isLeft = index % 2 === 0;
           const enableProjection = shouldEnableProjection(index);
 
           return (
             <div
               key={`carousel-${index}`}
+              data-carousel-index={index}
               className="flex flex-row"
               style={{ justifyContent: isLeft ? 'flex-start' : 'flex-end' }}
             >
@@ -222,18 +325,23 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
             </div>
           );
         })}
+        {/* Sentinel for loading more carousels */}
+        {visibleRange.end < carouselGroups.length && (
+          <div ref={sentinelRef} style={{ height: '1px' }} />
+        )}
       </div>
     );
   }
 
   // Standard layouts
   return (
-    <div className={layoutConfig.className} style={layoutConfig.style}>
-      {carouselGroups.map((group, index) => {
+    <div ref={containerRef} className={layoutConfig.className} style={layoutConfig.style}>
+      {activeCarouselGroups.map((group, relativeIndex) => {
+        const index = visibleRange.start + relativeIndex;
         const enableProjection = shouldEnableProjection(index);
 
         return (
-          <div key={`carousel-${index}`} className="w-full">
+          <div key={`carousel-${index}`} data-carousel-index={index} className="w-full">
             <Carousel
               images={group}
               {...mapCarouselOptions()}
@@ -243,6 +351,10 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
           </div>
         );
       })}
+      {/* Sentinel for loading more carousels */}
+      {visibleRange.end < carouselGroups.length && (
+        <div ref={sentinelRef} style={{ height: '1px' }} />
+      )}
     </div>
   );
 }
