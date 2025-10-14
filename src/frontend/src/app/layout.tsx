@@ -23,15 +23,22 @@ export default function RootLayout({
   const [branding, setBranding] = useState<{ favicon?: string; title?: string } | null>(null);
 
   useEffect(() => {
-    // Fetch branding data from API
-    fetch('/api/site/branding')
+    // Fetch site config from API (includes branding)
+    fetch('/api/site/config')
       .then(r => {
-        if (!r.ok) throw new Error(`Branding API returned ${r.status}`);
+        if (!r.ok) throw new Error(`Site config API returned ${r.status}`);
         return r.json();
       })
-      .then(setBranding)
+      .then(response => {
+        // Extract branding from site config response
+        const data = response.data;
+        setBranding({
+          title: data.siteName || 'Portfolio',
+          favicon: data.branding?.faviconUrl || data.branding?.favicon,
+        });
+      })
       .catch(err => {
-        console.error('Failed to load branding:', err);
+        console.error('Failed to load site config:', err);
         // Set fallback branding
         setBranding({ title: 'Portfolio' });
       });
