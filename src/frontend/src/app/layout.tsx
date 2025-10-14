@@ -24,7 +24,8 @@ export default function RootLayout({
 
   useEffect(() => {
     // Fetch site config from API (includes branding)
-    fetch('/api/site/config')
+    // Use absolute URL to backend (port 4000)
+    fetch('http://localhost:4000/api/site/config')
       .then(r => {
         if (!r.ok) throw new Error(`Site config API returned ${r.status}`);
         return r.json();
