@@ -58,9 +58,6 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
 
   // Filter images only (skip videos for now - carousel v1 limitation)
   // Also exclude hero images (hero.jpg, hero.jfif, etc.) - those are for hero sections only
-  console.log(`[DynamicLayout] Collection "${collection.slug}" gallery:`, collection.gallery?.length || 0, 'items');
-  console.log(`[DynamicLayout] First gallery item:`, collection.gallery?.[0]);
-
   const images = (collection.gallery || [])
     .filter((item) => {
       // Must be an image type
@@ -86,8 +83,6 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
         alt: item.altText || item.title || item.filename,
       };
     });
-
-  console.log(`[DynamicLayout] Filtered images:`, images.length);
 
   if (images.length === 0) {
     return (

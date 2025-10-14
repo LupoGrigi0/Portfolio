@@ -91,16 +91,6 @@ export default function Carousel({
   reserveBackgroundOpacity = 0
 }: CarouselProps) {
 
-  console.log('[Carousel] Initializing', {
-    imageCount: images.length,
-    transitionType,
-    transitionDuration,
-    autoplaySpeed,
-    autoPauseDuration,
-    layout,
-    fullscreenMode
-  });
-
   // Background integration removed - handled separately by parallax scrolling
   // const { setBackground } = useBackground();
 
@@ -143,8 +133,6 @@ export default function Carousel({
     enabled: enablePreload
   });
 
-  console.log('[Carousel] Preloader state', { hasInteracted, preloadedCount });
-
   // Midground projection (carousel projects first image onto background layer)
   const carouselRef = useCarouselProjection(
     projectionId || `carousel-${images[0]?.id || 'default'}`,
@@ -166,8 +154,6 @@ export default function Carousel({
 
   // Prevent scrolling when in fullscreen mode
   useEffect(() => {
-    console.log('[Carousel] Fullscreen mode changed', { isFullscreen, fullscreenMode });
-
     if (isFullscreen && fullscreenMode === 'browser') {
       // Only prevent scrolling for browser fullscreen
       // Native fullscreen handles this automatically
