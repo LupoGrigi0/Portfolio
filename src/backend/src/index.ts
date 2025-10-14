@@ -60,25 +60,29 @@ app.use(helmet({
       connectSrc: ["'self'", "ws:", "wss:"],
     },
   },
+  // Disable Cross-Origin-Resource-Policy to allow images to be loaded from localhost:3000
+  crossOriginResourcePolicy: false,
 }));
 
-// CORS configuration - support multiple frontend ports
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
-  'http://localhost:3003'
-];
-
+// CORS configuration - allow all localhost origins for development
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Allow all localhost origins (any port)
+    if (origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:') ||
+        origin.startsWith('http://0.0.0.0:')) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      // In development, allow everything. In production, would need stricter rules
+      const isDev = process.env.NODE_ENV !== 'production';
+      if (isDev) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   credentials: true,

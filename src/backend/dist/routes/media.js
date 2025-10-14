@@ -66,7 +66,6 @@ router.get('/icons/:type', async (req, res) => {
     }
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.send(icon);
 });
 /**
@@ -158,13 +157,14 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
                     code: 'FILE_NOT_FOUND'
                 });
             }
+            // Set CORS headers explicitly for file streaming
+            res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
             // Set caching headers for optimal performance
             // Images are immutable - cache for 1 year
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
             res.setHeader('Content-Type', mimeType);
             res.setHeader('Content-Length', stats.size);
-            // Allow cross-origin embedding (for COEP-enabled frontends)
-            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             // Optional: Add ETag for conditional requests
             res.setHeader('ETag', `"${stats.size}-${stats.mtimeMs}"`);
             // Stream the file to response
@@ -283,11 +283,13 @@ router.get('/:slug/:filename', async (req, res, next) => {
                     code: 'FILE_NOT_FOUND'
                 });
             }
+            // Set CORS headers explicitly for file streaming
+            res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
             // Set headers
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
             res.setHeader('Content-Type', mimeType);
             res.setHeader('Content-Length', stats.size);
-            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             res.setHeader('ETag', `"${stats.size}-${stats.mtimeMs}"`);
             // Stream the file
             const fileStream = createReadStream(resolvedPath);
@@ -383,11 +385,13 @@ router.get('/:slug/gallery/:filename', async (req, res, next) => {
                     code: 'FILE_NOT_FOUND'
                 });
             }
+            // Set CORS headers explicitly for file streaming
+            res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
             // Set headers
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
             res.setHeader('Content-Type', mimeType);
             res.setHeader('Content-Length', stats.size);
-            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
             res.setHeader('ETag', `"${stats.size}-${stats.mtimeMs}"`);
             // Stream the file using fs.createReadStream
             const fileStream = createReadStream(resolvedPath);

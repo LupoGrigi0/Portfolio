@@ -10,11 +10,20 @@ import { createHash } from 'crypto';
 import { createLogger } from '../utils/logger-wrapper.js';
 const logger = createLogger('backend-social.log');
 const router = Router();
-// Database manager instance (injected by index.ts on startup)
-export let db = null;
+// Global database manager instance (will be set by server on startup)
+export let dbManager = null;
 export function setDatabaseManager(manager) {
-    db = manager;
+    dbManager = manager;
 }
+// Legacy alias for backwards compatibility
+const db = new Proxy({}, {
+    get(target, prop) {
+        if (!dbManager) {
+            throw new Error('Database manager not initialized');
+        }
+        return dbManager[prop];
+    }
+});
 /**
  * Helper function to hash IP addresses for privacy
  */
@@ -27,13 +36,6 @@ function hashIP(ip) {
  */
 router.post('/reactions', async (req, res, next) => {
     try {
-        if (!db) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database manager not initialized',
-                code: 'DB_NOT_INITIALIZED'
-            });
-        }
         const { imageId, reactionType, sessionId } = req.body;
         // Validate required fields
         if (!imageId || !reactionType) {
@@ -94,13 +96,6 @@ router.post('/reactions', async (req, res, next) => {
  */
 router.get('/reactions/image/:imageId', async (req, res, next) => {
     try {
-        if (!db) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database manager not initialized',
-                code: 'DB_NOT_INITIALIZED'
-            });
-        }
         const { imageId } = req.params;
         await logger.info('SocialRoutes', 'GET /reactions/image/:imageId', { imageId });
         const counts = await db.getReactionCounts(imageId);
@@ -129,13 +124,6 @@ router.get('/reactions/image/:imageId', async (req, res, next) => {
  */
 router.post('/inquiries', async (req, res, next) => {
     try {
-        if (!db) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database manager not initialized',
-                code: 'DB_NOT_INITIALIZED'
-            });
-        }
         const { imageId, inquiryType, contactInfo, message, intendedUse, budget } = req.body;
         // Validate required fields
         if (!imageId || !inquiryType || !contactInfo?.email) {
@@ -170,13 +158,6 @@ router.post('/inquiries', async (req, res, next) => {
  */
 router.post('/share', async (req, res, next) => {
     try {
-        if (!db) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database manager not initialized',
-                code: 'DB_NOT_INITIALIZED'
-            });
-        }
         const { imageId, platform, context } = req.body;
         if (!imageId || !platform) {
             return res.status(400).json({

@@ -177,6 +177,10 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req: Request, res: Response, next: NextF
         });
       }
 
+      // Set CORS headers explicitly for file streaming
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+
       // Set caching headers for optimal performance
       // Images are immutable - cache for 1 year
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -315,6 +319,10 @@ router.get('/:slug/:filename', async (req: Request, res: Response, next: NextFun
         });
       }
 
+      // Set CORS headers explicitly for file streaming
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+
       // Set headers
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       res.setHeader('Content-Type', mimeType);
@@ -426,6 +434,10 @@ router.get('/:slug/gallery/:filename', async (req: Request, res: Response, next:
           code: 'FILE_NOT_FOUND'
         });
       }
+
+      // Set CORS headers explicitly for file streaming
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
 
       // Set headers
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');

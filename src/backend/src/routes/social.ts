@@ -13,7 +13,23 @@ import { createLogger } from '../utils/logger-wrapper.js';
 
 const logger = createLogger('backend-social.log');
 const router = Router();
-const db = new DatabaseManager();
+
+// Global database manager instance (will be set by server on startup)
+export let dbManager: DatabaseManager | null = null;
+
+export function setDatabaseManager(manager: DatabaseManager) {
+  dbManager = manager;
+}
+
+// Legacy alias for backwards compatibility
+const db = new Proxy({} as DatabaseManager, {
+  get(target, prop) {
+    if (!dbManager) {
+      throw new Error('Database manager not initialized');
+    }
+    return (dbManager as any)[prop];
+  }
+});
 
 /**
  * Helper function to hash IP addresses for privacy
