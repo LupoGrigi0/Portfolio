@@ -252,4 +252,74 @@ router.post('/reset-rate-limit', async (req: Request, res: Response, next: NextF
   }
 });
 
+/**
+ * PUT /api/admin/config/:slug
+ * Update collection configuration file
+ * Body: JSON config object to save
+ */
+router.put('/config/:slug', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug } = req.params;
+    const config = req.body;
+
+    await logger.info('AdminRoutes', `PUT /config/${slug} - Config update triggered`);
+
+    if (!dbManager) {
+      return res.status(500).json({
+        success: false,
+        message: 'Database manager not initialized',
+      });
+    }
+
+    // Get directory info from database
+    const directory = await dbManager.getDirectoryBySlug(slug) as any;
+    if (!directory) {
+      return res.status(404).json({
+        success: false,
+        error: `Directory not found: ${slug}`,
+      });
+    }
+
+    // Build filesystem path using directory title (which matches filesystem directory name)
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const contentDir = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
+
+    // For hierarchical directories, we need to build the full path
+    // If this is a subcollection, get parent directory title(s)
+    let dirPath = contentDir;
+    if (directory.parent_category) {
+      const parent = await dbManager.getDirectoryById(directory.parent_category) as any;
+      if (parent) {
+        dirPath = path.join(dirPath, parent.title);
+      }
+    }
+    dirPath = path.join(dirPath, directory.title);
+    const configPath = path.join(dirPath, 'config.json');
+
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+
+    // Update database with full config JSON
+    await dbManager.updateDirectoryConfig(directory.id, config);
+
+    const updatedAt = new Date().toISOString();
+    await logger.info('AdminRoutes', `Config updated successfully for ${slug}`, { configPath });
+
+    res.json({
+      success: true,
+      message: `Config saved successfully for ${slug}`,
+      config,
+      path: configPath,
+      updatedAt,
+    });
+
+  } catch (error: any) {
+    await logger.error('AdminRoutes', `PUT /config/:slug failed for ${req.params.slug}`, { error });
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update config',
+    });
+  }
+});
+
 export default router;

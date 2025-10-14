@@ -52,6 +52,12 @@ interface ScanResult {
 
 type ScanMode = 'full' | 'incremental' | 'lightweight';
 
+/**
+ * System directories that should be excluded from collection scanning
+ * These directories serve special purposes and should not appear in public collections
+ */
+const SYSTEM_DIRECTORIES = ['Branding', '.thumbnails', '.git', 'node_modules'];
+
 export class ContentScanner {
   private logger: Logger;
   private db: DatabaseManager;
@@ -99,6 +105,12 @@ export class ContentScanner {
 
       for (const entry of entries) {
         if (entry.isDirectory()) {
+          // Skip system directories
+          if (SYSTEM_DIRECTORIES.includes(entry.name)) {
+            await this.logger.debug('Skipping system directory', { name: entry.name });
+            continue;
+          }
+
           try {
             const dirResult = await this.scanDirectory(path.join(this.contentDir, entry.name));
             result.imagesProcessed += dirResult.imagesProcessed;

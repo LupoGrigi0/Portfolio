@@ -154,6 +154,13 @@ export class DatabaseManager {
     return stmt.run(JSON.stringify(updatedConfig), directoryId);
   }
 
+  async updateDirectoryConfig(directoryId: string, config: any) {
+    const db = this.getDb();
+    // Replace entire config (not merge)
+    const stmt = db.prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    return stmt.run(JSON.stringify(config), directoryId);
+  }
+
   async updateDirectoryImageCount(directoryId: string, imageCount: number) {
     const db = this.getDb();
     const stmt = db.prepare(`
