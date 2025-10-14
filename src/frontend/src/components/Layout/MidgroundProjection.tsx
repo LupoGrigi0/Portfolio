@@ -294,18 +294,6 @@ function MidgroundLayer() {
           checkerboardBlur={checkerboardBlur}
         />
       ))}
-
-      {/* Debug overlay (optional - can be toggled) */}
-      {process.env.NODE_ENV === 'development' && projectionsArray.length > 0 && (
-        <div className="fixed top-4 left-4 bg-black/80 text-white text-xs p-3 rounded-lg font-mono max-w-sm">
-          <div className="font-bold mb-2">Active Projections: {projectionsArray.length}</div>
-          {projectionsArray.map(p => (
-            <div key={p.id} className="mb-1 opacity-70">
-              {p.id}: opacity={p.opacity.toFixed(2)}, dist={p.distanceFromCenter.toFixed(0)}px
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
