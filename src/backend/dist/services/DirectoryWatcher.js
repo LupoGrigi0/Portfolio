@@ -55,6 +55,10 @@ export class DirectoryWatcher {
         }
     }
     async handleFileAdded(path) {
+        // Skip thumbnail directory files - they are generated, not source content
+        if (path.includes('.thumbnails')) {
+            return;
+        }
         // Check if it's an image file
         const imageExtensions = (process.env.SUPPORTED_FORMATS || 'jpg,jpeg,png,webp,avif').split(',');
         const ext = path.split('.').pop()?.toLowerCase();
