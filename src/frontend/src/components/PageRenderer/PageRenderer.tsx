@@ -40,7 +40,6 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
     let isMounted = true;
 
     async function fetchData() {
-      console.log(`[PageRenderer] Fetching collection: ${collectionSlug}`);
       setLoading(true);
       setError(null);
 
@@ -54,11 +53,6 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
           console.error(`[PageRenderer] Collection not found: ${collectionSlug}`);
         } else {
           setCollection(data);
-          console.log(`[PageRenderer] Collection loaded:`, data);
-          console.log(`[PageRenderer] - Layout type: ${data.config?.layoutType || 'dynamic'}`);
-          console.log(`[PageRenderer] - Images: ${data.imageCount}`);
-          console.log(`[PageRenderer] - Videos: ${data.videoCount}`);
-          console.log(`[PageRenderer] - Gallery items: ${data.gallery?.length || 0}`);
         }
       } catch (err) {
         if (!isMounted) return;
@@ -84,8 +78,6 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
     if (!collection?.config?.projection) return;
 
     const projectionConfig = collection.config.projection;
-
-    console.log(`[PageRenderer] Applying projection settings:`, projectionConfig);
 
     // Apply all projection settings if they exist
     if (projectionConfig.fadeDistance !== undefined) {
@@ -160,8 +152,6 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
   // Determine layout type from config (default to 'dynamic')
   const layoutType = collection.config?.layoutType || 'dynamic';
   const config = collection.config || {};
-
-  console.log(`[PageRenderer] Rendering with ${layoutType} layout`);
 
   // Render appropriate layout
   if (layoutType === 'curated') {
