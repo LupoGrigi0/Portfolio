@@ -271,7 +271,7 @@ router.put('/config/:slug', async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-    // Get directory info from database
+    // Get directory info from database to verify it exists
     const directory = await dbManager.getDirectoryBySlug(slug) as any;
     if (!directory) {
       return res.status(404).json({
@@ -280,27 +280,43 @@ router.put('/config/:slug', async (req: Request, res: Response, next: NextFuncti
       });
     }
 
-    // Build filesystem path using directory title (which matches filesystem directory name)
+    // Get the actual filesystem path from an image in this directory
+    // Images store absolute paths in exif_data.path
     const fs = await import('fs/promises');
     const path = await import('path');
     const contentDir = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
 
-    // For hierarchical directories, we need to build the full path
-    // If this is a subcollection, get parent directory title(s)
-    let dirPath = contentDir;
-    if (directory.parent_category) {
-      const parent = await dbManager.getDirectoryById(directory.parent_category) as any;
-      if (parent) {
-        dirPath = path.join(dirPath, parent.title);
+    const images = await dbManager.getImagesByDirectory(directory.id, 1);
+    let dirPath: string;
+
+    if (images.length > 0) {
+      // Extract directory path from first image's path
+      const imagePath = JSON.parse((images[0] as any).exif_data || '{}').path;
+      if (imagePath) {
+        dirPath = path.dirname(imagePath);
+      } else {
+        throw new Error(`No filesystem path found for collection: ${slug}`);
       }
+    } else {
+      // No images - try to infer from directory title
+      // This is a fallback for empty collections
+      dirPath = path.join(contentDir, directory.title);
     }
-    dirPath = path.join(dirPath, directory.title);
+
     const configPath = path.join(dirPath, 'config.json');
 
     await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    await logger.info('AdminRoutes', `Config written to filesystem for ${slug}`, { configPath });
 
     // Update database with full config JSON
+    await logger.info('AdminRoutes', `Updating database cache for ${slug}`, { directoryId: directory.id, configKeys: Object.keys(config) });
     await dbManager.updateDirectoryConfig(directory.id, config);
+    await logger.info('AdminRoutes', `Database cache updated successfully for ${slug}`);
+
+    // Verify the update by reading back
+    const verifyDirectory = await dbManager.getDirectoryBySlug(slug) as any;
+    const verifyConfig = JSON.parse(verifyDirectory.config || '{}');
+    await logger.info('AdminRoutes', `Verification read - config keys in DB`, { configKeys: Object.keys(verifyConfig) });
 
     const updatedAt = new Date().toISOString();
     await logger.info('AdminRoutes', `Config updated successfully for ${slug}`, { configPath });
