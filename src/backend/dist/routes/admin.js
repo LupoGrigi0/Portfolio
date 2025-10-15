@@ -8,8 +8,6 @@
 import { Router } from 'express';
 import { createLogger } from '../utils/logger-wrapper.js';
 import { resetRateLimit } from '../middleware/rateLimiter.js';
-import fs from 'fs/promises';
-import path from 'path';
 const logger = createLogger('backend-admin.log');
 const router = Router();
 // Global content scanner instance (will be set by server on startup)
@@ -220,274 +218,128 @@ router.post('/reset-rate-limit', async (req, res, next) => {
     }
 });
 /**
- * GET /api/admin/reset-rate-limit
- * Dev convenience: GET version of reset-rate-limit for browser testing
- */
-router.get('/reset-rate-limit', async (req, res, next) => {
-    try {
-        const targetIp = req.query.ip || req.ip || req.connection.remoteAddress || 'unknown';
-        await logger.info('AdminRoutes', 'GET /reset-rate-limit - Rate limit reset triggered (dev convenience)', { targetIp });
-        // Reset rate limit for the specified IP
-        await resetRateLimit(targetIp);
-        res.json({
-            success: true,
-            message: `Rate limit reset for IP: ${targetIp}`,
-            data: {
-                resetAt: new Date().toISOString(),
-                ip: targetIp
-            }
-        });
-    }
-    catch (error) {
-        await logger.error('AdminRoutes', 'GET /reset-rate-limit failed', { error });
-        next(error);
-    }
-});
-/**
- * GET /api/admin/scan
- * Dev convenience: GET version of scan for browser testing
- */
-router.get('/scan', async (req, res, next) => {
-    try {
-        await logger.info('AdminRoutes', 'GET /scan - Manual scan triggered (dev convenience)');
-        if (!contentScanner) {
-            return res.status(500).json({
-                success: false,
-                message: 'Content scanner not initialized',
-            });
-        }
-        // Run scan in background to avoid timeout
-        const scanPromise = contentScanner.scanAll();
-        // Return immediately
-        res.json({
-            success: true,
-            message: 'Content scan initiated',
-            data: {
-                status: 'scanning',
-                startedAt: new Date().toISOString(),
-            },
-        });
-        // Wait for scan to complete in background
-        const result = await scanPromise;
-        await logger.info('AdminRoutes', 'Content scan completed', result);
-    }
-    catch (error) {
-        await logger.error('AdminRoutes', 'GET /scan failed', { error });
-        next(error);
-    }
-});
-/**
- * GET /api/admin/scan/:slug
- * Dev convenience: GET version of scan/:slug for browser testing
- */
-router.get('/scan/:slug', async (req, res, next) => {
-    try {
-        const { slug } = req.params;
-        const mode = req.query.mode || 'incremental';
-        // Validate mode parameter
-        if (!['full', 'incremental', 'lightweight'].includes(mode)) {
-            return res.status(400).json({
-                success: false,
-                message: `Invalid scan mode: ${mode}. Must be 'full', 'incremental', or 'lightweight'`,
-            });
-        }
-        await logger.info('AdminRoutes', `GET /scan/${slug} - Manual directory scan triggered (dev convenience)`, { mode });
-        if (!contentScanner) {
-            return res.status(500).json({
-                success: false,
-                message: 'Content scanner not initialized',
-            });
-        }
-        // Run scan in background to avoid timeout for large directories
-        const scanPromise = contentScanner.scanBySlug(slug, mode);
-        // Return immediately
-        res.json({
-            success: true,
-            message: `Content scan initiated for directory: ${slug} (mode: ${mode})`,
-            data: {
-                status: 'scanning',
-                slug,
-                mode,
-                startedAt: new Date().toISOString(),
-            },
-        });
-        // Wait for scan to complete in background
-        const result = await scanPromise;
-        await logger.info('AdminRoutes', `Directory scan completed for ${slug}`, { mode, result });
-    }
-    catch (error) {
-        await logger.error('AdminRoutes', `GET /scan/:slug failed for ${req.params.slug}`, { error });
-        next(error);
-    }
-});
-/**
- * GET /api/admin/reinit-db
- * Dev convenience: GET version of reinit-db for browser testing
- */
-router.get('/reinit-db', async (req, res, next) => {
-    try {
-        await logger.info('AdminRoutes', 'GET /reinit-db - Manual database re-initialization triggered (dev convenience)');
-        if (!dbManager) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database manager instance not available',
-                code: 'DB_MANAGER_NOT_FOUND'
-            });
-        }
-        // Close existing connection and re-initialize
-        dbManager.close();
-        await dbManager.initialize();
-        await logger.info('AdminRoutes', 'Database re-initialized successfully');
-        res.json({
-            success: true,
-            message: 'Database re-initialized successfully',
-            data: {
-                reinitializedAt: new Date().toISOString()
-            }
-        });
-    }
-    catch (error) {
-        await logger.error('AdminRoutes', 'GET /reinit-db failed', { error });
-        next(error);
-    }
-});
-/**
  * PUT /api/admin/config/:slug
- * Update config.json for a collection
- * Body: JSON object representing the new config
- *
- * This enables visual portfolio crafting from the frontend!
- * Frontend can update collection settings and see changes in real-time.
+ * Update collection configuration file
+ * Body: JSON config object to save
  */
 router.put('/config/:slug', async (req, res, next) => {
     try {
         const { slug } = req.params;
-        const newConfig = req.body;
-        await logger.info('AdminRoutes', `PUT /config/${slug} - Updating collection config`, { config: newConfig });
+        const config = req.body;
+        await logger.info('AdminRoutes', `PUT /config/${slug} - Config update triggered`);
         if (!dbManager) {
             return res.status(500).json({
                 success: false,
                 message: 'Database manager not initialized',
-                code: 'DB_NOT_INITIALIZED'
             });
         }
-        // Get directory from database to find filesystem path
+        // Get directory info from database to verify it exists
         const directory = await dbManager.getDirectoryBySlug(slug);
         if (!directory) {
             return res.status(404).json({
                 success: false,
-                message: `Collection not found: ${slug}`,
-                code: 'COLLECTION_NOT_FOUND'
+                error: `Directory not found: ${slug}`,
             });
         }
-        // Construct path to config.json
-        // Get the directory name from an image's path in this directory
+        // Get the actual filesystem path from an image in this directory
+        // Images store absolute paths in exif_data.path
+        const fs = await import('fs/promises');
+        const path = await import('path');
         const contentDir = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
-        // Query an image to get the filesystem directory name
-        const sampleImage = await dbManager.getDb().prepare("SELECT json_extract(exif_data, '$.path') as path FROM images WHERE directory_id = ? LIMIT 1").get(directory.id);
-        let dirName;
-        if (sampleImage && sampleImage.path) {
-            // Extract directory name from full path
-            // E.g., "E:\mnt\lupoportfolio\content\Scientists\file.jpg" -> "Scientists"
-            const fullPath = sampleImage.path;
-            // Normalize both paths to use forward slashes for consistent comparison
-            const normalizedFullPath = fullPath.replace(/\\/g, '/');
-            const normalizedContentDir = contentDir.replace(/\\/g, '/');
-            const relativePath = normalizedFullPath.replace(normalizedContentDir, '').replace(/^[\\\/]+/, '');
-            dirName = relativePath.split(/[\\\/]/)[0];
+        const images = await dbManager.getImagesByDirectory(directory.id, 1);
+        let dirPath;
+        if (images.length > 0) {
+            // Extract directory path from first image's path
+            const imagePath = JSON.parse(images[0].exif_data || '{}').path;
+            if (imagePath) {
+                dirPath = path.dirname(imagePath);
+            }
+            else {
+                throw new Error(`No filesystem path found for collection: ${slug}`);
+            }
         }
         else {
-            // Fallback: capitalize the slug (scientists -> Scientists)
-            dirName = slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            // No images - try to infer from directory title
+            // This is a fallback for empty collections
+            dirPath = path.join(contentDir, directory.title);
         }
-        const configPath = path.join(contentDir, dirName, 'config.json');
-        // Validate config object (basic validation)
-        if (typeof newConfig !== 'object' || newConfig === null) {
-            return res.status(400).json({
-                success: false,
-                message: 'Config must be a valid JSON object',
-                code: 'INVALID_CONFIG'
-            });
+        const configPath = path.join(dirPath, 'config.json');
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+        await logger.info('AdminRoutes', `Config written to filesystem for ${slug}`, { configPath });
+        // Update database with full config JSON
+        await logger.info('AdminRoutes', `Updating database cache for ${slug}`, { directoryId: directory.id, configKeys: Object.keys(config) });
+        await dbManager.updateDirectoryConfig(directory.id, config);
+        // Sync cached fields from config to directory table columns
+        const cachedFields = {};
+        if (config.title !== undefined) {
+            cachedFields.title = config.title;
         }
-        // Write config.json to filesystem
-        await fs.writeFile(configPath, JSON.stringify(newConfig, null, 2), 'utf-8');
-        // Update database with new config - directly update the config field, don't merge
-        const stmt = dbManager.getDb().prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-        stmt.run(JSON.stringify(newConfig), directory.id);
-        await logger.info('AdminRoutes', `Config updated successfully for ${slug}`, { path: configPath });
+        if (config.description !== undefined) {
+            cachedFields.description = config.description;
+        }
+        if (config.isFeatured !== undefined) {
+            cachedFields.featured = config.isFeatured;
+        }
+        if (config.order !== undefined) {
+            cachedFields.menuOrder = config.order;
+        }
+        if (config.status !== undefined) {
+            cachedFields.status = config.status;
+        }
+        // Handle coverImage - validate it exists in filesystem if provided
+        if (config.coverImage !== undefined && config.coverImage !== null && config.coverImage !== '') {
+            // Validate that the cover image path exists
+            const coverImagePath = path.isAbsolute(config.coverImage)
+                ? config.coverImage
+                : path.join(dirPath, config.coverImage);
+            try {
+                await fs.access(coverImagePath);
+                cachedFields.coverImage = coverImagePath;
+                await logger.info('AdminRoutes', `Cover image validated`, { coverImagePath });
+            }
+            catch (error) {
+                await logger.warn('AdminRoutes', `Cover image not found, skipping cache update`, {
+                    configCoverImage: config.coverImage,
+                    resolvedPath: coverImagePath
+                });
+            }
+        }
+        else if (config.coverImage === null || config.coverImage === '') {
+            // Clear cover image if explicitly set to null or empty string
+            cachedFields.coverImage = null;
+        }
+        // Update cached fields if any were changed
+        if (Object.keys(cachedFields).length > 0) {
+            await logger.info('AdminRoutes', `Updating cached directory fields`, { cachedFields });
+            await dbManager.updateDirectoryCachedFields(directory.id, cachedFields);
+            await logger.info('AdminRoutes', `Cached fields updated successfully`);
+        }
+        await logger.info('AdminRoutes', `Database cache updated successfully for ${slug}`);
+        // Verify the update by reading back
+        const verifyDirectory = await dbManager.getDirectoryBySlug(slug);
+        const verifyConfig = JSON.parse(verifyDirectory.config || '{}');
+        await logger.info('AdminRoutes', `Verification read - config keys in DB`, {
+            configKeys: Object.keys(verifyConfig),
+            title: verifyDirectory.title,
+            description: verifyDirectory.description,
+            coverImage: verifyDirectory.cover_image
+        });
+        const updatedAt = new Date().toISOString();
+        await logger.info('AdminRoutes', `Config updated successfully for ${slug}`, { configPath });
         res.json({
             success: true,
-            message: `Config updated for collection: ${slug}`,
-            data: {
-                slug,
-                config: newConfig,
-                updatedAt: new Date().toISOString(),
-                path: configPath
-            }
+            message: `Config saved successfully for ${slug}`,
+            config,
+            path: configPath,
+            updatedAt,
         });
     }
     catch (error) {
         await logger.error('AdminRoutes', `PUT /config/:slug failed for ${req.params.slug}`, { error });
-        next(error);
-    }
-});
-/**
- * POST /api/admin/config/:slug
- * Alternative POST version for easier testing
- */
-router.post('/config/:slug', async (req, res, next) => {
-    try {
-        const { slug } = req.params;
-        const newConfig = req.body;
-        await logger.info('AdminRoutes', `POST /config/${slug} - Updating collection config`, { config: newConfig });
-        if (!dbManager) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database manager not initialized',
-                code: 'DB_NOT_INITIALIZED'
-            });
-        }
-        // Get directory from database to find filesystem path
-        const directory = await dbManager.getDirectoryBySlug(slug);
-        if (!directory) {
-            return res.status(404).json({
-                success: false,
-                message: `Collection not found: ${slug}`,
-                code: 'COLLECTION_NOT_FOUND'
-            });
-        }
-        // Construct path to config.json
-        const contentDir = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
-        const dirPath = directory.path;
-        const configPath = path.join(contentDir, dirPath, 'config.json');
-        // Validate config object (basic validation)
-        if (typeof newConfig !== 'object' || newConfig === null) {
-            return res.status(400).json({
-                success: false,
-                message: 'Config must be a valid JSON object',
-                code: 'INVALID_CONFIG'
-            });
-        }
-        // Write config.json to filesystem
-        await fs.writeFile(configPath, JSON.stringify(newConfig, null, 2), 'utf-8');
-        // Update database with new config - directly update the config field, don't merge
-        const stmt = dbManager.getDb().prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-        stmt.run(JSON.stringify(newConfig), directory.id);
-        await logger.info('AdminRoutes', `Config updated successfully for ${slug}`, { path: configPath });
-        res.json({
-            success: true,
-            message: `Config updated for collection: ${slug}`,
-            data: {
-                slug,
-                config: newConfig,
-                updatedAt: new Date().toISOString(),
-                path: configPath
-            }
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to update config',
         });
-    }
-    catch (error) {
-        await logger.error('AdminRoutes', `POST /config/:slug failed for ${req.params.slug}`, { error });
-        next(error);
     }
 });
 export default router;
