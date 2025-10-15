@@ -112,6 +112,8 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
   }, []);
 
   // Memoize context value to prevent unnecessary re-renders
+  // NOTE: projections is NOT in deps - it's a Map managed by useState
+  // Including it would cause infinite loop (projections update -> context recreates -> consumers re-render -> projections update)
   const contextValue = useMemo(() => ({
     projections,
     registerProjection,
@@ -140,7 +142,7 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
     setCheckerboardScatterSpeed,
     setCheckerboardBlur,
   }), [
-    projections,
+    // projections deliberately excluded - causes infinite loop if included
     registerProjection,
     unregisterProjection,
     updateProjection,
@@ -155,17 +157,6 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
     checkerboardTileSize,
     checkerboardScatterSpeed,
     checkerboardBlur,
-    setFadeDistance,
-    setMaxBlur,
-    setProjectionScaleX,
-    setProjectionScaleY,
-    setBlendMode,
-    setVignetteWidth,
-    setVignetteStrength,
-    setCheckerboardEnabled,
-    setCheckerboardTileSize,
-    setCheckerboardScatterSpeed,
-    setCheckerboardBlur,
   ]);
 
   return (

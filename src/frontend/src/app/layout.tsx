@@ -2,8 +2,12 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import { MidgroundProjectionProvider } from '@/components/Layout';
+import { Navigation } from '@/components/Navigation';
 import './globals.css';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import type { Collection, SiteConfig } from '@/lib/api-client';
+import { getSiteConfig, getCollections } from '@/lib/api-client';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,39 +24,56 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [branding, setBranding] = useState<{ favicon?: string; title?: string } | null>(null);
+  const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [currentCollectionName, setCurrentCollectionName] = useState<string | undefined>();
+  const pathname = usePathname();
 
+  // Fetch site config and collections on mount
   useEffect(() => {
-    // Fetch site config from API (includes branding)
-    // Use absolute URL to backend (port 4000)
-    fetch('http://localhost:4000/api/site/config')
-      .then(r => {
-        if (!r.ok) throw new Error(`Site config API returned ${r.status}`);
-        return r.json();
-      })
-      .then(response => {
-        // Extract branding from site config response
-        const data = response.data;
-        setBranding({
-          title: data.siteName || 'Portfolio',
-          favicon: data.branding?.faviconUrl || data.branding?.favicon,
-        });
-      })
-      .catch(err => {
-        console.error('Failed to load site config:', err);
-        // Set fallback branding
-        setBranding({ title: 'Portfolio' });
-      });
+    // Fetch site config
+    getSiteConfig().then(config => {
+      if (config) {
+        setSiteConfig(config);
+      }
+    });
+
+    // Fetch collections for menu
+    getCollections().then(collections => {
+      setCollections(collections);
+    });
   }, []);
+
+  // Extract current collection name from pathname
+  useEffect(() => {
+    if (pathname?.startsWith('/collections/')) {
+      const slug = pathname.split('/')[2];
+      // Find collection by slug
+      const collection = collections.find(c => c.slug === slug);
+      setCurrentCollectionName(collection?.name || collection?.title);
+    } else if (pathname === '/') {
+      setCurrentCollectionName(undefined);
+    }
+  }, [pathname, collections]);
 
   return (
     <html lang="en">
       <head>
-        {branding?.favicon && <link rel="icon" href={branding.favicon} />}
-        <title>{branding?.title || 'Portfolio'}</title>
+        {siteConfig?.branding?.faviconUrl && (
+          <link rel="icon" href={siteConfig.branding.faviconUrl} />
+        )}
+        <title>{siteConfig?.siteName || 'Portfolio'}</title>
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <MidgroundProjectionProvider>
+          {/* Navigation (includes top bar, breadcrumbs, and drawer) */}
+          <Navigation
+            config={siteConfig?.navigation}
+            collections={collections}
+            currentCollectionName={currentCollectionName}
+          />
+
+          {/* Main content */}
           {children}
         </MidgroundProjectionProvider>
       </body>
