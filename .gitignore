@@ -2,6 +2,10 @@
 validation_report*.txt
 api_collections_raw.json
 
+# Site configuration
+deployments/site-config.json
+# Keep development and production configs in git, but ignore the active config
+
 # Python cache
 __pycache__/
 *.py[cod]

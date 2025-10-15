@@ -1,0 +1,17 @@
+{
+  "environment": "production",
+  "paths": {
+    "content": "/mnt/lupoportfolio/content",
+    "database": "/mnt/lupoportfolio/database",
+    "logs": "/mnt/lupoportfolio/logs",
+    "source": "/mnt/lupoportfolio/luminous-canvas"
+  },
+  "server": {
+    "port": 4000,
+    "host": "0.0.0.0"
+  },
+  "content": {
+    "imageSizes": "640,750,828,1080,1200,1920,2048,3840",
+    "supportedFormats": "jpg,jpeg,jfif,png,webp,avif,gif,tiff,bmp"
+  }
+}

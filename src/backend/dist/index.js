@@ -25,11 +25,14 @@ import { WebSocketManager } from './services/WebSocketManager.js';
 import { DirectoryWatcher } from './services/DirectoryWatcher.js';
 import { ContentScanner } from './services/ContentScanner.js';
 import { createLogger } from './utils/logger-wrapper.js';
+import { loadSiteConfig } from './utils/config-loader.js';
 // Middleware imports
 import { errorHandler } from './middleware/errorHandler.js';
 import { rateLimiterMiddleware, adminRateLimiterMiddleware } from './middleware/rateLimiter.js';
 // Load environment variables
 dotenv.config();
+// Load site configuration
+const siteConfig = loadSiteConfig();
 const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
@@ -140,7 +143,7 @@ app.get('/api/admin/shutdown', async (req, res) => {
 // Error handling
 app.use(errorHandler);
 // Start server
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || siteConfig.server.port;
 async function startServer() {
     try {
         // Initialize database
@@ -152,11 +155,8 @@ async function startServer() {
         setAdminDb(dbManager);
         setThumbnailDb(dbManager);
         console.log('✅ Database manager injected into routes');
-        // Initialize content scanner
-        const contentDir = process.env.CONTENT_DIRECTORY || '../content';
-        const imageSizes = process.env.IMAGE_SIZES || '640,750,828,1080,1200,1920,2048,3840';
-        const supportedFormats = process.env.SUPPORTED_FORMATS || 'jpg,jpeg,jfif,png,webp,avif,gif,tiff,bmp';
-        contentScanner = new ContentScanner(logger, dbManager, contentDir, imageSizes, supportedFormats);
+        // Initialize content scanner with site config
+        contentScanner = new ContentScanner(logger, dbManager, siteConfig.paths.content, siteConfig.content.imageSizes, siteConfig.content.supportedFormats);
         setContentScanner(contentScanner);
         setContentScannerForContent(contentScanner);
         console.log('✅ Content scanner initialized');
@@ -165,9 +165,12 @@ async function startServer() {
         console.log('✅ Directory watcher started');
         // Start server
         server.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`🚀 Server running on ${siteConfig.server.host}:${PORT}`);
             console.log(`📡 WebSocket server ready`);
             console.log(`🎨 Modern Art Portfolio Backend - Viktor (Backend API Specialist)`);
+            console.log(`📁 Content directory: ${siteConfig.paths.content}`);
+            console.log(`🗄️  Database directory: ${siteConfig.paths.database}`);
+            console.log(`📝 Logs directory: ${siteConfig.paths.logs}`);
         });
     }
     catch (error) {
