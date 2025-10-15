@@ -5,7 +5,6 @@ import { MidgroundProjectionProvider } from '@/components/Layout';
 import { Navigation } from '@/components/Navigation';
 import './globals.css';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import type { Collection, SiteConfig } from '@/lib/api-client';
 import { getSiteConfig, getCollections } from '@/lib/api-client';
 
@@ -26,8 +25,6 @@ export default function RootLayout({
 }>) {
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [currentCollectionName, setCurrentCollectionName] = useState<string | undefined>();
-  const pathname = usePathname();
 
   // Fetch site config and collections on mount
   useEffect(() => {
@@ -44,18 +41,6 @@ export default function RootLayout({
     });
   }, []);
 
-  // Extract current collection name from pathname
-  useEffect(() => {
-    if (pathname?.startsWith('/collections/')) {
-      const slug = pathname.split('/')[2];
-      // Find collection by slug
-      const collection = collections.find(c => c.slug === slug);
-      setCurrentCollectionName(collection?.name || collection?.title);
-    } else if (pathname === '/') {
-      setCurrentCollectionName(undefined);
-    }
-  }, [pathname, collections]);
-
   return (
     <html lang="en">
       <head>
@@ -66,11 +51,11 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <MidgroundProjectionProvider>
-          {/* Navigation (includes top bar, breadcrumbs, and drawer) */}
+          {/* Navigation (includes hamburger, drawer, and breadcrumbs) */}
           <Navigation
             config={siteConfig?.navigation}
             collections={collections}
-            currentCollectionName={currentCollectionName}
+            siteConfig={siteConfig}
           />
 
           {/* Main content */}
