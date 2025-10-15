@@ -87,10 +87,11 @@ function transformImageUrl(absolutePath: string | null, slug: string, originalFo
       else if (filename.includes('_3840w')) size = '4k';
       else if (filename.includes('_640w')) size = 'thumbnail';
 
-      // Remove size suffix and .webp extension to get original filename with correct extension
+      // Remove size suffix and .webp/.jpg extension to get original filename with correct extension
+      // Video thumbnails are .jpg, image thumbnails are .webp
       const originalName = filename
         .replace(/_\d+w/, '') // Remove _640w, _1200w, etc.
-        .replace(/\.webp$/, `.${originalFormat}`); // Use actual original format
+        .replace(/\.(webp|jpg)$/, `.${originalFormat}`); // Use actual original format
 
       // Extract subdirectory path (skip slug, exclude .thumbnails and filename)
       // E.g., "Cafe/Coffee/.thumbnails/image.webp" → subdirectory = "Coffee"
