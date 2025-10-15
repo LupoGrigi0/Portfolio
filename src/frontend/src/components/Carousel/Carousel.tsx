@@ -35,7 +35,7 @@ export default function Carousel({
   layout = 'single',
   transitionType = 'fade',
   transitionDuration = 600,
-  autoplaySpeed = 0,
+  autoplaySpeed = 5000, // Default to 5 seconds (medium speed)
   speedPreset,
   autoPauseDuration = 5000,
   showCaptions = true,
@@ -142,8 +142,6 @@ export default function Carousel({
     currentIndex,
     enabled: enablePreload
   });
-
-  console.log('[Carousel] Preloader state', { hasInteracted, preloadedCount });
 
   // Midground projection (carousel projects first image onto background layer)
   const carouselRef = useCarouselProjection(

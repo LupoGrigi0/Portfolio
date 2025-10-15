@@ -1,51 +1,61 @@
-/**
- * Root Layout
- *
- * Main application layout with Navigation and Background system.
- *
- * @author Zara (UI/UX & React Components Specialist)
- */
+'use client';
 
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { Navigation, BackgroundProvider, ParallaxBackgroundProvider } from "@/components/Layout";
+import { Geist, Geist_Mono } from "next/font/google";
+import { MidgroundProjectionProvider } from '@/components/Layout';
+import { Navigation } from '@/components/Navigation';
+import './globals.css';
+import { useEffect, useState } from 'react';
+import type { Collection, SiteConfig } from '@/lib/api-client';
+import { getSiteConfig, getCollections } from '@/lib/api-client';
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Lupo's Art Portfolio",
-  description: "A breathtaking showcase of artistic vision and creativity",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
+  const [collections, setCollections] = useState<Collection[]>([]);
+
+  // Fetch site config and collections on mount
+  useEffect(() => {
+    // Fetch site config
+    getSiteConfig().then(config => {
+      if (config) {
+        setSiteConfig(config);
+      }
+    });
+
+    // Fetch collections for menu
+    getCollections().then(collections => {
+      setCollections(collections);
+    });
+  }, []);
+
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-      >
-        <ParallaxBackgroundProvider>
+      <head>
+        {siteConfig?.branding?.faviconUrl && (
+          <link rel="icon" href={siteConfig.branding.faviconUrl} />
+        )}
+        <title>{siteConfig?.siteName || 'Portfolio'}</title>
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <MidgroundProjectionProvider>
+          {/* Navigation (includes hamburger, drawer, and breadcrumbs) */}
           <Navigation
-            logoSrc="/branding/logo.png"
-            menuItems={[
-              { label: 'Home', href: '/' },
-              { label: 'Parallax Demo', href: '/parallax-demo', featured: true },
-              { label: 'Showcase', href: '/showcase', featured: true },
-              { label: 'Collections', href: '/collections', featured: true },
-              { label: 'Gallery Demo', href: '/gallery' },
-            ]}
+            config={siteConfig?.navigation}
+            collections={collections}
+            siteConfig={siteConfig}
           />
-          <main className="pt-16 min-h-screen">
-            {children}
-          </main>
-        </ParallaxBackgroundProvider>
+
+          {/* Main content */}
+          {children}
+        </MidgroundProjectionProvider>
       </body>
     </html>
   );

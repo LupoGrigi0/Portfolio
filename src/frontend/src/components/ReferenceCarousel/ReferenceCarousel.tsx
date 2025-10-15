@@ -43,11 +43,11 @@ export default function ReferenceCarousel({
   );
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? validImages.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev === validImages.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
   const goToSlide = (index: number) => {

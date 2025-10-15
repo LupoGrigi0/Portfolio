@@ -111,36 +111,56 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
     });
   }, []);
 
+  // Memoize context value to prevent unnecessary re-renders
+  // NOTE: projections is NOT in deps - it's a Map managed by useState
+  // Including it would cause infinite loop (projections update -> context recreates -> consumers re-render -> projections update)
+  const contextValue = useMemo(() => ({
+    projections,
+    registerProjection,
+    unregisterProjection,
+    updateProjection,
+    fadeDistance,
+    maxBlur,
+    projectionScaleX,
+    projectionScaleY,
+    blendMode,
+    vignetteWidth,
+    vignetteStrength,
+    checkerboardEnabled,
+    checkerboardTileSize,
+    checkerboardScatterSpeed,
+    checkerboardBlur,
+    setFadeDistance,
+    setMaxBlur,
+    setProjectionScaleX,
+    setProjectionScaleY,
+    setBlendMode,
+    setVignetteWidth,
+    setVignetteStrength,
+    setCheckerboardEnabled,
+    setCheckerboardTileSize,
+    setCheckerboardScatterSpeed,
+    setCheckerboardBlur,
+  }), [
+    // projections deliberately excluded - causes infinite loop if included
+    registerProjection,
+    unregisterProjection,
+    updateProjection,
+    fadeDistance,
+    maxBlur,
+    projectionScaleX,
+    projectionScaleY,
+    blendMode,
+    vignetteWidth,
+    vignetteStrength,
+    checkerboardEnabled,
+    checkerboardTileSize,
+    checkerboardScatterSpeed,
+    checkerboardBlur,
+  ]);
+
   return (
-    <MidgroundProjectionContext.Provider
-      value={{
-        projections,
-        registerProjection,
-        unregisterProjection,
-        updateProjection,
-        fadeDistance,
-        maxBlur,
-        projectionScaleX,
-        projectionScaleY,
-        blendMode,
-        vignetteWidth,
-        vignetteStrength,
-        checkerboardEnabled,
-        checkerboardTileSize,
-        checkerboardScatterSpeed,
-        checkerboardBlur,
-        setFadeDistance,
-        setMaxBlur,
-        setProjectionScaleX,
-        setProjectionScaleY,
-        setBlendMode,
-        setVignetteWidth,
-        setVignetteStrength,
-        setCheckerboardEnabled,
-        setCheckerboardTileSize,
-        setCheckerboardScatterSpeed,
-        setCheckerboardBlur,
-      }}
+    <MidgroundProjectionContext.Provider value={contextValue}
     >
       <MidgroundLayer />
       {children}

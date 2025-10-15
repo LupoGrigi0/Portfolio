@@ -1,0 +1,666 @@
+
+> backend@1.0.0 dev
+> nodemon --exec ts-node --esm src/index.ts
+
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: ts,json[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:14432) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:15044) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:12252) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:11448) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:1300) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:23172) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:20248) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:23308) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:4180) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:8016) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:1188) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:7520) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:21084) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:11764) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:3360) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:16592) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:20988) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 exit listeners added to [Bus]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23528) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:23532) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:23392) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:15736) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:22044) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:19636) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:5204) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:21248) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:17540) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:11964) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:19312) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+(node:20952) [DEP0180] DeprecationWarning: fs.Stats constructor is deprecated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for D:\Lupo\Source\Portfolio\worktrees\backend-api\src\backend\src\index.ts
+    at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+    at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+    at defaultLoad (node:internal/modules/esm/load:120:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async nextLoad (node:internal/modules/esm/hooks:748:22)
+    at async Hooks.load (node:internal/modules/esm/hooks:385:20)
+    at async MessagePort.handleMessage (node:internal/modules/esm/worker:199:18) {
+  code: 'ERR_UNKNOWN_FILE_EXTENSION'
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+[32m[nodemon] restarting due to changes...[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[32m[nodemon] starting `ts-node --esm src/index.ts`[39m
+'ts-node' is not recognized as an internal or external command,
+operable program or batch file.
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
