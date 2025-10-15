@@ -48,11 +48,6 @@ function CollectionTreeItem({
   const isActive = collection.slug === currentSlug;
   const isExpanded = expandedCollections.has(collection.slug);
 
-  // Debug log
-  if (hasSubcollections && indent === 0) {
-    console.log(`[Nav] ${collection.name} has ${collection.subcollections?.length} subcollections, expanded:`, isExpanded);
-  }
-
   return (
     <div style={{ marginLeft: indent > 0 ? `${indentSpacing}px` : '0' }}>
       <button
