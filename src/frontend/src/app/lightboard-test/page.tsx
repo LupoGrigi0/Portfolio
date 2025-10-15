@@ -11,7 +11,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Lightboard, LightboardProvider } from '@/components/Lightboard';
+import { LightboardWithToast, LightboardProvider } from '@/components/Lightboard';
 import { LivePreview } from '@/components/Lightboard/LivePreview';
 import { MidgroundProjectionProvider } from '@/components/Layout';
 import { getCollection, type Collection } from '@/lib/api-client';
@@ -120,7 +120,7 @@ export default function LightboardTestPage() {
           </div>
 
           {/* Lightboard Designer */}
-          <Lightboard collection={collection} />
+          <LightboardWithToast collection={collection} />
         </div>
       </LightboardProvider>
     </MidgroundProjectionProvider>

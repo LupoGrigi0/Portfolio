@@ -88,13 +88,19 @@ export function LivePreview({
     <div key={renderKey.current} className="space-y-12">
       {previewCarousels.map((images, index) => {
         // Filter out images with missing URLs and convert relative URLs to absolute
+        // Fallback chain: large -> medium -> small -> original
         const validImages = images
-          .filter((img) => img.urls?.medium)
-          .map((img) => ({
-            id: img.id,
-            src: getAbsoluteMediaUrl(img.urls.medium),
-            alt: img.altText || img.filename,
-          }));
+          .filter((img) => {
+            return img.urls?.large || img.urls?.medium || img.urls?.small || img.urls?.original;
+          })
+          .map((img) => {
+            const imageUrl = img.urls.large || img.urls.medium || img.urls.small || img.urls.original;
+            return {
+              id: img.id,
+              src: getAbsoluteMediaUrl(imageUrl),
+              alt: img.altText || img.filename,
+            };
+          });
 
         // Skip carousel if no valid images
         if (validImages.length === 0) {

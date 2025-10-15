@@ -52,7 +52,7 @@ export function SiteSettingsWidget({
   isSaving = false,
 }: SiteSettingsProps) {
   return (
-    <div className="bg-zinc-900 rounded-lg p-6 shadow-2xl border border-zinc-700 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
+    <div className="bg-zinc-900 rounded-lg p-6 shadow-2xl border border-zinc-700 w-full max-w-2xl">
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-white font-bold text-xl mb-2">Site Settings</h3>
@@ -165,24 +165,6 @@ export function SiteSettingsWidget({
         <p className="text-xs text-zinc-500 mt-1">
           Default page background (can be overridden per-page)
         </p>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="space-y-3 mb-6">
-        <button
-          onClick={onSaveSiteSettings}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded font-bold text-base transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSaving}
-        >
-          {isSaving ? 'Saving Settings...' : 'Save Site Settings'}
-        </button>
-        <button
-          onClick={onLoadCurrentSettings}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSaving}
-        >
-          Load Current Settings
-        </button>
       </div>
 
       {/* Help Section */}

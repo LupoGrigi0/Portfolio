@@ -21,6 +21,7 @@
 'use client';
 
 import React from 'react';
+import { CollapsibleSection } from '../CollapsibleSection';
 
 export interface NavigationSettingsWidgetProps {
   // Timing
@@ -112,7 +113,7 @@ export function NavigationSettingsWidget({
   isSaving = false,
 }: NavigationSettingsWidgetProps) {
   return (
-    <div className="bg-zinc-900 rounded-lg p-6 shadow-2xl border border-zinc-700 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
+    <div className="bg-zinc-900 rounded-lg p-6 shadow-2xl border border-zinc-700 w-full max-w-2xl">
       {/* Header */}
       <div className="mb-6">
         <h3 className="text-white font-bold text-xl mb-2">Navigation Settings</h3>
@@ -129,11 +130,7 @@ export function NavigationSettingsWidget({
       </div>
 
       {/* TIMING SECTION */}
-      <div className="mb-8">
-        <h4 className="text-cyan-400 font-semibold text-base mb-4 pb-2 border-b border-zinc-700">
-          Timing & Animation
-        </h4>
-
+      <CollapsibleSection title="Timing & Animation" defaultOpen={true} storageKey="nav-timing">
         {/* Rollback Delay */}
         <div className="mb-5">
           <label className="block text-zinc-300 text-sm mb-2 font-medium">
@@ -173,14 +170,10 @@ export function NavigationSettingsWidget({
             Animation duration for drawer transitions (100-1000ms)
           </p>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* SPACING SECTION */}
-      <div className="mb-8">
-        <h4 className="text-cyan-400 font-semibold text-base mb-4 pb-2 border-b border-zinc-700">
-          Spacing & Layout
-        </h4>
-
+      <CollapsibleSection title="Spacing & Layout" defaultOpen={true} storageKey="nav-spacing">
         {/* Indent Spacing */}
         <div className="mb-5">
           <label className="block text-zinc-300 text-sm mb-2 font-medium">
@@ -220,14 +213,10 @@ export function NavigationSettingsWidget({
             Gap between navigation items (0-16px)
           </p>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* TYPOGRAPHY SECTION */}
-      <div className="mb-8">
-        <h4 className="text-cyan-400 font-semibold text-base mb-4 pb-2 border-b border-zinc-700">
-          Typography
-        </h4>
-
+      <CollapsibleSection title="Typography" defaultOpen={true} storageKey="nav-typography">
         {/* Font Family */}
         <div className="mb-5">
           <label className="block text-zinc-300 text-sm mb-2 font-medium">
@@ -268,13 +257,10 @@ export function NavigationSettingsWidget({
             Base font size for nav items (12-20px)
           </p>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* COLORS SECTION */}
-      <div className="mb-8">
-        <h4 className="text-cyan-400 font-semibold text-base mb-4 pb-2 border-b border-zinc-700">
-          Colors & Themes
-        </h4>
+      <CollapsibleSection title="Colors & Themes" defaultOpen={false} storageKey="nav-colors">
 
         {/* Active Text Color */}
         <div className="mb-5">
@@ -437,13 +423,10 @@ export function NavigationSettingsWidget({
             Border color for drawer and navigation items
           </p>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {/* VISUAL STYLE SECTION */}
-      <div className="mb-8">
-        <h4 className="text-cyan-400 font-semibold text-base mb-4 pb-2 border-b border-zinc-700">
-          Visual Style
-        </h4>
+      <CollapsibleSection title="Visual Style" defaultOpen={true} storageKey="nav-visual">
 
         {/* Home Icon Toggle */}
         <div className="mb-5">
@@ -485,25 +468,7 @@ export function NavigationSettingsWidget({
             Visual style for active navigation item highlight
           </p>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="space-y-3 mb-6">
-        <button
-          onClick={onSave}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded font-bold text-base transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSaving}
-        >
-          {isSaving ? 'Saving Settings...' : 'Save to Site Config'}
-        </button>
-        <button
-          onClick={onReset}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSaving}
-        >
-          Reset to Defaults
-        </button>
-      </div>
+      </CollapsibleSection>
 
       {/* Help Section */}
       <div className="p-4 bg-zinc-800/50 rounded text-sm space-y-3">
