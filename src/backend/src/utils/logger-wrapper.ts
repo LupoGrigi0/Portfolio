@@ -14,7 +14,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Dynamically resolve logger.js path (works in both dev and production)
-const loggerPath = join(__dirname, '../../../../../../src/logger.js');
+// From dist/utils/ go up to project root, then into src/
+const loggerPath = join(__dirname, '../../../logger.js');
 const loggerURL = pathToFileURL(loggerPath).href;
 
 // @ts-ignore - JavaScript module
