@@ -129,6 +129,9 @@ export class ContentScanner {
       // Update directory image counts after scan completes
       await this.updateDirectoryImageCounts();
 
+      // Auto-detect and set hero images
+      await this.updateHeroImages();
+
       await this.logger.info('Content scan complete', result);
       return result;
 
