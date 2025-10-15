@@ -112,6 +112,12 @@ export class DatabaseManager {
         const stmt = db.prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
         return stmt.run(JSON.stringify(updatedConfig), directoryId);
     }
+    async updateDirectoryConfig(directoryId, config) {
+        const db = this.getDb();
+        // Replace entire config (not merge)
+        const stmt = db.prepare('UPDATE directories SET config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+        return stmt.run(JSON.stringify(config), directoryId);
+    }
     async updateDirectoryImageCount(directoryId, imageCount) {
         const db = this.getDb();
         const stmt = db.prepare(`
@@ -131,6 +137,46 @@ export class DatabaseManager {
       WHERE id = ?
     `);
         return stmt.run(coverImagePath, directoryId);
+    }
+    async updateDirectoryCachedFields(directoryId, fields) {
+        const db = this.getDb();
+        const updates = [];
+        const params = [];
+        if (fields.title !== undefined) {
+            updates.push('title = ?');
+            params.push(fields.title);
+        }
+        if (fields.description !== undefined) {
+            updates.push('description = ?');
+            params.push(fields.description);
+        }
+        if (fields.coverImage !== undefined) {
+            updates.push('cover_image = ?');
+            params.push(fields.coverImage);
+        }
+        if (fields.featured !== undefined) {
+            updates.push('featured = ?');
+            params.push(fields.featured ? 1 : 0);
+        }
+        if (fields.menuOrder !== undefined) {
+            updates.push('menu_order = ?');
+            params.push(fields.menuOrder);
+        }
+        if (fields.status !== undefined) {
+            updates.push('status = ?');
+            params.push(fields.status);
+        }
+        if (updates.length === 0) {
+            return; // Nothing to update
+        }
+        updates.push('updated_at = CURRENT_TIMESTAMP');
+        params.push(directoryId);
+        const stmt = db.prepare(`
+      UPDATE directories
+      SET ${updates.join(', ')}
+      WHERE id = ?
+    `);
+        return stmt.run(...params);
     }
     async deleteDirectory(directoryId) {
         const db = this.getDb();
@@ -172,6 +218,23 @@ export class DatabaseManager {
       WHERE id = ?
     `);
         return stmt.run(data.filename, data.title, data.caption || null, data.directoryId, data.thumbnailUrl || null, data.smallUrl || null, data.mediumUrl || null, data.largeUrl || null, data.originalUrl || null, data.width || null, data.height || null, data.aspectRatio || null, data.fileSize || null, data.format || null, JSON.stringify(data.colorPalette || []), data.averageColor || null, data.status || 'processing', data.altText || null, JSON.stringify(data.exifData || {}), id);
+    }
+    /**
+     * Update only thumbnail URLs for an image (partial update)
+     * Used by thumbnail regeneration to avoid NOT NULL constraint errors
+     */
+    async updateImageThumbnails(id, data) {
+        const db = this.getDb();
+        const stmt = db.prepare(`
+      UPDATE images SET
+        thumbnail_url = ?,
+        medium_url = ?,
+        large_url = ?,
+        exif_data = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+        return stmt.run(data.thumbnailUrl !== undefined ? data.thumbnailUrl : null, data.mediumUrl !== undefined ? data.mediumUrl : null, data.largeUrl !== undefined ? data.largeUrl : null, JSON.stringify(data.exifData || {}), id);
     }
     async createImage(data) {
         const db = this.getDb();

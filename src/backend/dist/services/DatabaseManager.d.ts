@@ -31,13 +31,32 @@ export declare class DatabaseManager {
     getSubdirectoriesByParentId(parentId: string): Promise<unknown[]>;
     createDirectory(data: any): Promise<Database.RunResult>;
     updateDirectoryMetadata(directoryId: string, metadata: any): Promise<Database.RunResult>;
+    updateDirectoryConfig(directoryId: string, config: any): Promise<Database.RunResult>;
     updateDirectoryImageCount(directoryId: string, imageCount: number): Promise<Database.RunResult>;
     updateDirectoryCoverImage(directoryId: string, coverImagePath: string): Promise<Database.RunResult>;
+    updateDirectoryCachedFields(directoryId: string, fields: {
+        title?: string;
+        description?: string;
+        coverImage?: string;
+        featured?: boolean;
+        menuOrder?: number;
+        status?: string;
+    }): Promise<Database.RunResult | undefined>;
     deleteDirectory(directoryId: string): Promise<Database.RunResult>;
     getImagesByDirectory(directoryId: string, limit?: number, offset?: number): Promise<unknown[]>;
     getImageById(id: string): Promise<unknown>;
     getImageByPath(path: string): Promise<unknown>;
     updateImage(id: string, data: any): Promise<Database.RunResult>;
+    /**
+     * Update only thumbnail URLs for an image (partial update)
+     * Used by thumbnail regeneration to avoid NOT NULL constraint errors
+     */
+    updateImageThumbnails(id: string, data: {
+        thumbnailUrl?: string | null;
+        mediumUrl?: string | null;
+        largeUrl?: string | null;
+        exifData?: any;
+    }): Promise<Database.RunResult>;
     createImage(data: any): Promise<Database.RunResult>;
     deleteImage(id: string): Promise<Database.RunResult>;
     addReaction(imageId: string, reactionType: string, ipHash: string, sessionId?: string): Promise<Database.RunResult>;

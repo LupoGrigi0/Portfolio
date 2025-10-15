@@ -11,6 +11,11 @@ import path from 'path';
 import sharp from 'sharp';
 import { createHash } from 'crypto';
 import { VideoProcessor } from './VideoProcessor.js';
+/**
+ * System directories that should be excluded from collection scanning
+ * These directories serve special purposes and should not appear in public collections
+ */
+const SYSTEM_DIRECTORIES = ['Branding', '.thumbnails', '.git', 'node_modules'];
 export class ContentScanner {
     logger;
     db;
@@ -47,6 +52,11 @@ export class ContentScanner {
             const entries = await fs.readdir(this.contentDir, { withFileTypes: true });
             for (const entry of entries) {
                 if (entry.isDirectory()) {
+                    // Skip system directories
+                    if (SYSTEM_DIRECTORIES.includes(entry.name)) {
+                        await this.logger.debug('Skipping system directory', { name: entry.name });
+                        continue;
+                    }
                     try {
                         const dirResult = await this.scanDirectory(path.join(this.contentDir, entry.name));
                         result.imagesProcessed += dirResult.imagesProcessed;
@@ -649,10 +659,12 @@ export class ContentScanner {
             // Extract video metadata using ffprobe
             const metadata = await this.videoProcessor.extractMetadata(videoPath);
             // Generate thumbnail (first frame)
+            // Use standard thumbnail naming (_640w) so media routes can serve them
+            // Keep .jpg since ffmpeg generates JPEG, not WebP
             const thumbnailDir = path.join(path.dirname(videoPath), '.thumbnails');
             await fs.mkdir(thumbnailDir, { recursive: true });
             const basename = path.basename(videoPath, path.extname(videoPath));
-            const thumbnailPath = path.join(thumbnailDir, `${basename}_thumb.jpg`);
+            const thumbnailPath = path.join(thumbnailDir, `${basename}_640w.jpg`);
             const thumbnail = await this.videoProcessor.generateThumbnail(videoPath, thumbnailPath, 0 // First frame
             );
             const videoData = {
