@@ -777,11 +777,13 @@ export class ContentScanner {
       const metadata = await this.videoProcessor.extractMetadata(videoPath);
 
       // Generate thumbnail (first frame)
+      // Use standard thumbnail naming (_640w) so media routes can serve them
+      // Keep .jpg since ffmpeg generates JPEG, not WebP
       const thumbnailDir = path.join(path.dirname(videoPath), '.thumbnails');
       await fs.mkdir(thumbnailDir, { recursive: true });
 
       const basename = path.basename(videoPath, path.extname(videoPath));
-      const thumbnailPath = path.join(thumbnailDir, `${basename}_thumb.jpg`);
+      const thumbnailPath = path.join(thumbnailDir, `${basename}_640w.jpg`);
 
       const thumbnail = await this.videoProcessor.generateThumbnail(
         videoPath,

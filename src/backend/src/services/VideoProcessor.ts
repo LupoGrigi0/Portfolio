@@ -36,6 +36,20 @@ export class VideoProcessor {
   }
 
   /**
+   * Get ffmpeg command (use env var path if available, otherwise just 'ffmpeg')
+   */
+  private getFfmpegCommand(): string {
+    return process.env.FFMPEG_PATH || 'ffmpeg';
+  }
+
+  /**
+   * Get ffprobe command (use env var path if available, otherwise just 'ffprobe')
+   */
+  private getFfprobeCommand(): string {
+    return process.env.FFPROBE_PATH || 'ffprobe';
+  }
+
+  /**
    * Check if ffmpeg is available on the system
    */
   async checkFfmpegAvailable(): Promise<boolean> {
@@ -44,9 +58,10 @@ export class VideoProcessor {
     }
 
     try {
-      await execAsync('ffmpeg -version');
+      const ffmpegCmd = this.getFfmpegCommand();
+      await execAsync(`"${ffmpegCmd}" -version`);
       this.ffmpegAvailable = true;
-      await this.logger.info('ffmpeg is available');
+      await this.logger.info('ffmpeg is available', { command: ffmpegCmd });
       return true;
     } catch (error) {
       this.ffmpegAvailable = false;
@@ -64,9 +79,10 @@ export class VideoProcessor {
     }
 
     try {
-      await execAsync('ffprobe -version');
+      const ffprobeCmd = this.getFfprobeCommand();
+      await execAsync(`"${ffprobeCmd}" -version`);
       this.ffprobeAvailable = true;
-      await this.logger.info('ffprobe is available');
+      await this.logger.info('ffprobe is available', { command: ffprobeCmd });
       return true;
     } catch (error) {
       this.ffprobeAvailable = false;
@@ -97,7 +113,8 @@ export class VideoProcessor {
 
     try {
       // Use ffprobe to extract metadata
-      const command = `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration,codec_name,bit_rate,r_frame_rate -of json "${videoPath}"`;
+      const ffprobeCmd = this.getFfprobeCommand();
+      const command = `"${ffprobeCmd}" -v error -select_streams v:0 -show_entries stream=width,height,duration,codec_name,bit_rate,r_frame_rate -of json "${videoPath}"`;
 
       const { stdout } = await execAsync(command);
       const data = JSON.parse(stdout);
@@ -185,7 +202,8 @@ export class VideoProcessor {
       // -i: input file
       // -vframes 1: extract 1 frame
       // -q:v 2: quality (2 is high quality for JPEG)
-      const command = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -q:v 2 "${outputPath}" -y`;
+      const ffmpegCmd = this.getFfmpegCommand();
+      const command = `"${ffmpegCmd}" -ss ${timestamp} -i "${videoPath}" -vframes 1 -q:v 2 "${outputPath}" -y`;
 
       await execAsync(command, { timeout: 30000 }); // 30 second timeout
 
