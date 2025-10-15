@@ -1,9 +1,0 @@
-{
-  "api_base_url": "http://localhost:4000/api",
-  "content_root": "E:\\mnt\\lupoportfolio\\content",
-  "platform": "windows",
-  "notes": {
-    "linux": "For Linux deployment, change content_root to /mnt/lupoportfolio/content",
-    "api": "Update api_base_url for production environment"
-  }
-}

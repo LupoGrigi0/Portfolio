@@ -1305,3 +1305,10 @@ returns:
 "config":{"title":"Best","description":"Best of Bugs subcollection","featured":false,"tags":
 etc. etc.
 
+# starting the server from scratch:
+link or copy deployments site-config.json 
+from site-config.development or site-config.production
+cd down into src/backend
+npm run build
+npm start
+
