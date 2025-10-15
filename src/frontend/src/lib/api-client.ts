@@ -290,6 +290,72 @@ export interface CarouselOptionsConfig {
   };
 }
 
+// Navigation configuration (stored in site config)
+export interface NavigationConfig {
+  menu?: {
+    position?: 'left' | 'right';
+    showHome?: boolean;
+    homeLabel?: string;
+    groupByTag?: boolean;
+    showSubcollections?: boolean;
+  };
+  breadcrumbs?: {
+    enabled?: boolean;
+    separator?: string;
+    showHome?: boolean;
+    homeLabel?: string;
+  };
+  timing?: {
+    drawerTransitionMs?: number;
+    fadeInMs?: number;
+    hoverDelayMs?: number;
+  };
+  styling?: {
+    hamburgerSize?: number;
+    hamburgerColor?: string;
+    hamburgerPosition?: { top?: number; left?: number; right?: number };
+    drawerWidth?: number;
+    drawerBackgroundColor?: string;
+    drawerBackgroundOpacity?: number;
+    textColor?: string;
+    hoverColor?: string;
+    activeColor?: string;
+    subcollectionIndent?: number;
+  };
+}
+
+// Site configuration (from /api/site/config)
+export interface SiteConfig {
+  siteName?: string;
+  tagline?: string;
+  copyright?: string;
+  contact?: {
+    email?: string;
+    phone?: string;
+    location?: string;
+  };
+  social?: Array<{
+    platform: string;
+    url: string;
+    icon: string;
+  }>;
+  branding?: {
+    logo?: string;
+    logoUrl?: string;
+    favicon?: string;
+    faviconUrl?: string;
+    appleTouchIcon?: string;
+    appleTouchIconUrl?: string;
+    primaryColor?: string;
+    accentColor?: string;
+  };
+  seo?: {
+    description?: string;
+    keywords?: string[];
+  };
+  navigation?: NavigationConfig;
+}
+
 /**
  * Fetch all available collections
  */
@@ -569,6 +635,77 @@ export async function updateCollectionConfig(
     };
   } catch (error) {
     console.error('[API Client] Error updating config:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Fetch site-wide configuration
+ */
+export async function getSiteConfig(): Promise<SiteConfig | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/site/config`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch site config: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      return result.data;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[API Client] Error fetching site config:', error);
+    return null;
+  }
+}
+
+/**
+ * Update site-wide configuration
+ * (Development mode only)
+ */
+export async function updateSiteConfig(
+  config: Partial<SiteConfig>
+): Promise<{
+  success: boolean;
+  config?: SiteConfig;
+  error?: string;
+  updatedAt?: string;
+  path?: string;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/site/config`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(config),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Site config update failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || 'Site config update failed');
+    }
+
+    return {
+      success: true,
+      config: data.data.config,
+      updatedAt: data.data.updatedAt,
+      path: data.data.path,
+    };
+  } catch (error) {
+    console.error('[API Client] Error updating site config:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
