@@ -6,9 +6,13 @@
  * - Smooth slide-in drawer
  * - Hierarchical collection tree with triangle pips
  * - Professional styling and animations
+ * - Auto-close timer after navigation
+ * - Site logo integration
+ * - Breadcrumbs for subcollections
  *
- * @author Claude (Sonnet 4.5)
+ * @author Claude (Sonnet 4.5 + Opus 4.1)
  * @created 2025-10-14
+ * @updated 2025-10-14
  * @based-on nav-real-api by Kai v3
  */
 
@@ -122,6 +126,8 @@ export default function Navigation({ config, collections, currentCollectionName,
   const router = useRouter();
   const pathname = usePathname();
   const drawerRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Extract current collection slug from pathname
   const currentSlug = pathname?.startsWith('/collections/')
@@ -132,13 +138,30 @@ export default function Navigation({ config, collections, currentCollectionName,
   const indentSpacing = config?.styling?.subcollectionIndent || 16;
   const drawerWidth = config?.styling?.drawerWidth || 240;
   const transitionMs = config?.timing?.drawerTransitionMs || 300;
+  const rollbackDelay = config?.timing?.rollbackDelay || 300; // Time before auto-close
 
-  // Click outside to close
+  // Clear any pending auto-close timer
+  const clearAutoCloseTimer = () => {
+    if (autoCloseTimerRef.current) {
+      clearTimeout(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+  };
+
+  // Click outside to close (excluding hamburger button)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (isOpen && drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        isOpen &&
+        drawerRef.current &&
+        !drawerRef.current.contains(target) &&
+        hamburgerRef.current &&
+        !hamburgerRef.current.contains(target)
+      ) {
         setIsOpen(false);
         onClose?.();
+        clearAutoCloseTimer();
       }
     }
 
@@ -152,6 +175,7 @@ export default function Navigation({ config, collections, currentCollectionName,
       if (event.key === 'Escape' && isOpen) {
         setIsOpen(false);
         onClose?.();
+        clearAutoCloseTimer();
       }
     }
 
@@ -159,14 +183,30 @@ export default function Navigation({ config, collections, currentCollectionName,
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => clearAutoCloseTimer();
+  }, []);
+
   const handleNavigate = (slug: string) => {
+    // Clear any existing timer
+    clearAutoCloseTimer();
+
+    // Navigate
     if (slug === 'home') {
       router.push('/');
+      // Start rollback timer for home navigation
+      autoCloseTimerRef.current = setTimeout(() => {
+        setIsOpen(false);
+        setExpandedCollections(new Set());
+      }, rollbackDelay);
     } else {
       router.push(`/collections/${slug}`);
+      // Start rollback timer for collection navigation
+      autoCloseTimerRef.current = setTimeout(() => {
+        setIsOpen(false);
+      }, rollbackDelay);
     }
-    // Keep drawer open for easier navigation
-    // User can close manually or click outside
   };
 
   const handleToggleExpand = (slug: string) => {
@@ -181,6 +221,13 @@ export default function Navigation({ config, collections, currentCollectionName,
     });
   };
 
+  // Sort collections to put 'home' at the top
+  const sortedCollections = [...collections].sort((a, b) => {
+    if (a.slug === 'home') return -1;
+    if (b.slug === 'home') return 1;
+    return 0;
+  });
+
   return (
     <>
       {/* Top Navigation Bar - matches nav-real-api styling */}
@@ -188,7 +235,11 @@ export default function Navigation({ config, collections, currentCollectionName,
         <div className="flex items-center h-16 px-4 gap-4">
           {/* Hamburger Button */}
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            ref={hamburgerRef}
+            onClick={() => {
+              setIsOpen(!isOpen);
+              clearAutoCloseTimer();
+            }}
             className={`relative w-10 h-10 flex items-center justify-center text-white hover:bg-white/10 rounded-lg transition-all duration-300 ${
               !isOpen ? 'animate-pulse-subtle' : ''
             }`}
@@ -213,7 +264,7 @@ export default function Navigation({ config, collections, currentCollectionName,
             </div>
           </button>
 
-          {/* Logo/Site Name */}
+          {/* Logo/Site Name - TODO: Replace with site logo image */}
           <button
             onClick={() => handleNavigate('home')}
             className="text-white text-xl font-semibold tracking-tight hover:opacity-80 transition-opacity"
@@ -221,7 +272,7 @@ export default function Navigation({ config, collections, currentCollectionName,
             Lupo Grigio
           </button>
 
-          {/* Breadcrumbs (Desktop) */}
+          {/* Breadcrumbs (Desktop) - TODO: Fix for subcollections */}
           {currentCollectionName && (
             <div className="hidden md:flex items-center gap-2 text-sm text-white/70">
               <span className="text-white/40">/</span>
@@ -234,13 +285,10 @@ export default function Navigation({ config, collections, currentCollectionName,
         </div>
       </div>
 
-      {/* Drawer Overlay (for click-outside) */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
-          style={{ top: '64px' }} // Below top bar
-        />
-      )}
+      {/* Drawer Overlay - REMOVED per Site Rule: Images are paramount
+          The overlay was blocking images with a grey cast.
+          Click-outside functionality now handled by drawer ref only.
+      */}
 
       {/* Drawer - matches nav-real-api styling */}
       <div
@@ -255,7 +303,7 @@ export default function Navigation({ config, collections, currentCollectionName,
       >
         <div className="h-full overflow-y-auto p-4">
           <nav className="space-y-1">
-            {/* Home link (when viewing a collection) */}
+            {/* Home link (always shows when viewing a collection, uses favicon) */}
             {currentSlug && currentSlug !== 'home' && (
               <>
                 <button
@@ -269,19 +317,40 @@ export default function Navigation({ config, collections, currentCollectionName,
               </>
             )}
 
-            {/* Collections tree */}
-            {collections.map((collection, index) => (
-              <CollectionTreeItem
-                key={`${collection.slug}-${index}`}
-                collection={collection}
-                currentSlug={currentSlug}
-                indent={0}
-                indentSpacing={indentSpacing}
-                onNavigate={handleNavigate}
-                expandedCollections={expandedCollections}
-                onToggleExpand={handleToggleExpand}
-              />
-            ))}
+            {/* Collections tree (sorted with home first) */}
+            {sortedCollections.map((collection, index) => {
+              // If this is the home collection, render with logo instead of text
+              if (collection.slug === 'home') {
+                return (
+                  <button
+                    key={`${collection.slug}-${index}`}
+                    onClick={() => handleNavigate('home')}
+                    className={`collection-nav-item w-full text-left px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                      currentSlug === 'home'
+                        ? 'bg-white/10 border border-white/20 text-white font-semibold'
+                        : 'text-white/80'
+                    }`}
+                  >
+                    <img src="/favicon.ico" alt="Home" className="w-4 h-4" />
+                    <span>Home</span>
+                  </button>
+                );
+              }
+
+              // Regular collection rendering
+              return (
+                <CollectionTreeItem
+                  key={`${collection.slug}-${index}`}
+                  collection={collection}
+                  currentSlug={currentSlug}
+                  indent={0}
+                  indentSpacing={indentSpacing}
+                  onNavigate={handleNavigate}
+                  expandedCollections={expandedCollections}
+                  onToggleExpand={handleToggleExpand}
+                />
+              );
+            })}
           </nav>
         </div>
       </div>
@@ -298,7 +367,7 @@ export default function Navigation({ config, collections, currentCollectionName,
         }
 
         /* Pure CSS hover - no JS, no re-renders, instant performance */
-        :global(.collection-nav-item:not(.bg-white\/10):hover) {
+        :global(.collection-nav-item:not(.bg-white\\/10):hover) {
           background-color: rgba(255, 255, 255, 0.05);
           color: rgba(255, 255, 255, 1);
         }
