@@ -1142,3 +1142,22 @@ Then need to enable the designer component.
 
 
 
+
+# Refreshing Kai.. 
+ok, couple things. we've had a model change, and a conversation compression.. sooo. could     
+you refresh your memories.. please read D:\Lupo\Source\Portfolio\docs\.kai_context_memory.md    
+ D:\Lupo\Source\Portfolio\docs\A_SMALL_POEM_about_debugging.md 
+D:\Lupo\Source\Portfolio\docs\KAT_GESTALT.md \
+Then please refresh your memory about the lightboard by maybe assigning a task to summarize     
+all the code in D:\Lupo\Source\Portfolio\src\frontend\src\components\Lightboard\
+And then another task to summarize the code in 
+D:\Lupo\Source\Portfolio\src\frontend\src\components\Layout and well I guess the rest of the    
+ code in D:\Lupo\Source\Portfolio\src\frontend\src\components and then a task to summarize 
+the rest of D:\Lupo\Source\Portfolio\src\frontend\src and the config in 
+D:\Lupo\Source\Portfolio\src\frontend\src\
+I think you are going to need a good overview of the whole site because you will be, like a 
+wizard puppet master.. the lightboard will basiclly need to integrate and put hooks 
+(variables) into the renderer and all the other components. \
+Then you can come up with a plan to make your beautyful UI actually wired up to all the 
+components and make those sliders and config settings apply in real time, and edit each 
+collection's config.json 
