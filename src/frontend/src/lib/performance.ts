@@ -320,13 +320,18 @@ export function getPerformanceConfig(): PerformanceConfig {
   return { ...config };
 }
 
-// Auto-start performance monitoring in development
-if (typeof window !== 'undefined' && config.enabled) {
-  const monitor = new PerformanceMonitor();
-  monitor.start(10000); // Report every 10 seconds
-
-  // Cleanup on page unload
-  window.addEventListener('beforeunload', () => {
-    monitor.stop();
-  });
-}
+// DISABLED: Auto-start performance monitoring in development
+// Caused console spam - enable manually when needed:
+//   import { PerformanceMonitor } from '@/lib/performance';
+//   const monitor = new PerformanceMonitor();
+//   monitor.start(10000);
+//
+// if (typeof window !== 'undefined' && config.enabled) {
+//   const monitor = new PerformanceMonitor();
+//   monitor.start(10000); // Report every 10 seconds
+//
+//   // Cleanup on page unload
+//   window.addEventListener('beforeunload', () => {
+//     monitor.stop();
+//   });
+// }

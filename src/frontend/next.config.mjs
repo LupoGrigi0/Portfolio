@@ -12,9 +12,9 @@ const nextConfig = {
   reactStrictMode: true,
 
   // Webpack config for bundle analysis
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Enable source maps in production for debugging
+  webpack: (config, { isServer, dev }) => {
+    if (!isServer && !dev) {
+      // Only enable source maps in production for debugging
       config.devtool = 'source-map';
     }
     return config;
@@ -25,6 +25,15 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Allow images from backend server
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4000',
+        pathname: '/api/media/**',
+      },
+    ],
   },
 };
 

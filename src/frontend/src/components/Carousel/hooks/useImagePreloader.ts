@@ -52,7 +52,8 @@ export function useImagePreloader({
       img.onload = () => {
         preloadedImagesRef.current.set(src, { src, image: img });
         isPreloadingRef.current.delete(src);
-        console.log('[useImagePreloader] Preloaded:', src);
+        // EMERGENCY DISABLED: Console spam
+        // console.log('[useImagePreloader] Preloaded:', src);
         resolve();
       };
 
@@ -92,11 +93,13 @@ export function useImagePreloader({
 
     toUnload.forEach(src => {
       preloadedImagesRef.current.delete(src);
-      console.log('[useImagePreloader] Unloaded distant image:', src);
+      // EMERGENCY DISABLED: Console spam
+      // console.log('[useImagePreloader] Unloaded distant image:', src);
     });
 
     if (toUnload.length > 0) {
-      console.log(`[useImagePreloader] Memory cleanup: unloaded ${toUnload.length} distant images`);
+      // EMERGENCY DISABLED: Console spam
+      // console.log(`[useImagePreloader] Memory cleanup: unloaded ${toUnload.length} distant images`);
     }
   }, [images, currentIndex]);
 
@@ -118,7 +121,8 @@ export function useImagePreloader({
     }
 
     if (toPreload.length > 0) {
-      console.log(`[useImagePreloader] Preloading ${toPreload.length} adjacent images at index ${currentIndex}`);
+      // EMERGENCY DISABLED: Console spam
+      // console.log(`[useImagePreloader] Preloading ${toPreload.length} adjacent images at index ${currentIndex}`);
       toPreload.forEach(src => {
         preloadImage(src).catch(() => {
           // Silent fail - image will load on demand
@@ -136,7 +140,8 @@ export function useImagePreloader({
   const handleFirstInteraction = useCallback(() => {
     if (hasInteracted || !enabled) return;
 
-    console.log('[useImagePreloader] First interaction detected, starting preload');
+    // EMERGENCY DISABLED: Console spam
+    // console.log('[useImagePreloader] First interaction detected, starting preload');
     setHasInteracted(true);
     preloadAdjacentImages();
   }, [hasInteracted, enabled, preloadAdjacentImages]);

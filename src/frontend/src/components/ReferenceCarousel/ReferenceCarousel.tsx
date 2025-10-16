@@ -51,7 +51,8 @@ export default function ReferenceCarousel({
     setCurrentIndex(index);
   };
 
-  console.log('[ReferenceCarousel] Current index:', currentIndex);
+  // EMERGENCY DISABLED: Causing 100k+ logs/min in render loop
+  // console.log('[ReferenceCarousel] Current index:', currentIndex);
 
   return (
     <div ref={carouselRef} className="relative w-full h-[600px] bg-gray-900 rounded-lg overflow-hidden">
