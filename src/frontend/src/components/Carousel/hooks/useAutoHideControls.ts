@@ -81,7 +81,8 @@ export function useAutoHideControls({
   const triggerActivity = useCallback(() => {
     if (permanentlyHide) return;
 
-    console.log('[useAutoHideControls] Activity detected, restoring controls');
+    // EMERGENCY DISABLED: Logs on EVERY mouse move, touch, keydown, click
+    // console.log('[useAutoHideControls] Activity detected, restoring controls');
 
     setIsInteracting(true);
     startFadeSequence();

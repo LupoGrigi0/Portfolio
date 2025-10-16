@@ -69,7 +69,8 @@ export function useCarouselState({
   const triggerAutoPause = useCallback(() => {
     if (autoPauseDuration === 0 || autoplaySpeed === 0) return;
 
-    console.log('[useCarouselState] Auto-pause triggered', { duration: autoPauseDuration });
+    // EMERGENCY DISABLED: Console spam
+    // console.log('[useCarouselState] Auto-pause triggered', { duration: autoPauseDuration });
 
     // Clear existing auto-pause timer
     if (autoPauseTimerRef.current) {
@@ -81,7 +82,8 @@ export function useCarouselState({
 
     // Resume autoplay after duration
     autoPauseTimerRef.current = setTimeout(() => {
-      console.log('[useCarouselState] Auto-pause ended, resuming autoplay');
+      // EMERGENCY DISABLED: Console spam
+      // console.log('[useCarouselState] Auto-pause ended, resuming autoplay');
       setState(prev => ({ ...prev, isAutoPaused: false }));
     }, autoPauseDuration);
   }, [autoPauseDuration, autoplaySpeed]);
@@ -93,12 +95,13 @@ export function useCarouselState({
 
     const direction = index > state.currentIndex ? 'forward' : 'backward';
 
-    console.log('[useCarouselState] Navigating to index', {
-      from: state.currentIndex,
-      to: index,
-      direction,
-      fromAutoplay
-    });
+    // EMERGENCY DISABLED: Logs on every navigation
+    // console.log('[useCarouselState] Navigating to index', {
+    //   from: state.currentIndex,
+    //   to: index,
+    //   direction,
+    //   fromAutoplay
+    // });
 
     // Trigger auto-pause if this is manual navigation
     if (!fromAutoplay) {
@@ -168,7 +171,8 @@ export function useCarouselState({
           } else if ((elem as any).msRequestFullscreen) {
             await (elem as any).msRequestFullscreen();
           } else {
-            console.warn('[useCarouselState] Fullscreen API not supported');
+            // EMERGENCY DISABLED: Console spam
+            // console.warn('[useCarouselState] Fullscreen API not supported');
             // Fallback to browser mode
             setState(prev => ({
               ...prev,
@@ -177,7 +181,8 @@ export function useCarouselState({
             return;
           }
 
-          console.log('[useCarouselState] Native fullscreen requested');
+          // EMERGENCY DISABLED: Console spam
+          // console.log('[useCarouselState] Native fullscreen requested');
         } else {
           // Exit fullscreen
           if (document.exitFullscreen) {
@@ -190,9 +195,11 @@ export function useCarouselState({
             await (document as any).msExitFullscreen();
           }
 
-          console.log('[useCarouselState] Native fullscreen exited');
+          // EMERGENCY DISABLED: Console spam
+          // console.log('[useCarouselState] Native fullscreen exited');
         }
       } catch (error) {
+        // Keep errors visible
         console.error('[useCarouselState] Fullscreen error:', error);
         // Fallback to browser mode
         setState(prev => ({
@@ -204,7 +211,8 @@ export function useCarouselState({
       // Browser fullscreen (existing behavior)
       setState(prev => {
         const newFullscreen = !prev.isFullscreen;
-        console.log('[useCarouselState] Toggle browser fullscreen', { isFullscreen: newFullscreen });
+        // EMERGENCY DISABLED: Console spam
+        // console.log('[useCarouselState] Toggle browser fullscreen', { isFullscreen: newFullscreen });
         return {
           ...prev,
           isFullscreen: newFullscreen
@@ -215,7 +223,8 @@ export function useCarouselState({
 
   // Pause autoplay
   const pause = useCallback(() => {
-    console.log('[useCarouselState] Autoplay paused');
+    // EMERGENCY DISABLED: Console spam
+    // console.log('[useCarouselState] Autoplay paused');
     setState(prev => ({ ...prev, isPaused: true, isAutoPaused: false }));
     if (autoplayTimerRef.current) {
       clearTimeout(autoplayTimerRef.current);
@@ -229,7 +238,8 @@ export function useCarouselState({
 
   // Resume autoplay
   const resume = useCallback(() => {
-    console.log('[useCarouselState] Autoplay resumed');
+    // EMERGENCY DISABLED: Console spam
+    // console.log('[useCarouselState] Autoplay resumed');
     setState(prev => ({ ...prev, isPaused: false, isAutoPaused: false }));
     if (autoPauseTimerRef.current) {
       clearTimeout(autoPauseTimerRef.current);
@@ -248,7 +258,8 @@ export function useCarouselState({
 
   // Set specific autoplay speed preset
   const setSpeed = useCallback((speed: AutoplaySpeedPreset) => {
-    console.log('[useCarouselState] Speed changed', { from: state.currentSpeed, to: speed, duration: AUTOPLAY_SPEEDS[speed] });
+    // EMERGENCY DISABLED: Console spam
+    // console.log('[useCarouselState] Speed changed', { from: state.currentSpeed, to: speed, duration: AUTOPLAY_SPEEDS[speed] });
     setState(prev => ({ ...prev, currentSpeed: speed }));
     onSpeedChange?.(speed); // Notify parent component
   }, [state.currentSpeed, onSpeedChange]);
@@ -290,7 +301,8 @@ export function useCarouselState({
     if (fullscreenMode === 'native') {
       const handleFullscreenChange = () => {
         const isFullscreen = !!document.fullscreenElement;
-        console.log('[useCarouselState] Native fullscreen change detected', { isFullscreen });
+        // EMERGENCY DISABLED: Console spam
+        // console.log('[useCarouselState] Native fullscreen change detected', { isFullscreen });
         setState(prev => ({
           ...prev,
           isFullscreen
@@ -315,7 +327,8 @@ export function useCarouselState({
   // Sync speedPreset prop with internal state (for controlled speed from external config panels)
   useEffect(() => {
     if (speedPreset && speedPreset !== state.currentSpeed) {
-      console.log('[useCarouselState] Syncing speed preset from prop', { from: state.currentSpeed, to: speedPreset });
+      // EMERGENCY DISABLED: Console spam
+      // console.log('[useCarouselState] Syncing speed preset from prop', { from: state.currentSpeed, to: speedPreset });
       setState(prev => ({ ...prev, currentSpeed: speedPreset }));
     }
   }, [speedPreset, state.currentSpeed]);
@@ -326,12 +339,14 @@ export function useCarouselState({
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
-          console.log('[useCarouselState] Keyboard: Previous');
+          // EMERGENCY DISABLED: Logs on every keypress
+          // console.log('[useCarouselState] Keyboard: Previous');
           previous();
           break;
         case 'ArrowRight':
           e.preventDefault();
-          console.log('[useCarouselState] Keyboard: Next');
+          // EMERGENCY DISABLED: Logs on every keypress
+          // console.log('[useCarouselState] Keyboard: Next');
           next();
           break;
         case 'Escape':
@@ -339,13 +354,15 @@ export function useCarouselState({
           // For browser fullscreen, we handle it manually
           if (state.isFullscreen && fullscreenMode === 'browser') {
             e.preventDefault();
-            console.log('[useCarouselState] Keyboard: Exit browser fullscreen');
+            // EMERGENCY DISABLED: Console spam
+            // console.log('[useCarouselState] Keyboard: Exit browser fullscreen');
             toggleFullscreen();
           }
           break;
         case ' ':
           e.preventDefault();
-          console.log('[useCarouselState] Keyboard: Toggle autoplay');
+          // EMERGENCY DISABLED: Console spam
+          // console.log('[useCarouselState] Keyboard: Toggle autoplay');
           toggleAutoplay();
           break;
       }
