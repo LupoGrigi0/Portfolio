@@ -116,14 +116,15 @@ export default function CarouselImageRenderer({
     padding: `${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px`
   };
 
-  console.debug('[CarouselImageRenderer] Rendering image', {
-    imageId: image.id,
-    isActive,
-    transitionType,
-    direction,
-    transitionName: transitionHandler.metadata?.name,
-    containerStyle
-  });
+  // EMERGENCY DISABLED: Logs on EVERY render (20 images × every transition)
+  // console.debug('[CarouselImageRenderer] Rendering image', {
+  //   imageId: image.id,
+  //   isActive,
+  //   transitionType,
+  //   direction,
+  //   transitionName: transitionHandler.metadata?.name,
+  //   containerStyle
+  // });
 
   /**
    * Handle click/touch on image to navigate
@@ -140,13 +141,14 @@ export default function CarouselImageRenderer({
     const width = rect.width;
     const clickPercentage = (clickX / width) * 100;
 
-    console.log('[CarouselImageRenderer] Image clicked', {
-      imageId: image.id,
-      clickX,
-      width,
-      clickPercentage: clickPercentage.toFixed(1) + '%',
-      zone: clickPercentage < 50 ? 'left (previous)' : 'right (next)'
-    });
+    // EMERGENCY DISABLED: Console spam on every click
+    // console.log('[CarouselImageRenderer] Image clicked', {
+    //   imageId: image.id,
+    //   clickX,
+    //   width,
+    //   clickPercentage: clickPercentage.toFixed(1) + '%',
+    //   zone: clickPercentage < 50 ? 'left (previous)' : 'right (next)'
+    // });
 
     // Left 50% = previous, Right 50% = next
     if (clickPercentage < 50 && onPrevious) {
