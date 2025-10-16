@@ -354,6 +354,11 @@ export interface SiteConfig {
     keywords?: string[];
   };
   navigation?: NavigationConfig;
+
+  // PERFORMANCE: Global projection control
+  // Set to false to disable projection system entirely (overrides all page-level settings)
+  // Useful during performance optimization or on mobile devices
+  enableProjection?: boolean; // Default: true
 }
 
 /**

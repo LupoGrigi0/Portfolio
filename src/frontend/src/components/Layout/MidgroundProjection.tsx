@@ -41,6 +41,7 @@ interface MidgroundProjectionContextType {
   unregisterProjection: (id: string) => void;
   updateProjection: (id: string, updates: Partial<CarouselProjection>) => void;
   // Global settings
+  globalEnabled: boolean; // Master toggle from site config (overrides all page-level settings)
   fadeDistance: number; // Viewport distance where fade starts (0-1, fraction of viewport height)
   maxBlur: number;
   projectionScaleX: number;
@@ -68,7 +69,13 @@ interface MidgroundProjectionContextType {
 
 const MidgroundProjectionContext = createContext<MidgroundProjectionContextType | undefined>(undefined);
 
-export function MidgroundProjectionProvider({ children }: { children: ReactNode }) {
+export function MidgroundProjectionProvider({
+  children,
+  globalEnabled = true // Default: enabled (preserves existing behavior)
+}: {
+  children: ReactNode;
+  globalEnabled?: boolean;
+}) {
   const [projections, setProjections] = useState<Map<string, CarouselProjection>>(new Map());
 
   // Global projection settings (configurable)
@@ -119,6 +126,7 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
     registerProjection,
     unregisterProjection,
     updateProjection,
+    globalEnabled,
     fadeDistance,
     maxBlur,
     projectionScaleX,
@@ -146,6 +154,7 @@ export function MidgroundProjectionProvider({ children }: { children: ReactNode 
     registerProjection,
     unregisterProjection,
     updateProjection,
+    globalEnabled,
     fadeDistance,
     maxBlur,
     projectionScaleX,
@@ -337,6 +346,7 @@ export function useCarouselProjection(
     registerProjection,
     unregisterProjection,
     updateProjection,
+    globalEnabled,
     fadeDistance,
     maxBlur,
     projectionScaleX,
@@ -390,7 +400,8 @@ export function useCarouselProjection(
 
   // Update projection on scroll/resize
   useEffect(() => {
-    if (!enabled || !imageUrl) {
+    // Respect global enable flag AND local enable flag
+    if (!globalEnabled || !enabled || !imageUrl) {
       unregisterProjection(carouselId);
       return;
     }
@@ -431,7 +442,7 @@ export function useCarouselProjection(
       }
       unregisterProjection(carouselId);
     };
-  }, [enabled, imageUrl, carouselId, calculateProjection, registerProjection, unregisterProjection, updateProjection]);
+  }, [globalEnabled, enabled, imageUrl, carouselId, calculateProjection, registerProjection, unregisterProjection, updateProjection]);
 
   return elementRef;
 }
