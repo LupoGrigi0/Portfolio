@@ -25,6 +25,7 @@ import {
 } from './Sections';
 import Carousel from '@/components/Carousel/Carousel';
 import type { CarouselImage } from '@/components/Carousel/types';
+import { useCarouselVirtualization } from '@/hooks/useCarouselVirtualization';
 
 interface CuratedLayoutProps {
   collection: Collection;
@@ -429,6 +430,21 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
               carouselGroups.push(group);
             }
 
+            // ===== VIRTUALIZATION: Prevent backend flood =====
+            // Use shared hook to progressively load carousels
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const { visibleRange, sentinelRef, containerRef } = useCarouselVirtualization(
+              carouselGroups.length,
+              {
+                initialLoad: 4,
+                loadIncrement: 4,
+                maxActive: 10,
+              }
+            );
+
+            // Only render carousels within visible range
+            const activeCarouselGroups = carouselGroups.slice(visibleRange.start, visibleRange.end);
+
             // Render with layout and spacing
             const layout = section.layout || 'single-column';
             const spacing = section.spacing || {};
@@ -453,14 +469,19 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             const carouselOptions = mapCarouselOptions(section.carouselDefaults);
 
             return (
-              <div key={key} className={layoutClass} style={layoutStyle}>
-                {carouselGroups.map((group, idx) => {
-                  // Determine projection for this carousel
-                  const currentCarouselIndex = carouselIndex++;
+              <div key={key} ref={containerRef} className={layoutClass} style={layoutStyle}>
+                {activeCarouselGroups.map((group, relativeIndex) => {
+                  // Calculate actual carousel index (accounting for visible range)
+                  const idx = visibleRange.start + relativeIndex;
+                  const currentCarouselIndex = carouselIndex + idx;
                   const enableProjection = shouldEnableProjection(currentCarouselIndex);
 
                   return (
-                    <div key={`dynamic-carousel-${idx}`} className="w-full">
+                    <div
+                      key={`dynamic-carousel-${idx}`}
+                      data-carousel-index={idx}
+                      className="w-full"
+                    >
                       <Carousel
                         images={group}
                         {...carouselOptions}
@@ -470,6 +491,10 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                     </div>
                   );
                 })}
+                {/* Sentinel element triggers progressive loading */}
+                {visibleRange.end < carouselGroups.length && (
+                  <div ref={sentinelRef} style={{ height: '1px' }} />
+                )}
               </div>
             );
           }
