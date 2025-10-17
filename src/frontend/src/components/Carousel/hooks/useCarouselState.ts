@@ -44,7 +44,7 @@ export function useCarouselState({
     isFullscreen: false,
     isPaused: false,
     isAutoPaused: false,
-    currentSpeed: 'medium' // Default speed preset
+    currentSpeed: 'ultraFast' // TESTING: 0.8 sec (was 'medium' 5 sec)
   });
 
   const autoplayTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -333,44 +333,42 @@ export function useCarouselState({
     }
   }, [speedPreset, state.currentSpeed]);
 
-  // Keyboard navigation
+  /**
+   * Keyboard navigation REMOVED (except ESC for fullscreen exit)
+   *
+   * Previously, each carousel instance added its own window keyboard listener.
+   * With 20-50 carousels per page, this meant 20-50 handlers firing on every keypress.
+   *
+   * Keyboard control is now centralized in a separate KeyboardManager component
+   * managed by Kat (Performance Tactical Controller).
+   *
+   * EXCEPTION: ESC key handler is preserved for fullscreen exit to prevent users
+   * from getting trapped when fullscreen button is off-screen.
+   *
+   * @author Glide (Carousel Performance Specialist)
+   * @created 2025-10-16
+   * @removed Lines 337-373 (keyboard event listener)
+   * @restored ESC key only for fullscreen exit
+   */
+
+  // ESC key handler for fullscreen exit (only when in fullscreen)
   useEffect(() => {
+    if (!state.isFullscreen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowLeft':
+      if (e.key === 'Escape') {
+        // For native fullscreen, ESC is handled by browser automatically
+        // For browser fullscreen, we handle it manually
+        if (fullscreenMode === 'browser') {
           e.preventDefault();
-          // EMERGENCY DISABLED: Logs on every keypress
-          // console.log('[useCarouselState] Keyboard: Previous');
-          previous();
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          // EMERGENCY DISABLED: Logs on every keypress
-          // console.log('[useCarouselState] Keyboard: Next');
-          next();
-          break;
-        case 'Escape':
-          // For native fullscreen, ESC key is handled by browser automatically
-          // For browser fullscreen, we handle it manually
-          if (state.isFullscreen && fullscreenMode === 'browser') {
-            e.preventDefault();
-            // EMERGENCY DISABLED: Console spam
-            // console.log('[useCarouselState] Keyboard: Exit browser fullscreen');
-            toggleFullscreen();
-          }
-          break;
-        case ' ':
-          e.preventDefault();
-          // EMERGENCY DISABLED: Console spam
-          // console.log('[useCarouselState] Keyboard: Toggle autoplay');
-          toggleAutoplay();
-          break;
+          toggleFullscreen();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [next, previous, toggleFullscreen, toggleAutoplay, state.isFullscreen, fullscreenMode]);
+  }, [state.isFullscreen, fullscreenMode, toggleFullscreen]);
 
   const controls: CarouselControls = {
     next,
