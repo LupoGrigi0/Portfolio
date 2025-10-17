@@ -17,14 +17,14 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { CarouselProps, CarouselImage } from './types';
 import { useCarouselState } from './hooks/useCarouselState';
 import { useAutoHideControls } from './hooks/useAutoHideControls';
 import { useAutoHideReactions } from './hooks/useAutoHideReactions';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { useCarouselProjection } from '@/components/Layout';
-// import { useBackground } from '@/components/Layout/Background'; // Removed - background handled separately
+// import { useBackground } from '@/components/Layout/Background'; // Removed - background separately
 import CarouselImageRenderer from './CarouselImageRenderer';
 import CarouselNavigation from './CarouselNavigation';
 import SocialReactions from './SocialReactions';
@@ -134,12 +134,28 @@ export default function Carousel({
     enabled: enablePreload
   });
 
+  // Stabilize projectionSettings to prevent infinite loops (Prism's fix)
+  // useMemo ensures object identity stays stable unless actual values change
+  const stableProjectionSettings = useMemo(() => projectionSettings, [
+    projectionSettings?.fadeDistance,
+    projectionSettings?.maxBlur,
+    projectionSettings?.scaleX,
+    projectionSettings?.scaleY,
+    projectionSettings?.blendMode,
+    projectionSettings?.vignette?.width,
+    projectionSettings?.vignette?.strength,
+    projectionSettings?.checkerboard?.enabled,
+    projectionSettings?.checkerboard?.tileSize,
+    projectionSettings?.checkerboard?.blur,
+    projectionSettings?.checkerboard?.scatterSpeed,
+  ]);
+
   // Midground projection (carousel projects first image onto background layer)
   const carouselRef = useCarouselProjection(
     projectionId || `carousel-${images[0]?.id || 'default'}`,
     enableProjection && images[0] ? images[0].src : null,
     enableProjection,
-    projectionSettings
+    stableProjectionSettings
   );
 
   // Background integration removed - handled separately by parallax scrolling
