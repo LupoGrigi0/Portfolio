@@ -1,7 +1,7 @@
 'use client';
 
 import { Geist, Geist_Mono } from "next/font/google";
-import { MidgroundProjectionProvider } from '@/components/Layout';
+import { ProjectionManagerProvider } from '@/components/Layout';
 import { Navigation } from '@/components/Navigation';
 import { LightboardProvider, Lightboard } from '@/components/Lightboard';
 import './globals.css';
@@ -51,7 +51,7 @@ export default function RootLayout({
         <title>{siteConfig?.siteName || 'Portfolio'}</title>
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <MidgroundProjectionProvider globalEnabled={siteConfig?.enableProjection}>
+        <ProjectionManagerProvider>
           <LightboardProvider>
             {/* Navigation (includes hamburger, drawer, and breadcrumbs) */}
             <Navigation
@@ -66,7 +66,7 @@ export default function RootLayout({
             {/* Lightboard design panel */}
             <Lightboard />
           </LightboardProvider>
-        </MidgroundProjectionProvider>
+        </ProjectionManagerProvider>
       </body>
     </html>
   );

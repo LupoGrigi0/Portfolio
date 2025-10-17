@@ -21,7 +21,8 @@ import { useEffect, useState } from 'react';
 import { getCollection, Collection, CollectionConfig } from '@/lib/api-client';
 import CuratedLayout from '@/components/Layout/CuratedLayout';
 import DynamicLayout from '@/components/Layout/DynamicLayout';
-import { useMidgroundProjection } from '@/components/Layout';
+import { useProjectionManager } from '@/components/Layout';
+import { CollectionConfigProvider } from '@/contexts/CollectionConfigContext';
 
 interface PageRendererProps {
   collectionSlug: string;
@@ -33,7 +34,7 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Access projection context to apply global settings
-  const projection = useMidgroundProjection();
+  const projection = useProjectionManager();
 
   // Fetch collection data
   useEffect(() => {
@@ -153,10 +154,14 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
   const layoutType = collection.config?.layoutType || 'dynamic';
   const config = collection.config || {};
 
-  // Render appropriate layout
-  if (layoutType === 'curated') {
-    return <CuratedLayout collection={collection} config={config} />;
-  }
-
-  return <DynamicLayout collection={collection} config={config} />;
+  // Wrap layouts with CollectionConfigProvider so Lightboard can access collection info
+  return (
+    <CollectionConfigProvider collection={collection}>
+      {layoutType === 'curated' ? (
+        <CuratedLayout collection={collection} config={config} />
+      ) : (
+        <DynamicLayout collection={collection} config={config} />
+      )}
+    </CollectionConfigProvider>
+  );
 }

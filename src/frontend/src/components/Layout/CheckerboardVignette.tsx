@@ -41,7 +41,7 @@ export function CheckerboardVignette({
   enabled,
 }: CheckerboardVignetteProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
 
   // Generate checker tiles with positions and animation properties
   const tiles = useMemo(() => {

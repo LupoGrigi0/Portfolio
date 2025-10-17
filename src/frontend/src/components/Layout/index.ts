@@ -17,10 +17,20 @@ export {
   createParallaxLayersFromConfig,
   type ParallaxLayer
 } from './ParallaxBackground';
+// OLD projection system (commented for rollback if needed)
+// export {
+//   MidgroundProjectionProvider,
+//   useMidgroundProjection,
+//   useCarouselProjection,
+//   type CarouselProjection
+// } from './MidgroundProjection';
+
+// NEW projection system by Prism (2025-10-16)
 export {
-  MidgroundProjectionProvider,
-  useMidgroundProjection,
+  ProjectionManagerProvider,
+  useProjectionManager,
   useCarouselProjection,
+  type ProjectionSettings,
   type CarouselProjection
-} from './MidgroundProjection';
+} from './ProjectionManager';
 export { CheckerboardVignette, generateCheckerboardMask } from './CheckerboardVignette';

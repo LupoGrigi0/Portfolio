@@ -41,7 +41,7 @@ export default function ParallaxBackground({
   className = ''
 }: ParallaxBackgroundProps) {
   const [scrollY, setScrollY] = useState(0);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | undefined>(undefined);
 
   // Smooth scroll tracking with requestAnimationFrame
   useEffect(() => {

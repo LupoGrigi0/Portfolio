@@ -354,7 +354,7 @@ export function useCarouselProjection(
   } = useMidgroundProjection();
 
   const elementRef = useRef<HTMLDivElement>(null);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | undefined>(undefined);
 
   // Calculate projection based on carousel position
   const calculateProjection = useCallback((): CarouselProjection | null => {
