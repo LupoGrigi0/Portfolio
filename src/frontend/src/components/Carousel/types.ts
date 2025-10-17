@@ -6,7 +6,10 @@
  * @author Kai (Carousel & Animation Specialist)
  * @created 2025-09-30
  * @updated 2025-10-01 - Added autoplay speed presets (Kai v3)
+ * @updated 2025-10-16 - Added per-carousel projection settings (Prism)
  */
+
+import type { ProjectionSettings } from '@/components/Layout';
 
 export type TransitionType = 'none' | 'fade' | 'slide' | 'slide-up' | 'slide-down' | 'zoom' | 'flip' | 'flipbook';
 export type CarouselLayout = 'single' | 'side-by-side' | 'stacked';
@@ -89,6 +92,7 @@ export interface CarouselProps {
   // Midground Projection (carousel projects first image onto background)
   enableProjection?: boolean; // Enable midground projection (default: false)
   projectionId?: string; // Unique ID for this carousel's projection (default: auto-generated)
+  projectionSettings?: Partial<ProjectionSettings>; // Per-carousel projection settings (overrides global)
 
   // Reserved UI Space (margins beyond image container for controls/UI)
   // This creates "safe zones" where controls won't overlap the image
