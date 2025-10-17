@@ -202,6 +202,7 @@ export default function CarouselImageRenderer({
             priority={isActive}
             sizes="100vw"
             quality={90}
+            unoptimized={true}
             onError={() => {
               console.error('[CarouselImageRenderer] Image failed to load:', {
                 id: image.id,
