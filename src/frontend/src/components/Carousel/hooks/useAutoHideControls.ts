@@ -105,27 +105,22 @@ export function useAutoHideControls({
     }
   }, [permanentlyHide]);
 
-  // Global event listeners for user activity
-  useEffect(() => {
-    if (!enabled || permanentlyHide) return;
-
-    const handleActivity = () => {
-      triggerActivity();
-    };
-
-    // Listen to all interaction events
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('touchstart', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-    window.addEventListener('click', handleActivity);
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('click', handleActivity);
-    };
-  }, [enabled, permanentlyHide, triggerActivity]);
+  /**
+   * Global event listeners REMOVED
+   *
+   * Previously, each carousel added 4 window event listeners (mousemove, touchstart, keydown, click).
+   * With 10-20 carousels per page, this created 40-80 handlers firing on EVERY interaction.
+   *
+   * Activity detection is now handled by:
+   * 1. Local hover events on the carousel container (see Carousel.tsx)
+   * 2. Centralized activity management by parent page (future enhancement)
+   *
+   * The triggerActivity() function is exposed for external control.
+   *
+   * @author Glide (Carousel Performance Specialist)
+   * @created 2025-10-16
+   * @removed Lines 108-128 (global window event listeners)
+   */
 
   return [
     { visibility, isInteracting },

@@ -80,7 +80,8 @@ export function useAutoHideReactions({
    * Signal user interaction - instantly restore reactions
    */
   const triggerActivity = useCallback(() => {
-    console.log('[useAutoHideReactions] Activity detected, restoring reactions');
+    // EMERGENCY DISABLED: Console spam (every mouse move)
+    // console.log('[useAutoHideReactions] Activity detected, restoring reactions');
 
     setIsInteracting(true);
     startFadeSequence();
@@ -96,27 +97,19 @@ export function useAutoHideReactions({
     }
   }, [enabled, startFadeSequence]);
 
-  // Global event listeners for user activity (reactions restore on any interaction)
-  useEffect(() => {
-    if (!enabled) return;
-
-    const handleActivity = () => {
-      triggerActivity();
-    };
-
-    // Listen to all interaction events
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('touchstart', handleActivity);
-    window.addEventListener('keydown', handleActivity);
-    window.addEventListener('click', handleActivity);
-
-    return () => {
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      window.removeEventListener('keydown', handleActivity);
-      window.removeEventListener('click', handleActivity);
-    };
-  }, [enabled, triggerActivity]);
+  /**
+   * Global event listeners REMOVED
+   *
+   * Previously, each carousel with reactions added 4 window event listeners.
+   * Combined with useAutoHideControls, this created 40-80+ global handlers.
+   *
+   * Activity detection now handled by local hover events on carousel container.
+   * The triggerActivity() function is exposed for external control.
+   *
+   * @author Glide (Carousel Performance Specialist)
+   * @created 2025-10-16
+   * @removed Lines 99-119 (global window event listeners)
+   */
 
   return [
     { visibility, isInteracting },

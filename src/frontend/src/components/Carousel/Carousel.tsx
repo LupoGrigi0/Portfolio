@@ -113,7 +113,7 @@ export default function Carousel({
   const [reactionRefreshTrigger, setReactionRefreshTrigger] = useState(0);
 
   // Auto-hide controls management
-  const [autoHideState] = useAutoHideControls({
+  const [autoHideState, triggerControlsActivity] = useAutoHideControls({
     enabled: autoHideControls,
     fadeStartDelay,
     fadeCompleteDelay,
@@ -121,11 +121,25 @@ export default function Carousel({
   });
 
   // Auto-hide reactions management (independent from main controls)
-  const [reactionAutoHideState] = useAutoHideReactions({
+  const [reactionAutoHideState, triggerReactionsActivity] = useAutoHideReactions({
     enabled: showReactions && autoHideReactions,
     fadeStartDelay: reactionFadeStartDelay,
     fadeCompleteDelay: reactionFadeCompleteDelay
   });
+
+  /**
+   * Local hover/touch handlers for auto-hide controls
+   * Replaces global window event listeners (40-80+ handlers) with local container events
+   *
+   * @author Glide (Carousel Performance Specialist)
+   * @created 2025-10-16
+   */
+  const handleCarouselActivity = () => {
+    triggerControlsActivity();
+    if (showReactions) {
+      triggerReactionsActivity();
+    }
+  };
 
   // Smart image preloading
   const { hasInteracted, preloadedCount } = useImagePreloader({
@@ -227,6 +241,8 @@ export default function Carousel({
       role="region"
       aria-label="Image carousel"
       aria-live="polite"
+      onMouseMove={handleCarouselActivity}
+      onTouchStart={handleCarouselActivity}
     >
       {/* Main Carousel Container */}
       <div className={`relative w-full ${isFullscreen ? 'h-screen' : 'h-full'}`}>
