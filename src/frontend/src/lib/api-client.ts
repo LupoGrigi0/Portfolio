@@ -154,6 +154,11 @@ export interface HeroSectionConfig {
   containerOpacity?: number;
   textPosition?: 'center' | 'left' | 'right';
   separator?: boolean;
+  // Background image settings (configurable via Lightboard)
+  backgroundImage?: string; // URL or path to hero image
+  backgroundPosition?: string; // CSS background-position (e.g., 'center', 'top', '50% 30%')
+  backgroundSize?: string; // CSS background-size (e.g., 'cover', 'contain', '100% auto')
+  minHeight?: string; // Minimum height as CSS value (e.g., '60vh', '800px', '100%')
 }
 
 export interface TextSectionConfig {
@@ -309,6 +314,8 @@ export interface NavigationConfig {
     drawerTransitionMs?: number;
     fadeInMs?: number;
     hoverDelayMs?: number;
+    rollbackDelay?: number; // Delay before menu auto-closes (simple collections)
+    rollbackDelayWithSubs?: number; // Delay before menu auto-closes (with subcollections)
   };
   styling?: {
     hamburgerSize?: number;

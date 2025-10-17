@@ -20,7 +20,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getCollection, getAbsoluteMediaUrl, type Collection, type NavigationConfig, type SiteConfig } from '@/lib/api-client';
+import { getCollection, getAbsoluteMediaUrl, type Collection, type Subcollection, type NavigationConfig, type SiteConfig } from '@/lib/api-client';
 
 interface NavigationProps {
   config?: NavigationConfig;
@@ -124,6 +124,7 @@ export default function Navigation({ config, collections, siteConfig, currentCol
               slug,
               name: slug.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
               id: slug,
+              hasConfig: false,
               imageCount: 0,
               videoCount: 0,
               subcollections: [],
@@ -131,7 +132,7 @@ export default function Navigation({ config, collections, siteConfig, currentCol
           }
         } else {
           // Object subcollections - recurse
-          const found = findCollectionBySlug(slug, col.subcollections as Collection[]);
+          const found = findCollectionBySlug(slug, col.subcollections as unknown as Collection[]);
           if (found) return found;
         }
       }
@@ -257,6 +258,7 @@ export default function Navigation({ config, collections, siteConfig, currentCol
           slug,
           name: slug.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
           id: slug,
+          hasConfig: false,
           imageCount: 0,
           videoCount: 0,
           subcollections: [],
@@ -271,9 +273,10 @@ export default function Navigation({ config, collections, siteConfig, currentCol
       slug: sub.slug,
       name: sub.title || sub.name || sub.slug,
       id: sub.id || sub.slug,
+      hasConfig: false,
       imageCount: sub.imageCount || 0,
       videoCount: 0,
-      subcollections: normalizedSubcollections,
+      subcollections: normalizedSubcollections as unknown as Subcollection[],
     };
   };
 
@@ -295,6 +298,7 @@ export default function Navigation({ config, collections, siteConfig, currentCol
             slug,
             name: slug.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
             id: slug,
+            hasConfig: false,
             imageCount: 0,
             videoCount: 0,
             subcollections: [],
@@ -470,6 +474,7 @@ export default function Navigation({ config, collections, siteConfig, currentCol
                         slug: sub,
                         name: sub.replace(/^[^-]+-/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
                         id: sub,
+                        hasConfig: false,
                         imageCount: 0,
                         videoCount: 0,
                         subcollections: [],
