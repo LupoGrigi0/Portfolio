@@ -174,36 +174,6 @@ export function PageSettingsWidget({
         </p>
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3 mb-6">
-        {/* Primary Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={onApplyPreview}
-            className="bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSaving}
-          >
-            Apply Preview
-          </button>
-          <button
-            onClick={onSaveToGallery}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded font-bold transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save to Gallery'}
-          </button>
-        </div>
-
-        {/* Utility Action */}
-        <button
-          onClick={onCopyJSON}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSaving}
-        >
-          Copy JSON
-        </button>
-      </div>
-
       {/* Status Info */}
       <div className="p-4 bg-zinc-800/50 rounded text-sm">
         <div className="flex items-start gap-2">

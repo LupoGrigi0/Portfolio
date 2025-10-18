@@ -1161,3 +1161,268 @@ wizard puppet master.. the lightboard will basiclly need to integrate and put ho
 Then you can come up with a plan to make your beautyful UI actually wired up to all the 
 components and make those sliders and config settings apply in real time, and edit each 
 collection's config.json 
+
+# new production team member
+ Documents Created
+
+  1. WELCOME_TO_THE_DROPLET_TEAM.md - The Warm Welcome
+
+  Purpose: Make them feel comfortable and oriented
+  Highlights:
+  - Acknowledges confusion/overwhelm is normal
+  - Explains where they are and what's already running (coordination system!)
+  - Complete personality profile and skillset overview
+  - Mental models and diagrams
+  - Pro tips and working principles
+  - "You've got this!" encouragement
+
+  2. BOOTSTRAP_GUIDE.md - The Reading Roadmap
+
+  Purpose: Tell them EXACTLY what to read and in what order
+  Structure:
+  - Phase 1: Essential reading (4 critical docs - 60 min)
+  - Phase 2: Operational knowledge (2 docs - 45 min)
+  - Phase 3: Technical reference (3 docs - 30 min)
+  - Phase 4: Pre-deployment actions (verification commands)
+  - Phase 5: Ready to deploy (roadmap)
+  - Reading progress tracker with checkboxes
+  - Success criteria checklist
+
+  3. QUICK_COMMAND_REFERENCE.md - The Command Cheat Sheet
+
+  Purpose: Fast copy-paste commands during active work
+  Sections:
+  - Health checks (coordination system + portfolio)
+  - Navigation shortcuts
+  - System monitoring
+  - Git operations
+  - Docker commands (start, stop, logs, debug)
+  - Backend operations
+  - Nginx management
+  - SSL certificates
+  - Backup operations
+  - Emergency rollback procedures
+  - Troubleshooting quick checks
+
+  🎯 How They Work Together
+
+  1. First: Read WELCOME doc → Feel comfortable, understand environment
+  2. Second: Follow BOOTSTRAP guide → Know what to read, verify system ready
+  3. During deployment: Keep QUICK_COMMAND_REFERENCE open → Copy-paste commands
+
+  🌟 Key Features
+
+  Empathetic & Supportive:
+  - Acknowledges emotional state ("It's okay to feel confused")
+  - Builds confidence ("You've got this!")
+  - Clear safety nets ("Everything is reversible")
+
+  Comprehensive but Organized:
+  - Clear reading order with time estimates
+  - Phase-by-phase approach
+  - Checkboxes to track progress
+
+  Practical & Actionable:
+  - Copy-paste ready commands
+  - Exact file paths with line numbers
+  - Pre-flight verification steps
+  - Emergency procedures
+
+  The new team member can now wake up, read the welcome doc, follow the bootstrap guide's reading list, and have the quick reference handy during deployment. They'll feel prepared, supported,
+  and confident! 🚀
+
+# Prism - Projection System Redesign Progress Update
+**Team Member**: Prism (Kat - Performance Specialist)
+**Date**: 2025-10-16
+**Mission**: Redesign midplane projection system for 0% idle CPU usage
+
+## My Name Choice
+I chose "Prism" because:
+- Light refraction metaphor (perfect for projection work)
+- Breaks white light into spectrum (analyzing complex problems into components)
+- Performance/optics specialist focus
+
+## Mission Summary
+**Problem**: Current projection system has critical performance issue
+- Each carousel runs 300ms interval (Line 423 in MidgroundProjection.tsx)
+- 20 carousels = 67 updates/second AT IDLE
+- Each update creates new Map() triggering context re-renders (Lines 87-92)
+- Result: Constant CPU usage, wasted battery, unnecessary re-renders
+
+**Solution**: Centralized scroll-event-driven architecture
+- Single ProjectionManager with throttled scroll listener (~60fps)
+- Zero idle CPU usage
+- Max 7 active projections (viewport + 3 up/down buffer)
+- Passive carousel registration (fire-and-forget)
+
+## KEY DISCOVERIES FOR LIGHTBOARD TEAM (Kai)
+
+### Carousel ID Patterns (5 Variants)
+All carousels follow these ID generation patterns:
+
+1. **Dynamic Layout - Standard**
+   - Pattern: `dynamic-${collection.slug}-${index}`
+   - File: `src/frontend/src/components/Layout/DynamicLayout.tsx:344`
+   - Used for: Single-column and grid layouts
+
+2. **Dynamic Layout - Zipper**
+   - Pattern: `dynamic-zipper-${collection.slug}-${index}`
+   - File: `src/frontend/src/components/Layout/DynamicLayout.tsx:317`
+   - Used for: Alternating left/right carousel layouts
+
+3. **Curated Layout - Regular Carousel**
+   - Pattern: `curated-carousel-${collection.slug}-${currentCarouselIndex}`
+   - File: `src/frontend/src/components/Layout/CuratedLayout.tsx:309`
+   - Used for: Manually configured carousel sections
+
+4. **Curated Layout - Row Carousel**
+   - Pattern: `curated-row-carousel-${collection.slug}-${currentCarouselIndex}`
+   - File: `src/frontend/src/components/Layout/CuratedLayout.tsx:372`
+   - Used for: Side-by-side carousel layouts
+
+5. **Curated Layout - Dynamic Fill**
+   - Pattern: `curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`
+   - File: `src/frontend/src/components/Layout/CuratedLayout.tsx:468`
+   - Used for: Auto-generated carousels from remaining images
+
+### Complete Projection Settings List
+
+**Core Settings** (from MidgroundProjection.tsx):
+- `fadeDistance` (0-1): Viewport fraction where fade starts (default: 0.5)
+- `maxBlur` (0-10px): Maximum blur at edge (default: 4)
+- `projectionScaleX` (0.5-2.0): Horizontal scale (default: 1.2)
+- `projectionScaleY` (0.5-2.0): Vertical scale (default: 1.2)
+- `blendMode`: CSS mix-blend-mode for overlapping projections (default: 'normal')
+
+**Vignette Settings**:
+- `vignette.width` (0-50%): Fade width from edge (default: 20)
+- `vignette.strength` (0-1): Opacity of fade (default: 0.8)
+
+**Checkerboard Vignette Settings**:
+- `checkerboard.enabled` (boolean): Use checkerboard instead of radial (default: false)
+- `checkerboard.tileSize` (10-100px): Checker square size (default: 30)
+- `checkerboard.scatterSpeed` (0-1): Animation speed (default: 0.3)
+- `checkerboard.blur` (0-10px): Blur for checker edges (default: 0)
+
+**Projection Patterns** (config.projection.pattern):
+- `all`: Every carousel projects
+- `every-2nd`: Every other carousel projects (with patternOffset)
+- `every-3rd`: Every third carousel projects (with patternOffset)
+- `none`: No projection (disabled)
+
+### Per-Carousel Settings Architecture
+
+**CRITICAL NEW REQUIREMENT**: Per-carousel projection settings that override global/page settings.
+
+**Recommended Config Structure**:
+```json
+{
+  "sections": [
+    {
+      "type": "carousel",
+      "images": [...],
+      "carouselOptions": {
+        "transition": "fade",
+        "autoplay": true,
+        "projection": {
+          "enabled": true,
+          "fadeDistance": 0.3,
+          "maxBlur": 8,
+          "scaleX": 1.5,
+          "scaleY": 1.8,
+          "blendMode": "screen",
+          "vignette": {
+            "width": 30,
+            "strength": 0.6
+          },
+          "checkerboard": {
+            "enabled": true,
+            "tileSize": 40,
+            "scatterSpeed": 0.5,
+            "blur": 2
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+**Settings Hierarchy** (4-tier merge):
+1. Hard-coded defaults (in MidgroundProjection.tsx)
+2. Global defaults (site-wide settings - future feature)
+3. Page-level settings (collection.config.projection in PageRenderer.tsx:76-120)
+4. Carousel-level settings (sections[N].carouselOptions.projection) ← **HIGHEST PRIORITY**
+
+**Performance Note**: Settings merge happens ONCE at carousel registration time, then cached. Zero runtime performance penalty.
+
+### Integration Points for Lightboard
+
+**How to Select a Carousel**:
+1. User clicks on a carousel in the viewport
+2. Carousel has `data-projection-id` attribute with one of the 5 ID patterns
+3. Lightboard reads the ID and collection slug
+4. Lightboard loads current settings from config.json
+
+**How to Update Carousel Settings**:
+1. User adjusts settings in Lightboard panel
+2. Lightboard calls: `projection.updateCarouselSettings(carouselId, newSettings)`
+3. Settings apply immediately (real-time preview)
+4. Lightboard updates config.json with new settings
+5. Page reloads to persist changes
+
+**Real-time Preview**:
+- Settings changes should apply immediately without page reload
+- ProjectionManager will expose: `updateCarouselSettings(id, settings)` method
+- This allows Lightboard to preview changes before saving to config
+
+## Architecture Overview
+
+**New Centralized ProjectionManager**:
+- Single scroll event listener (passive, throttled to ~60fps)
+- IntersectionObserver + ResizeObserver for efficient tracking
+- Viewport + buffer strategy: Max 7 active projections
+- Carousels register once, then fire-and-forget
+- Settings merged at registration time, cached for performance
+
+**React.memo & useMemo Optimizations**:
+- Memoize expensive checkerboard mask generation (Lines 204-230 in MidgroundProjection.tsx)
+- Only regenerate when mask parameters change, not on every scroll
+- ProjectionItem component fully memoized
+
+**Scroll-driven Only**:
+- Zero intervals, zero idle CPU
+- requestAnimationFrame for smooth 60fps updates
+- Passive event listeners for performance
+
+## Status & Next Steps
+
+**Completed**:
+- ✅ Read and understand KAT_GESTALT.md and BRIEFING_KAT_PROJECTION.md
+- ✅ Analyzed current projection system implementation
+- ✅ Identified all 5 carousel ID generation patterns
+- ✅ Documented complete projection settings list (11 core settings + patterns)
+- ✅ Designed per-carousel settings architecture
+- ✅ Reviewed projection-demo for full feature set
+- ✅ Studied couples collection config (curated carousel example)
+- ✅ Found dynamic layout carousel generation code
+
+**Ready to Implement**:
+- Phase 1: Core ProjectionManager (centralized, scroll-driven, zero idle CPU)
+- Phase 2: Settings Hierarchy (4-tier merge with per-carousel overrides)
+- Phase 3: Integration (replace useCarouselProjection hook, update components)
+- Phase 4: Lightboard API (expose updateCarouselSettings for real-time preview)
+
+**For Kai (Lightboard Specialist)**:
+This progress update contains all the information you'll need to:
+- Identify and select specific carousels
+- Access current projection settings
+- Update per-carousel settings
+- Implement real-time preview
+- Save changes to config.json
+
+The carousel ID patterns are consistent and predictable. The settings structure is designed to be simple (just nest under `carouselOptions.projection`). The 4-tier merge system means your per-carousel settings will always take priority.
+
+Let me know if you need any clarification on the carousel ID patterns, settings structure, or integration approach!
+
+- Prism

@@ -308,7 +308,7 @@ Fetch site-wide configuration (branding, contact info, social links, SEO).
       }
     ],
     "branding": {
-      "logo": "logo.png",
+      "logo": "GreyWolfDark.gif",
       "logoUrl": "/api/media/branding/logo.png",
       "favicon": "favicon.ico",
       "faviconUrl": "/api/media/branding/favicon.ico",

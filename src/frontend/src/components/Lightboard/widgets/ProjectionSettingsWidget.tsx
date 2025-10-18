@@ -336,24 +336,6 @@ export function ProjectionSettingsWidget({
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-2">
-        {onSyncToConfig && (
-          <button
-            onClick={onSyncToConfig}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded font-semibold transition-colors"
-          >
-            Sync to Config
-          </button>
-        )}
-        <button
-          onClick={handleResetToDefaults}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded font-semibold transition-colors"
-        >
-          Reset to Defaults
-        </button>
-      </div>
-
       {/* Tip */}
       <div className="mt-4 p-3 bg-zinc-800/50 rounded text-xs text-zinc-400">
         <strong className="text-zinc-300">Tip:</strong> Adjust settings live, then click "Sync to Config" to save them. Each carousel projects its first image onto the midground layer.

@@ -260,29 +260,6 @@ export function CarouselSettingsWidget({
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-2">
-        {onApplySettings && (
-          <button
-            onClick={onApplySettings}
-            disabled={!selectedCarouselId}
-            className={`w-full py-2 px-4 rounded font-semibold transition-colors ${
-              selectedCarouselId
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
-            }`}
-          >
-            Apply Settings
-          </button>
-        )}
-        <button
-          onClick={handleResetToDefaults}
-          className="w-full bg-zinc-700 hover:bg-zinc-600 text-white py-2 px-4 rounded font-semibold transition-colors"
-        >
-          Reset to Defaults
-        </button>
-      </div>
-
       {/* Tip */}
       <div className="mt-4 p-3 bg-zinc-800/50 rounded text-xs text-zinc-400">
         <strong className="text-zinc-300">Tip:</strong> Select a carousel to configure its settings. Reserved space prevents images from overlapping UI elements like navigation buttons.

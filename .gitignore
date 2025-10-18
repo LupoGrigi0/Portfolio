@@ -6,6 +6,15 @@ api_collections_raw.json
 deployments/site-config.json
 # Keep development and production configs in git, but ignore the active config
 
+# Backend runtime files
+src/backend/logs/*.log
+src/backend/data/*.sqlite
+src/backend/data/*.sqlite-*
+
+# Temporary files
+*-temp.json
+temp/
+
 # Python cache
 __pycache__/
 *.py[cod]
