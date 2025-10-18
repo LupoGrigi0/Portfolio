@@ -34,7 +34,20 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Access projection context to apply global settings
-  const projection = useProjectionManager();
+  // Destructure setters to avoid context object dependency issues
+  const {
+    setFadeDistance,
+    setMaxBlur,
+    setProjectionScaleX,
+    setProjectionScaleY,
+    setBlendMode,
+    setVignetteWidth,
+    setVignetteStrength,
+    setCheckerboardEnabled,
+    setCheckerboardTileSize,
+    setCheckerboardScatterSpeed,
+    setCheckerboardBlur,
+  } = useProjectionManager();
 
   // Fetch collection data
   useEffect(() => {
@@ -82,43 +95,56 @@ export default function PageRenderer({ collectionSlug }: PageRendererProps) {
 
     // Apply all projection settings if they exist
     if (projectionConfig.fadeDistance !== undefined) {
-      projection.setFadeDistance(projectionConfig.fadeDistance);
+      setFadeDistance(projectionConfig.fadeDistance);
     }
     if (projectionConfig.maxBlur !== undefined) {
-      projection.setMaxBlur(projectionConfig.maxBlur);
+      setMaxBlur(projectionConfig.maxBlur);
     }
     if (projectionConfig.scaleX !== undefined) {
-      projection.setProjectionScaleX(projectionConfig.scaleX);
+      setProjectionScaleX(projectionConfig.scaleX);
     }
     if (projectionConfig.scaleY !== undefined) {
-      projection.setProjectionScaleY(projectionConfig.scaleY);
+      setProjectionScaleY(projectionConfig.scaleY);
     }
     if (projectionConfig.blendMode) {
-      projection.setBlendMode(projectionConfig.blendMode);
+      setBlendMode(projectionConfig.blendMode);
     }
 
     // Vignette settings
     if (projectionConfig.vignette?.width !== undefined) {
-      projection.setVignetteWidth(projectionConfig.vignette.width);
+      setVignetteWidth(projectionConfig.vignette.width);
     }
     if (projectionConfig.vignette?.strength !== undefined) {
-      projection.setVignetteStrength(projectionConfig.vignette.strength);
+      setVignetteStrength(projectionConfig.vignette.strength);
     }
 
     // Checkerboard vignette settings
     if (projectionConfig.checkerboard?.enabled !== undefined) {
-      projection.setCheckerboardEnabled(projectionConfig.checkerboard.enabled);
+      setCheckerboardEnabled(projectionConfig.checkerboard.enabled);
     }
     if (projectionConfig.checkerboard?.tileSize !== undefined) {
-      projection.setCheckerboardTileSize(projectionConfig.checkerboard.tileSize);
+      setCheckerboardTileSize(projectionConfig.checkerboard.tileSize);
     }
     if (projectionConfig.checkerboard?.scatterSpeed !== undefined) {
-      projection.setCheckerboardScatterSpeed(projectionConfig.checkerboard.scatterSpeed);
+      setCheckerboardScatterSpeed(projectionConfig.checkerboard.scatterSpeed);
     }
     if (projectionConfig.checkerboard?.blur !== undefined) {
-      projection.setCheckerboardBlur(projectionConfig.checkerboard.blur);
+      setCheckerboardBlur(projectionConfig.checkerboard.blur);
     }
-  }, [collection, projection]);
+  }, [
+    collection,
+    setFadeDistance,
+    setMaxBlur,
+    setProjectionScaleX,
+    setProjectionScaleY,
+    setBlendMode,
+    setVignetteWidth,
+    setVignetteStrength,
+    setCheckerboardEnabled,
+    setCheckerboardTileSize,
+    setCheckerboardScatterSpeed,
+    setCheckerboardBlur,
+  ]); // Use stable setter functions, not entire context object
 
   // Loading state
   if (loading) {

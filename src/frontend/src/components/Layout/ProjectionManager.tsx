@@ -42,6 +42,19 @@ export interface ProjectionSettings {
     scatterSpeed: number;    // 0-1: Animation speed
     blur: number;            // 0-10: Blur for checker edges
   };
+  offset: {
+    x: number;               // -100 to +100: Manual horizontal offset in pixels
+    y: number;               // -100 to +100: Manual vertical offset in pixels
+    autoPosition: boolean;   // Enable position-aware auto-offset
+    intensity: number;       // 0-1: Multiplier for auto-offset calculation
+  };
+  swimming: {
+    enabled: boolean;        // Enable swimming motion
+    intensity: number;       // 0-1: Overall amplitude multiplier
+    speedX: number;          // 0-1: Horizontal sine wave frequency
+    speedY: number;          // 0-1: Vertical sine wave frequency
+    dampenTime: number;      // Milliseconds to dampen after scroll stops
+  };
 }
 
 export interface CarouselProjection {
@@ -52,6 +65,10 @@ export interface CarouselProjection {
     left: number;
     width: number;
     height: number;
+  };
+  offset: {
+    x: number;
+    y: number;
   };
   opacity: number;
   blur: number;
@@ -90,6 +107,19 @@ const DEFAULT_SETTINGS: ProjectionSettings = {
     scatterSpeed: 0.3,
     blur: 0,
   },
+  offset: {
+    x: 0,
+    y: 0,
+    autoPosition: false,
+    intensity: 0.3,
+  },
+  swimming: {
+    enabled: false,
+    intensity: 0.5,          // 50% default intensity (subtle)
+    speedX: 0.002,           // Slow horizontal sway
+    speedY: 0.003,           // Slightly faster vertical (creates elliptical Lissajous motion)
+    dampenTime: 1000,        // 1 second dampening
+  },
 };
 
 // ============================================================================
@@ -118,6 +148,15 @@ interface ProjectionManagerContextType {
   setCheckerboardTileSize: (size: number) => void;
   setCheckerboardScatterSpeed: (speed: number) => void;
   setCheckerboardBlur: (blur: number) => void;
+  setOffsetX: (x: number) => void;
+  setOffsetY: (y: number) => void;
+  setOffsetAutoPosition: (enabled: boolean) => void;
+  setOffsetIntensity: (intensity: number) => void;
+  setSwimmingEnabled: (enabled: boolean) => void;
+  setSwimmingIntensity: (intensity: number) => void;
+  setSwimmingSpeedX: (speed: number) => void;
+  setSwimmingSpeedY: (speed: number) => void;
+  setSwimmingDampenTime: (time: number) => void;
 }
 
 const ProjectionManagerContext = createContext<ProjectionManagerContextType | undefined>(undefined);
@@ -141,6 +180,12 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
   const lastScrollTime = useRef<number>(0);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const isUnmountingRef = useRef<boolean>(false);
+
+  // Swimming motion tracking
+  const lastScrollY = useRef<number>(0);
+  const scrollVelocity = useRef<number>(0);
+  const lastScrollStopTime = useRef<number>(0);
+  const swimmingAnimationRef = useRef<number | undefined>(undefined);
 
   // ============================================================================
   // Carousel Registration
@@ -166,6 +211,16 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
         ...DEFAULT_SETTINGS.checkerboard,
         ...globalSettings.checkerboard,
         ...customSettings?.checkerboard,
+      },
+      offset: {
+        ...DEFAULT_SETTINGS.offset,
+        ...globalSettings.offset,
+        ...customSettings?.offset,
+      },
+      swimming: {
+        ...DEFAULT_SETTINGS.swimming,
+        ...globalSettings.swimming,
+        ...customSettings?.swimming,
       },
     };
 
@@ -195,14 +250,9 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     // Update ref directly - NO setState during cleanup
     carouselsRef.current.delete(id);
 
-    // Remove from active projections (safe - not during unmount cascade)
-    if (!isUnmountingRef.current) {
-      setProjections(prev => {
-        const next = new Map(prev);
-        next.delete(id);
-        return next;
-      });
-    }
+    // DON'T update projections state here - it will be cleaned naturally on next scroll
+    // Calling setState during unregister causes infinite re-render loops
+    // The projection will simply not be rendered next scroll cycle (opacity 0 or not in ref)
   }, []);
 
   const updateCarouselImage = useCallback((id: string, imageUrl: string | null) => {
@@ -230,6 +280,14 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
             ...carousel.settings.checkerboard,
             ...settings.checkerboard,
           },
+          offset: {
+            ...carousel.settings.offset,
+            ...settings.offset,
+          },
+          swimming: {
+            ...carousel.settings.swimming,
+            ...settings.swimming,
+          },
         },
         lastUpdate: Date.now(),
       });
@@ -245,8 +303,11 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
 
     const rect = carousel.element.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
     const viewportCenterY = viewportHeight / 2;
+    const viewportCenterX = viewportWidth / 2;
     const carouselCenterY = rect.top + rect.height / 2;
+    const carouselCenterX = rect.left + rect.width / 2;
 
     // Distance from viewport center (positive = below, negative = above)
     const distanceFromCenter = Math.abs(carouselCenterY - viewportCenterY);
@@ -264,6 +325,63 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     // Check if carousel is in viewport
     const isInViewport = rect.bottom > 0 && rect.top < viewportHeight;
 
+    // Calculate position-aware offset (Phase 1: Left/Right Shift)
+    let offsetX = carousel.settings.offset.x;
+    let offsetY = carousel.settings.offset.y;
+
+    if (carousel.settings.offset.autoPosition) {
+      // Position-aware offset: shift opposite to carousel position
+      // Carousel on right → projection shifts left (negative offset)
+      // Carousel on left → projection shifts right (positive offset)
+      // This prevents projections from disappearing off edges
+      const horizontalDeviation = carouselCenterX - viewportCenterX;
+      const autoOffsetX = -horizontalDeviation * carousel.settings.offset.intensity;
+
+      // Combine manual offset with auto-offset
+      offsetX += autoOffsetX;
+    }
+
+    // Calculate swimming motion (Phase 2: Liquid Sway)
+    if (carousel.settings.swimming.enabled) {
+      const now = Date.now();
+
+      // Base amplitude from scroll velocity (faster scroll = more sway)
+      const velocityAmplitude = Math.min(Math.abs(scrollVelocity.current) * 0.1, 50);
+
+      // Calculate dampening factor (exponential decay after scroll stops)
+      let dampenFactor = 1.0;
+      if (scrollVelocity.current === 0 && lastScrollStopTime.current > 0) {
+        const timeSinceStopped = now - lastScrollStopTime.current;
+        const dampenTime = carousel.settings.swimming.dampenTime;
+
+        // Exponential dampening: e^(-t/dampenTime)
+        // At t=dampenTime, factor ≈ 0.37 (63% dampened)
+        // At t=2*dampenTime, factor ≈ 0.14 (86% dampened)
+        dampenFactor = Math.exp(-timeSinceStopped / dampenTime);
+
+        // Full stop when dampening is nearly complete (maintains zero idle CPU)
+        if (dampenFactor < 0.01) {
+          dampenFactor = 0;
+        }
+      }
+
+      // Dual sine waves for Lissajous motion (different frequencies = elliptical path)
+      const swayX = Math.sin(now * carousel.settings.swimming.speedX) *
+                    velocityAmplitude *
+                    carousel.settings.swimming.intensity *
+                    dampenFactor;
+
+      const swayY = Math.cos(now * carousel.settings.swimming.speedY) *
+                    velocityAmplitude *
+                    0.5 * // Vertical sway is half of horizontal (more natural)
+                    carousel.settings.swimming.intensity *
+                    dampenFactor;
+
+      // Add swimming to offsets
+      offsetX += swayX;
+      offsetY += swayY;
+    }
+
     return {
       id: carousel.id,
       imageUrl: carousel.imageUrl,
@@ -272,6 +390,10 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
         left: rect.left,
         width: rect.width,
         height: rect.height,
+      },
+      offset: {
+        x: offsetX,
+        y: offsetY,
       },
       opacity: isInViewport ? opacity : 0,
       blur,
@@ -291,7 +413,40 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
 
     // Throttle to ~60fps (16ms between updates)
     if (now - lastScrollTime.current < 16) return;
+    const deltaTime = now - lastScrollTime.current;
     lastScrollTime.current = now;
+
+    // Track scroll velocity for swimming motion
+    const currentScrollY = window.scrollY;
+    const scrollDelta = currentScrollY - lastScrollY.current;
+    scrollVelocity.current = scrollDelta / Math.max(deltaTime, 1); // pixels per ms
+
+    // Detect scroll stop
+    if (Math.abs(scrollVelocity.current) < 0.01) {
+      // Scroll has stopped - start dampening timer
+      if (scrollVelocity.current !== 0 || lastScrollStopTime.current === 0) {
+        scrollVelocity.current = 0;
+        lastScrollStopTime.current = now;
+      }
+    }
+
+    lastScrollY.current = currentScrollY;
+
+    // Debug logging (if enabled)
+    if (typeof window !== 'undefined' && (window as any).__PRISM_DEBUG) {
+      console.log('[ProjectionManager] updateProjections:', {
+        registeredCarousels: carouselsRef.current.size,
+        carouselIds: Array.from(carouselsRef.current.keys()),
+        scrollVelocity: scrollVelocity.current.toFixed(2),
+      });
+    }
+
+    // Guard: Don't update if no carousels registered (prevents updates during mass unmount)
+    if (carouselsRef.current.size === 0) {
+      // Clear any stale projections (but only if there are any to avoid unnecessary setState)
+      setProjections(prev => prev.size > 0 ? new Map() : prev);
+      return;
+    }
 
     // Calculate projections for all registered carousels (read from ref)
     const newProjections = new Map<string, CarouselProjection>();
@@ -313,7 +468,59 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     sortedProjections.forEach(p => finalProjections.set(p.id, p));
 
     setProjections(finalProjections);
-  }, [calculateProjection]); // NO carousel dependency - reads from ref!
+  }, [calculateProjection]); // NO size dependency - would cause loop
+
+  // ============================================================================
+  // Swimming Dampening Animation Loop
+  // ============================================================================
+
+  const updateSwimmingDampening = useCallback(() => {
+    // Check if any carousel has swimming enabled
+    let hasSwimming = false;
+    carouselsRef.current.forEach(carousel => {
+      if (carousel.settings.swimming.enabled) {
+        hasSwimming = true;
+      }
+    });
+
+    if (!hasSwimming) {
+      // No swimming enabled - stop animation loop
+      if (swimmingAnimationRef.current) {
+        cancelAnimationFrame(swimmingAnimationRef.current);
+        swimmingAnimationRef.current = undefined;
+      }
+      return;
+    }
+
+    // Calculate dampening factor
+    const now = Date.now();
+    if (scrollVelocity.current === 0 && lastScrollStopTime.current > 0) {
+      const timeSinceStopped = now - lastScrollStopTime.current;
+
+      // Find max dampen time from all swimming-enabled carousels
+      let maxDampenTime = 1000;
+      carouselsRef.current.forEach(carousel => {
+        if (carousel.settings.swimming.enabled) {
+          maxDampenTime = Math.max(maxDampenTime, carousel.settings.swimming.dampenTime);
+        }
+      });
+
+      const dampenFactor = Math.exp(-timeSinceStopped / maxDampenTime);
+
+      // Continue animation during dampening
+      if (dampenFactor > 0.01) {
+        updateProjections();
+        swimmingAnimationRef.current = requestAnimationFrame(updateSwimmingDampening);
+      } else {
+        // Dampening complete - stop animation loop (maintains zero idle CPU)
+        updateProjections(); // Final update
+        swimmingAnimationRef.current = undefined;
+      }
+    } else {
+      // Still scrolling - no need for dampening loop (scroll handler will update)
+      swimmingAnimationRef.current = undefined;
+    }
+  }, [updateProjections]);
 
   // ============================================================================
   // Scroll Event Listener
@@ -321,11 +528,29 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
 
   useEffect(() => {
     const handleScroll = () => {
+      // Cancel existing RAF
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
 
-      rafRef.current = requestAnimationFrame(updateProjections);
+      // Stop dampening loop if user starts scrolling again
+      if (swimmingAnimationRef.current) {
+        cancelAnimationFrame(swimmingAnimationRef.current);
+        swimmingAnimationRef.current = undefined;
+      }
+
+      // Update via scroll handler
+      rafRef.current = requestAnimationFrame(() => {
+        updateProjections();
+
+        // Start dampening loop after scroll handler finishes
+        // (delayed check allows scroll velocity to settle)
+        setTimeout(() => {
+          if (scrollVelocity.current === 0 && !swimmingAnimationRef.current) {
+            swimmingAnimationRef.current = requestAnimationFrame(updateSwimmingDampening);
+          }
+        }, 100);
+      });
     };
 
     const handleResize = () => {
@@ -336,17 +561,27 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleResize, { passive: true });
 
-    // Initial update
+    // Initial update (immediate)
     updateProjections();
+
+    // Delayed update to catch carousels that register after initial mount
+    // CuratedLayout renders all carousels synchronously, so they should be registered within 100ms
+    const delayedUpdateTimer = setTimeout(() => {
+      updateProjections();
+    }, 100);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
+      clearTimeout(delayedUpdateTimer);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
+      if (swimmingAnimationRef.current) {
+        cancelAnimationFrame(swimmingAnimationRef.current);
+      }
     };
-  }, [updateProjections]);
+  }, [updateProjections, updateSwimmingDampening]);
 
   // ============================================================================
   // Intersection Observer Setup (passive - no update triggers)
@@ -437,6 +672,69 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     }));
   }, []);
 
+  const setOffsetX = useCallback((x: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      offset: { ...prev.offset, x },
+    }));
+  }, []);
+
+  const setOffsetY = useCallback((y: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      offset: { ...prev.offset, y },
+    }));
+  }, []);
+
+  const setOffsetAutoPosition = useCallback((autoPosition: boolean) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      offset: { ...prev.offset, autoPosition },
+    }));
+  }, []);
+
+  const setOffsetIntensity = useCallback((intensity: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      offset: { ...prev.offset, intensity },
+    }));
+  }, []);
+
+  const setSwimmingEnabled = useCallback((enabled: boolean) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      swimming: { ...prev.swimming, enabled },
+    }));
+  }, []);
+
+  const setSwimmingIntensity = useCallback((intensity: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      swimming: { ...prev.swimming, intensity },
+    }));
+  }, []);
+
+  const setSwimmingSpeedX = useCallback((speedX: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      swimming: { ...prev.swimming, speedX },
+    }));
+  }, []);
+
+  const setSwimmingSpeedY = useCallback((speedY: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      swimming: { ...prev.swimming, speedY },
+    }));
+  }, []);
+
+  const setSwimmingDampenTime = useCallback((dampenTime: number) => {
+    setGlobalSettings(prev => ({
+      ...prev,
+      swimming: { ...prev.swimming, dampenTime },
+    }));
+  }, []);
+
   // ============================================================================
   // Context Value
   // ============================================================================
@@ -458,6 +756,15 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     setCheckerboardTileSize,
     setCheckerboardScatterSpeed,
     setCheckerboardBlur,
+    setOffsetX,
+    setOffsetY,
+    setOffsetAutoPosition,
+    setOffsetIntensity,
+    setSwimmingEnabled,
+    setSwimmingIntensity,
+    setSwimmingSpeedX,
+    setSwimmingSpeedY,
+    setSwimmingDampenTime,
   }), [
     registerCarousel,
     unregisterCarousel,
@@ -475,6 +782,15 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     setCheckerboardTileSize,
     setCheckerboardScatterSpeed,
     setCheckerboardBlur,
+    setOffsetX,
+    setOffsetY,
+    setOffsetAutoPosition,
+    setOffsetIntensity,
+    setSwimmingEnabled,
+    setSwimmingIntensity,
+    setSwimmingSpeedX,
+    setSwimmingSpeedY,
+    setSwimmingDampenTime,
   ]);
 
   return (
@@ -581,7 +897,7 @@ const ProjectionItem = React.memo(function ProjectionItem({ projection }: Projec
         height: projection.position.height,
         opacity: projection.opacity,
         filter: `blur(${projection.blur}px)`,
-        transform: `scale(${projection.scaleX}, ${projection.scaleY})`,
+        transform: `translate(${projection.offset.x}px, ${projection.offset.y}px) scale(${projection.scaleX}, ${projection.scaleY})`,
         transformOrigin: 'center center',
         mixBlendMode: projection.settings.blendMode as any,
         WebkitMaskImage: maskImage,
@@ -614,20 +930,31 @@ export function useCarouselProjection(
 
   // Stabilize custom settings to prevent re-registration loops
   const settingsRef = useRef(customSettings);
+  const isRegisteredRef = useRef(false);
 
-  // Register carousel on mount
+  // Register carousel once on mount
   useEffect(() => {
-    if (!enabled || !imageUrl || !elementRef.current) {
-      unregisterCarousel(carouselId);
+    if (!enabled || !elementRef.current) {
+      if (isRegisteredRef.current) {
+        unregisterCarousel(carouselId);
+        isRegisteredRef.current = false;
+      }
       return;
     }
 
-    registerCarousel(carouselId, elementRef.current, imageUrl, settingsRef.current);
+    // Only register once - imageUrl will be updated via separate effect
+    if (!isRegisteredRef.current) {
+      registerCarousel(carouselId, elementRef.current, imageUrl, settingsRef.current);
+      isRegisteredRef.current = true;
+    }
 
     return () => {
-      unregisterCarousel(carouselId);
+      if (isRegisteredRef.current) {
+        unregisterCarousel(carouselId);
+        isRegisteredRef.current = false;
+      }
     };
-  }, [carouselId, enabled, registerCarousel, unregisterCarousel, imageUrl]);
+  }, [carouselId, enabled, registerCarousel, unregisterCarousel]); // NO imageUrl - prevents re-registration loop
 
   // Update settings if they change (without re-registering)
   useEffect(() => {
@@ -637,9 +964,9 @@ export function useCarouselProjection(
     }
   }, [customSettings, carouselId, updateCarouselSettings]);
 
-  // Update image when it changes
+  // Update image when it changes (separate from registration)
   useEffect(() => {
-    if (enabled && imageUrl) {
+    if (isRegisteredRef.current && enabled && imageUrl) {
       updateCarouselImage(carouselId, imageUrl);
     }
   }, [carouselId, imageUrl, enabled, updateCarouselImage]);
