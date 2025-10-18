@@ -63,3 +63,4 @@
 [2025-10-18T00:43:14.274Z] INFO: AdminRoutes ["Verification read - config keys in DB",{"configKeys":["title","description","featured","tags","layoutType","sections","projection"],"title":"Tasty Bits: A taste of home cooking","description":"a sample collection of my work, experiments, & projects","coverImage":"E:\\mnt\\lupoportfolio\\content\\Home\\Hero.jpg"}]
 [2025-10-18T00:43:14.276Z] INFO: AdminRoutes ["Config updated successfully for home",{"configPath":"E:\\mnt\\lupoportfolio\\content\\Home\\config.json"}]
 [2025-10-18T00:48:04.711Z] INFO: AdminRoutes ["POST /reset-rate-limit - Rate limit reset triggered",{"targetIp":"::1"}]
+[2025-10-18T08:56:05.044Z] INFO: AdminRoutes ["POST /reset-rate-limit - Rate limit reset triggered",{"targetIp":"::1"}]

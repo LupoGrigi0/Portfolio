@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/Personalities/Kai-UI-devs/**)",
+      "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/Personalities/Kat/**)",
+      "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/**)",
+      "Read(//c/Users/LupoG/Downloads/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
