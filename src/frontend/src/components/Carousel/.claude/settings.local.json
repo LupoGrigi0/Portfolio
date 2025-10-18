@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix(performance): Bypass Next.js image optimizer to enable browser caching\n\nCRITICAL FIX: Images were being re-fetched from backend on every autoplay transition\n\nTHE PROBLEM:\n- Next.js <Image> component proxies all requests through /_next/image optimizer\n- This bypassed browser caching despite proper backend cache headers\n- Every carousel transition triggered fresh backend requests\n- Browser cache was never utilized\n\nTHE ROOT CAUSE:\n- Backend serves properly optimized WebP thumbnails with cache headers\n- Cache-Control: public, max-age=31536000, immutable (1 year cache)\n- But Next.js optimizer intercepted all requests as intermediary\n- Browser only cached Next.js''s optimized versions, not originals\n\nTHE FIX:\n- Added unoptimized={true} to Image component\n- Images now served directly from backend to browser\n- Browser cache headers respected\n- No performance loss (backend already serves optimized WebP)\n\nIMPACT:\n- Before: Every transition = backend request\n- After: Images cached by browser, served from disk\n- Network tab shows 304/cache hits instead of 200 requests\n- Backend load eliminated during autoplay\n\n🤖 Generated with Claude Code (https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

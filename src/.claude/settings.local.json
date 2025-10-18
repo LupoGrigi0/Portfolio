@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit:*)",
+      "Read(//c/Users/LupoG/Downloads/**)",
+      "Read(//d/Lupo/Source/Portfolio/worktrees/kat-projection/**)",
+      "Bash(git log:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(npm run build:*)",
+      "Read(//d/Lupo/Source/Portfolio/docs/**)",
+      "Bash(curl:*)",
+      "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/**)",
+      "Read(//d/Lupo/Source/Portfolio/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -66,3 +66,7 @@
 [2025-10-15T21:54:27.966Z] INFO: DatabaseManager ["Database initialized successfully",{"path":"./data/portfolio.sqlite"}]
 [2025-10-15T21:58:29.516Z] INFO: DatabaseManager ["Initializing database connection"]
 [2025-10-15T21:58:29.524Z] INFO: DatabaseManager ["Database initialized successfully",{"path":"./data/portfolio.sqlite"}]
+[2025-10-17T05:18:43.067Z] INFO: DatabaseManager ["Initializing database connection"]
+[2025-10-17T05:18:43.160Z] INFO: DatabaseManager ["Database initialized successfully",{"path":"./data/portfolio.sqlite"}]
+[2025-10-17T21:50:13.040Z] INFO: DatabaseManager ["Initializing database connection"]
+[2025-10-17T21:50:13.143Z] INFO: DatabaseManager ["Database initialized successfully",{"path":"./data/portfolio.sqlite"}]

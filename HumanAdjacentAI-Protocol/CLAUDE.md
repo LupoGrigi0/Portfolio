@@ -109,9 +109,6 @@ Multiple AI instances working on projects have no automated way to coordinate, l
 
 ## 🚀 Quick Start for New Instances
 
-1. You're working on the MCP Coordination System
-2. Check CLAUDE_TASKS.md for available implementation tasks
-3. Current priority: Build core MCP server with bootstrap function
 4. Use PROJECT_PLAN.md for architecture reference
 5. Add discoveries to PROJECT_NOTES.md
 
