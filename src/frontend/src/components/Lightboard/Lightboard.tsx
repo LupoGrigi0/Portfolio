@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useProjectionManager } from '@/components/Layout';
+import { useLightboard } from './LightboardContext';
 import {
   SiteSettingsWidget,
   PageSettingsWidget,
@@ -88,6 +89,15 @@ export default function Lightboard({ collection }: LightboardProps) {
 
   // Phase 2a - Lux: Connect to ProjectionManager for live projection control
   const projectionManager = useProjectionManager();
+
+  // Phase 3 - Lux: Connect to LightboardContext for carousel selection
+  const { selectedCarouselId, selectCarousel } = useLightboard();
+
+  // Clear carousel selection when navigating to a new page
+  useEffect(() => {
+    selectCarousel(null);
+    console.log('[Lightboard] Cleared carousel selection on page navigation');
+  }, [pathname, selectCarousel]);
 
   // Helper: Trigger projection recalculation by firing a minimal scroll event
   const triggerProjectionUpdate = () => {
@@ -1170,26 +1180,67 @@ export default function Lightboard({ collection }: LightboardProps) {
           />
         );
       case 'carousel':
+        // Phase 3c - Lux: Show selected carousel info
         return (
-          <CarouselSettingsWidget
-            transition={transition}
-            autoplay={autoplay}
-            interval={interval}
-            speed={speed}
-            reservedSpaceTop={reservedSpaceTop}
-            reservedSpaceBottom={reservedSpaceBottom}
-            reservedSpaceLeft={reservedSpaceLeft}
-            reservedSpaceRight={reservedSpaceRight}
-            setTransition={setTransitionDirty}
-            setAutoplay={setAutoplayDirty}
-            setInterval={setIntervalDirty}
-            setSpeed={setSpeedDirty}
-            setReservedSpaceTop={setReservedSpaceTopDirty}
-            setReservedSpaceBottom={setReservedSpaceBottomDirty}
-            setReservedSpaceLeft={setReservedSpaceLeftDirty}
-            setReservedSpaceRight={setReservedSpaceRightDirty}
-            onApplySettings={handleApplyCarouselSettings}
-          />
+          <div className="space-y-4">
+            {/* Selected Carousel Indicator */}
+            <div className="px-4 py-3 rounded-lg" style={{ backgroundColor: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+              {selectedCarouselId ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'rgb(6, 182, 212)' }}></div>
+                    <span className="text-sm font-semibold text-cyan-400">Selected:</span>
+                    <span className="text-sm text-white/80 font-mono">{selectedCarouselId}</span>
+                  </div>
+                  <button
+                    onClick={() => selectCarousel(null)}
+                    className="px-3 py-1 text-xs rounded-md transition-colors"
+                    style={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                    }}
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-zinc-500"></div>
+                  <span className="text-sm text-zinc-400">No carousel selected - Click a carousel on the page to edit it</span>
+                </div>
+              )}
+            </div>
+
+            {/* Carousel Settings Widget */}
+            <CarouselSettingsWidget
+              transition={transition}
+              autoplay={autoplay}
+              interval={interval}
+              speed={speed}
+              reservedSpaceTop={reservedSpaceTop}
+              reservedSpaceBottom={reservedSpaceBottom}
+              reservedSpaceLeft={reservedSpaceLeft}
+              reservedSpaceRight={reservedSpaceRight}
+              setTransition={setTransitionDirty}
+              setAutoplay={setAutoplayDirty}
+              setInterval={setIntervalDirty}
+              setSpeed={setSpeedDirty}
+              setReservedSpaceTop={setReservedSpaceTopDirty}
+              setReservedSpaceBottom={setReservedSpaceBottomDirty}
+              setReservedSpaceLeft={setReservedSpaceLeftDirty}
+              setReservedSpaceRight={setReservedSpaceRightDirty}
+              onApplySettings={handleApplyCarouselSettings}
+            />
+          </div>
         );
       default:
         return null;

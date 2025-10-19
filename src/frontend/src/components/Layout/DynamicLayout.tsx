@@ -15,6 +15,7 @@
 import { Collection, CollectionConfig, getAbsoluteMediaUrl } from '@/lib/api-client';
 import Carousel from '@/components/Carousel/Carousel';
 import type { CarouselImage } from '@/components/Carousel/types';
+import { SelectableCarousel } from '@/components/Lightboard';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface DynamicLayoutProps {
@@ -310,12 +311,14 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
                   maxWidth: '800px'
                 }}
               >
-                <Carousel
-                  images={group}
-                  {...mapCarouselOptions()}
-                  enableProjection={enableProjection}
-                  projectionId={`dynamic-zipper-${collection.slug}-${index}`}
-                />
+                <SelectableCarousel carouselId={`dynamic-zipper-${collection.slug}-${index}`}>
+                  <Carousel
+                    images={group}
+                    {...mapCarouselOptions()}
+                    enableProjection={enableProjection}
+                    projectionId={`dynamic-zipper-${collection.slug}-${index}`}
+                  />
+                </SelectableCarousel>
               </div>
             </div>
           );
@@ -337,12 +340,14 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
 
         return (
           <div key={`carousel-${index}`} data-carousel-index={index} className="w-full">
-            <Carousel
-              images={group}
-              {...mapCarouselOptions()}
-              enableProjection={enableProjection}
-              projectionId={`dynamic-${collection.slug}-${index}`}
-            />
+            <SelectableCarousel carouselId={`dynamic-${collection.slug}-${index}`}>
+              <Carousel
+                images={group}
+                {...mapCarouselOptions()}
+                enableProjection={enableProjection}
+                projectionId={`dynamic-${collection.slug}-${index}`}
+              />
+            </SelectableCarousel>
           </div>
         );
       })}

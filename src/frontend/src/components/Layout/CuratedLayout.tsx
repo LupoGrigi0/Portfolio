@@ -23,6 +23,7 @@ import {
   VideoSection,
   SeparatorSection,
 } from './Sections';
+import { SelectableCarousel } from '@/components/Lightboard';
 import Carousel from '@/components/Carousel/Carousel';
 import type { CarouselImage } from '@/components/Carousel/types';
 import { useCarouselVirtualization } from '@/hooks/useCarouselVirtualization';
@@ -303,12 +304,14 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
 
             return (
               <div key={key} className={getWidthClass(section.width)}>
-                <Carousel
-                  images={images}
-                  {...mapCarouselOptions(section.carouselOptions)}
-                  enableProjection={enableProjection}
-                  projectionId={`curated-carousel-${collection.slug}-${currentCarouselIndex}`}
-                />
+                <SelectableCarousel carouselId={`curated-carousel-${collection.slug}-${currentCarouselIndex}`}>
+                  <Carousel
+                    images={images}
+                    {...mapCarouselOptions(section.carouselOptions)}
+                    enableProjection={enableProjection}
+                    projectionId={`curated-carousel-${collection.slug}-${currentCarouselIndex}`}
+                  />
+                </SelectableCarousel>
               </div>
             );
           }
@@ -366,12 +369,14 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
 
                     return (
                       <div key={subKey} className={getWidthClass(subsection.width)}>
-                        <Carousel
-                          images={images}
-                          {...mapCarouselOptions(subsection.carouselOptions)}
-                          enableProjection={enableProjection}
-                          projectionId={`curated-row-carousel-${collection.slug}-${currentCarouselIndex}`}
-                        />
+                        <SelectableCarousel carouselId={`curated-row-carousel-${collection.slug}-${currentCarouselIndex}`}>
+                          <Carousel
+                            images={images}
+                            {...mapCarouselOptions(subsection.carouselOptions)}
+                            enableProjection={enableProjection}
+                            projectionId={`curated-row-carousel-${collection.slug}-${currentCarouselIndex}`}
+                          />
+                        </SelectableCarousel>
                       </div>
                     );
                   }
@@ -482,12 +487,14 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                       data-carousel-index={idx}
                       className="w-full"
                     >
-                      <Carousel
-                        images={group}
-                        {...carouselOptions}
-                        enableProjection={enableProjection}
-                        projectionId={`curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`}
-                      />
+                      <SelectableCarousel carouselId={`curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`}>
+                        <Carousel
+                          images={group}
+                          {...carouselOptions}
+                          enableProjection={enableProjection}
+                          projectionId={`curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`}
+                        />
+                      </SelectableCarousel>
                     </div>
                   );
                 })}

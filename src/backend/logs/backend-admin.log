@@ -101,3 +101,4 @@
 [2025-10-19T07:14:03.710Z] INFO: AdminRoutes ["Database cache updated successfully for home"]
 [2025-10-19T07:14:03.712Z] INFO: AdminRoutes ["Verification read - config keys in DB",{"configKeys":["title","description","featured","tags","layoutType","sections","projection"],"title":"Home Page Name","description":"a sample collection of my work, experiments, & projects","coverImage":"E:\\mnt\\lupoportfolio\\content\\Home\\Hero.jpg"}]
 [2025-10-19T07:14:03.713Z] INFO: AdminRoutes ["Config updated successfully for home",{"configPath":"E:\\mnt\\lupoportfolio\\content\\Home\\config.json"}]
+[2025-10-19T20:33:35.062Z] INFO: AdminRoutes ["POST /reset-rate-limit - Rate limit reset triggered",{"targetIp":"::1"}]

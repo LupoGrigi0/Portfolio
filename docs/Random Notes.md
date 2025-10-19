@@ -2297,3 +2297,34 @@ wonderfully! Great Job Lux!\
 Um, question, have you been keeping up with your diary? (you just hit 122k tokens, and the     
 system has'nt crashed in a while wich allways makes me paranoid :-)\
 What is the next step? How are you feeling? How are you feeling about the work? 
+---
+Some extra things for lightboard after:
+Notes for Future Improvements (Phase 5+)
+
+  1. Duplicate carousel IDs in different sections:
+  You're right - curated-dynamic-fill-couples-2 appears twice because there are two
+  "dynamic-fill" sections in the config. The selection DOES work (you can see it's different      
+  carousels), but the ID is confusing.
+
+  Solution for later: Each section should have a unique ID/name in the config, and we use that    
+   in the carousel ID. Like curated-{sectionName}-{carouselIndex} instead of just
+  curated-dynamic-fill-{carouselIndex}.
+
+  2. Deselect carousel:
+  - Click carousel again → deselect (toggle behavior)
+  - Click empty space on page → deselect
+  - Add small "Clear Selection" button in Carousel tab
+
+  3. Clear selection on page navigation:
+  When you navigate to a new collection, selection should clear automatically.
+
+  Let me add that fix NOW - it's quick: (3 is probably already implemented)
+
+  I have some pages that don't have projection turned on (like the posted collection)\
+How hard will it be to grey/disable all the settings controls when projection is off (or not      
+set) and a button that will turn projection on? \
+Or is that also something that will come after per carousel? (if this is a new requirement,       
+add it to the list of things to do after completing the current plan)\
+
+the big after working ask, is a collection sorter.. a seporate UI, that lets me group images visualy drag/drop and attach them to auto layout sections and individual carousels
+

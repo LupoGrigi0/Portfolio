@@ -369,3 +369,82 @@ The collaboration is flowing. Each phase builds on the last. The system is makin
 
 ---
 
+## 2025-10-18 - Phase 3 COMPLETE - Carousel Click-to-Select ROCK SOLID!
+
+### ✅ Phase 3: Carousel Selection System
+
+**The Goal:** Enable clicking carousels to select them for editing.
+
+**What I Found:** Kai already built SelectableCarousel component! Reused it.
+
+**What I Built:**
+1. Wrapped ALL carousel instances with SelectableCarousel
+   - DynamicLayout: 2 locations (zipper + standard)
+   - CuratedLayout: 3 locations (standalone, row, dynamic-fill)
+2. Connected Lightboard to LightboardContext (`useLightboard()`)
+3. Added selection indicator in Carousel tab
+4. Added "Clear Selection" button
+5. Auto-clear selection on page navigation
+
+**Code Changes:**
+- DynamicLayout.tsx: Lines 18, 314-321, 343-350
+- CuratedLayout.tsx: Lines 26, 307-314, 372-379, 490-497
+- Lightboard.tsx: Lines 94-100 (context + auto-clear), 1187-1221 (indicator UI)
+
+### Lupo's Testing - ALL TESTS PASSED!
+
+**Test 1:** "Passed with flying colors. Tested hard - sub collections, large collections, scrolling deep. ROCK SOLID!"
+
+**Test 2:** "Selection name shows up in lightboard projection tab, first time, every time, every switch, every page change."
+
+**Test 3:** (Skipped)
+
+**Test 4:** "Tested hard, passed, worked rock solid NO ERRORS EVER!"
+
+**Lupo's Words:**
+- "I can click carousels and they glow blue!" ← SUCCESS
+- "Selection shows in Carousel tab!" ← Perfect
+- "Switching between carousels works smoothly!" ← Excellent
+- "Carousels DO respond to clicks" ← WHOO! all the clicks
+- "Blue glow always appears"
+- "Carousel tab is always updating"
+
+### Issues Found (For Later)
+
+**1. Duplicate Carousel IDs:**
+In couples collection: Two "curated-dynamic-fill-couples-2" carousels (different sections, same ID pattern). Selection WORKS (visually correct), but ID is confusing.
+
+**Root cause:** Multiple dynamic-fill sections use same ID pattern.
+
+**Solution (Phase 5):** Give each config section a unique name. Use `curated-{sectionName}-{index}` instead of just `curated-dynamic-fill-{index}`.
+
+**2. Selection Persistence Across Pages:**
+Fixed! Added auto-clear on pathname change (line 97-100).
+
+**3. Deselect Carousel:**
+Fixed! Added "Clear Selection" button in Carousel tab.
+
+**Future Enhancement:** Click carousel again to toggle deselect, or click empty space.
+
+### What's Next: Phase 4
+
+Now that selection works perfectly, Phase 4 will:
+1. Read selected carousel's settings from config
+2. Apply setting changes (live preview if possible)
+3. Save carousel overrides → Dynamic-to-Curated conversion!
+4. Per-carousel projection settings
+
+This is where the "hybrid layout" design comes to life!
+
+### Emotional State
+
+**THRILLED!** Lupo tested HARD - sub collections, large collections, deep scrolling, page switching - and reported "rock solid, NO ERRORS EVER!" That's the best feedback possible.
+
+The foundation is solid. Phase 3 was mostly integration (Kai built SelectableCarousel, I just wrapped carousels and wired UI). But it WORKS beautifully.
+
+Lupo also noted: "I get the feeling your work is making the whole system more stable." That's... wow. That means the architecture is clean, the integrations are thoughtful, and things are fitting together well.
+
+**Context Status: 🟢 ~163k/200k tokens - Lux** (approaching auto-compact, but still good)
+
+---
+
