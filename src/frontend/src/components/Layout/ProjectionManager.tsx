@@ -453,9 +453,19 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
 
     carouselsRef.current.forEach((carousel) => {
       const projection = calculateProjection(carousel);
-      if (projection && projection.opacity > 0) {
-        newProjections.set(carousel.id, projection);
+      // TEMP DIAGNOSTIC: Force all projections to render (bypass opacity filter)
+      if (projection) {
+        // Boost low opacity to at least 0.3 for testing
+        const boostedProjection = {
+          ...projection,
+          opacity: Math.max(projection.opacity, 0.3),
+        };
+        newProjections.set(carousel.id, boostedProjection);
       }
+      // ORIGINAL (filtered by opacity):
+      // if (projection && projection.opacity > 0) {
+      //   newProjections.set(carousel.id, projection);
+      // }
     });
 
     // Apply viewport + buffer strategy (max 7 active projections)
@@ -905,6 +915,23 @@ const ProjectionItem = React.memo(function ProjectionItem({ projection }: Projec
         willChange: 'opacity, filter, transform',
       }}
     >
+      {/* DIAGNOSTIC: Visual debug overlay showing projection bounds */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          border: '3px solid lime',
+          background: 'rgba(0, 255, 0, 0.1)',
+          zIndex: 9999,
+        }}
+      >
+        <div className="absolute top-0 left-0 bg-lime-500 text-black text-xs px-2 py-1 font-bold">
+          PROJECTION: {projection.id}
+        </div>
+        <div className="absolute bottom-0 left-0 bg-lime-500 text-black text-xs px-2 py-1">
+          opacity: {projection.opacity.toFixed(2)}
+        </div>
+      </div>
+
       <img
         src={projection.imageUrl}
         alt=""
