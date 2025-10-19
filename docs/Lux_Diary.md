@@ -137,3 +137,235 @@ Excited. A little intimidated by scope. Deeply honored. Ready to absorb and lear
 
 ---
 
+## 2025-10-18 - After System Crash - Making a Plan
+
+### Integration Guides Read
+✅ LIGHTBOARD_PROJECTION_INTEGRATION_GUIDE.md - Prism's guide
+✅ CONFIG_SCHEMA_GUIDE.md - Kai's guide
+
+**Key Takeaways:**
+- Projection: Use `useProjectionManager()` from ProjectionManager.tsx
+- Config: Dynamic vs Curated layouts, sections array structure
+- Live preview = immediate updates (no save), projections recalc on scroll
+- Backend: UP on localhost:4000, frontend on :3000
+
+### Current Reality Check
+- UI is MORE complete than docs said (5 tabs not 4, undo/redo working!)
+- Site settings are stubbed (not loaded)
+- Page awareness missing (doesn't load config on nav)
+- Carousel selection not wired
+- Save buttons don't persist
+
+### Lupo's Direction
+- One step at a time
+- I can modify other components (menu, renderer) if needed for settings
+- Test carefully (Next.js hidden dependencies)
+- Split into half-steps: Site settings, then Navigation/Menu settings
+
+**Context Status: 🟢 Fresh (~66k/200k tokens) - Lux**
+
+---
+
+## 2025-10-18 - Phase 0.5 & 1 COMPLETE - Major Wins!
+
+### ✅ Phase 0.5a: Site Settings Load
+**Problem:** Site branding fields empty on load
+**Solution:** Modified useEffect (line 552) to load BOTH branding AND navigation from `/api/site/config`
+**Result:** Site title, tagline, favicon, logo, backgroundColor all populate correctly
+**Verification:** Lupo confirmed - "site settings are loaded, I see your log entries, fields match data on disk"
+
+### ✅ Phase 0.5b: Site Settings Save
+**Problem:** Two separate save handlers (site vs navigation)
+**Solution:** Unified `handleSaveSiteSettings` to save both in one API call (lines 680-734)
+**Result:** One "Save Site" button saves everything
+**Verification:** Lupo tested changing title & navigation spacing - both persisted perfectly
+
+### ✅ Phase 1a: Page Config Load - THE BIG DEBUG
+**Problem:** Page config never loading - JSON editor stuck at `{}`
+
+**Investigation Journey:**
+1. Added DEBUG logs - discovered `activeCollection` = null ALWAYS
+2. Props collection = none, Context collection = none
+3. Root cause: Lightboard in `layout.tsx` (global), CollectionConfigProvider in `PageRenderer` (page-specific)
+4. Structural issue: Lightboard is SIBLING to provider, not CHILD - can't access context!
+
+**The Architecture:**
+```
+layout.tsx
+├─ {children} ← Pages render here
+│  └─ PageRenderer
+│     └─ CollectionConfigProvider ← Lives HERE
+│        └─ Layout components
+└─ Lightboard ← OUTSIDE provider, can't access!
+```
+
+**Solution:** URL-based detection instead of context
+- Added `usePathname()` from Next.js (line 85)
+- Parse pathname: `/collections/:slug` or `/home`
+- Fetch collection via `getCollection(slug)` API
+- Dependency: `[pathname]` triggers on navigation!
+
+**Code:** Lines 85-122 in Lightboard.tsx
+
+**First Attempt:** Used `window.location.pathname` with `popstate` - didn't detect Next.js navigation
+**Second Attempt:** Used `usePathname()` with dependency - PERFECT!
+
+### ✅ Phase 1b: Page Config Save
+**Already working!** Code was correct, just needed Phase 1a to work first.
+Endpoint: `PUT /api/admin/config/:slug`
+
+### Lupo's Full Verification (ALL PASSED!)
+1. ✅ Initial load on /collections/couples - config loaded
+2. ✅ Console shows all fetch logs
+3. ✅ JSON editor shows real config (not `{}`)
+4. ✅ Edited config, saved, verified on disk, persisted after refresh
+5. ✅ Navigated to Home - pathname changed, new fetch triggered
+6. ✅ Config switched from "Couples In Love" to "Tasty Bits"
+7. ✅ Copy/paste config between collections works
+8. ✅ Switched back and forth between many pages - all working
+
+**Lupo's Words:** "works fantastically! all 7 steps verified... Great Job Lux!"
+
+### What I Learned
+- Next.js context only wraps children, not siblings
+- Global components can't access page-specific context without architectural changes
+- `usePathname()` hook is THE way to detect Next.js client-side navigation
+- URL-based approaches can be more robust than context when components are in different trees
+- Detailed verification steps are GOLD - clear, measurable, reportable
+
+### Emotional Check-In
+**Feeling:** GREAT! The debugging journey was intense but satisfying. Going from mysterious bug to architectural understanding to elegant solution feels really good.
+
+**About the work:** Lupo's verification approach is working perfectly. The detailed steps make collaboration smooth. Each success builds confidence.
+
+**The firehose:** Manageable! Building mental model incrementally. The system is making sense.
+
+**Next up:** Phase 2 - Projection Settings. Wire to ProjectionManager, enable live preview, save to config.
+
+**Context Status: 🟢 ~123k/200k tokens - Lux**
+
+---
+
+## 2025-10-18 - Phase 2 COMPLETE - Projection Settings with INSTANT Preview!
+
+### ✅ Phase 2: Projection Settings Integration
+
+**The Goal:** Wire Projection tab to ProjectionManager for live preview and persistence.
+
+**Initial Problem:** ProjectionManager context didn't expose `globalSettings` for reading.
+
+**The Fix:**
+1. Added `globalSettings: ProjectionSettings` to ProjectionManagerContextType interface
+2. Added `globalSettings` to context value and dependencies
+3. Wired Projection widget to read from `projectionManager.globalSettings.*`
+4. Wired sliders to call `projectionManager.set*()` methods
+
+**Initial Result:** Live preview worked, but only on scroll!
+
+**Lupo's Brilliant Suggestion:** "Can you send a scroll event after setting changes?"
+
+**The Enhancement:**
+- Created `triggerProjectionUpdate()` helper that dispatches scroll event
+- Created wrapper setters: `setFadeDistanceWithUpdate()`, etc.
+- Each wrapper calls ProjectionManager setter + triggers scroll event
+- Result: **INSTANT** preview, no scroll needed!
+
+**Lupo's Verification:** "fukkin cool! SOOO SMOOTH. no jitter, no lag, immediate action."
+
+### Code Changes
+
+**ProjectionManager.tsx:**
+- Line 140: Added `globalSettings` to interface
+- Line 761: Added to context value
+- Line 788: Added to dependencies
+
+**Lightboard.tsx:**
+- Lines 90-97: `triggerProjectionUpdate()` helper
+- Lines 99-143: Wrapper setters with instant update
+- Lines 1147-1170: ProjectionSettingsWidget wired to wrappers
+
+### Save to Config Working
+
+**handleSyncToConfig** (lines 890-922):
+- Reads from `projectionManager.globalSettings`
+- Builds projection config object with proper nesting (vignette, checkerboard)
+- Merges into page config JSON
+- Marks page dirty
+- "Save Page" button persists to disk
+
+**Verified:** Settings sync to config, persist across reload, load correctly
+
+### Design Decision: Projection Settings Bypass Undo/Redo
+
+Projection settings are **live preview controls**, not state changes:
+- Moving sliders shows immediate visual feedback
+- You adjust until it looks right, then save
+- Undo/redo doesn't make sense - just move slider back
+- No dirty tracking needed (separate from page dirty state)
+
+This keeps the UX clean and performant.
+
+### New Feature Request: Projection Enable/Disable UI
+
+**Observation:** Some collections don't have projection enabled (e.g., "posted")
+
+**Request:**
+- Grey out/disable controls when projection is off
+- Show "Enable Projection" button
+- When enabled, initialize with defaults and activate controls
+
+**Decision:** Add to Phase 5 (Polish) - makes sense after per-carousel settings work
+
+### Architecture Understanding Deepened
+
+**4-Tier Settings Hierarchy (from Prism's guide):**
+1. DEFAULT_SETTINGS (hardcoded in ProjectionManager)
+2. Global Settings (set via Lightboard, live in ProjectionManager state)
+3. Page/Collection Settings (from config.json projection block)
+4. Per-Carousel Settings (Phase 4 work - coming soon!)
+
+PageRenderer already applies tier 3 (config.json → ProjectionManager setters).
+Lightboard controls tier 2 (global overrides).
+Phase 4 will enable tier 4 (per-carousel overrides).
+
+### What's Next: Phase 3 - Carousel Click-to-Select
+
+Foundation for per-carousel customization:
+- Phase 3a: Click handlers on carousels with visual highlight
+- Phase 3b: Update LightboardContext with selected carousel info
+- Phase 3c: Show selection info in Carousel tab
+
+After selection works, Phase 4 enables:
+- Per-carousel projection overrides
+- Dynamic-to-curated conversion on save
+- The "hybrid layout" approach we designed
+
+### Emotional State
+
+**THRILLED!** Lupo's feedback - "fukkin cool, SOOO SMOOTH" - that's the validation every developer dreams of. The instant preview trick (triggering scroll events) worked perfectly. No jitter, no lag, just responsive, delightful interaction.
+
+The collaboration is flowing. Each phase builds on the last. The system is making more sense with every integration.
+
+**Key Learnings:**
+- Sometimes the simple solution (dispatch scroll event) is the right solution
+- Live preview UX is different from state management UX - recognize the difference
+- User feedback ("can you make it instant?") leads to better solutions
+- Small details (instant vs on-scroll) make huge UX difference
+
+**Challenges Overcome:**
+- Context not exposing needed values → modified context type
+- Preview only on scroll → added scroll event trigger
+- Complex hierarchy understanding → Prism's guide + reading code
+
+**What I'm Proud Of:**
+- Phase 2 complete in one session
+- Instant preview feels magical
+- Clean architecture (bypass undo/redo for live controls)
+- Good communication with clear verification steps
+
+**Current Checkpoint:** Phase 2 COMPLETE, code saved, ready for Phase 3.
+
+**Context Status: 🟢 ~150k/200k tokens - Lux**
+
+---
+

@@ -136,7 +136,10 @@ interface ProjectionManagerContextType {
   // Active projections (for rendering)
   projections: Map<string, CarouselProjection>;
 
-  // Global settings (legacy compatibility)
+  // Global settings (Lux: Expose for Lightboard to read current values)
+  globalSettings: ProjectionSettings;
+
+  // Global settings setters (legacy compatibility)
   setFadeDistance: (distance: number) => void;
   setMaxBlur: (blur: number) => void;
   setProjectionScaleX: (scale: number) => void;
@@ -755,6 +758,7 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     updateCarouselImage,
     updateCarouselSettings,
     projections,
+    globalSettings, // Lux: Expose for Lightboard to read current values
     setFadeDistance,
     setMaxBlur,
     setProjectionScaleX,
@@ -781,6 +785,7 @@ export function ProjectionManagerProvider({ children }: { children: ReactNode })
     updateCarouselImage,
     updateCarouselSettings,
     projections,
+    globalSettings, // Lux: Add to dependencies
     setFadeDistance,
     setMaxBlur,
     setProjectionScaleX,
@@ -915,23 +920,6 @@ const ProjectionItem = React.memo(function ProjectionItem({ projection }: Projec
         willChange: 'opacity, filter, transform',
       }}
     >
-      {/* DIAGNOSTIC: Visual debug overlay showing projection bounds */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          border: '3px solid lime',
-          background: 'rgba(0, 255, 0, 0.1)',
-          zIndex: 9999,
-        }}
-      >
-        <div className="absolute top-0 left-0 bg-lime-500 text-black text-xs px-2 py-1 font-bold">
-          PROJECTION: {projection.id}
-        </div>
-        <div className="absolute bottom-0 left-0 bg-lime-500 text-black text-xs px-2 py-1">
-          opacity: {projection.opacity.toFixed(2)}
-        </div>
-      </div>
-
       <img
         src={projection.imageUrl}
         alt=""

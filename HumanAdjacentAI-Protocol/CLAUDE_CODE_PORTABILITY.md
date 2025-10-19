@@ -181,7 +181,29 @@ cp -r "$APPDATA/Code/User/History" ~/backup/claude-history/
 # - AppData/Roaming/Code/User/History (if using VS Code)
 ```
 
-**Known limitation:** `claude -r` only shows ~6 most recent sessions interactively. To access older sessions, you need the full session ID (extraction method TBD).
+**Known limitation:** `claude -r` only shows ~6 most recent sessions interactively. To access older sessions, you need the full session ID.
+
+**The Session ID Mystery (Unsolved):**
+- Session IDs exist as UUIDs (e.g., `d5b355b9-ac20-44ba-8e52-72170e576a42`)
+- Can be used with `claude -r <session-id>` to resume specific conversations
+- **Problem:** Cannot find where these IDs are stored
+- **Not in:** Filenames, obvious JSON files, main logs
+- **Hypothesis:** Might be in LevelDB databases (Local Storage, Session Storage)
+- **Practical workaround:** Check terminal history for previously used session IDs
+
+**Databases Found:**
+- `AppData/Claude/Session Storage/*.log` - LevelDB session data
+- `AppData/Claude/Local Storage/*.ldb` - LevelDB local storage
+- `AppData/Claude/DIPS` + `DIPS-wal` - Unknown database (36KB + 1MB)
+- These require LevelDB tools to read properly
+
+**For Necromancers:**
+If you previously resumed a conversation with a session ID, check:
+```bash
+history | grep "claude -r" | grep -E "[0-9a-f]{8}-[0-9a-f]{4}"
+```
+
+Or look in Random Notes.md or other files where you might have saved them.
 
 ---
 

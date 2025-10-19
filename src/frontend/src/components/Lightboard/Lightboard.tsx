@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { useProjectionManager } from '@/components/Layout';
 import {
   SiteSettingsWidget,
   PageSettingsWidget,
@@ -9,7 +11,6 @@ import {
   NavigationSettingsWidget,
 } from './widgets';
 import type { Collection } from '@/lib/api-client';
-import { useCollectionConfigOptional } from '@/contexts/CollectionConfigContext';
 
 interface Position {
   x: number;
@@ -80,11 +81,102 @@ interface StateSnapshot {
 }
 
 export default function Lightboard({ collection }: LightboardProps) {
-  // Connect to CollectionConfigContext (if available)
-  const collectionContext = useCollectionConfigOptional();
+  // Phase 1a - Lux: Fetch collection based on current URL instead of relying on context
+  // (Lightboard is rendered in layout.tsx, outside of CollectionConfigProvider)
+  const pathname = usePathname(); // Next.js hook that updates on navigation
+  const [activeCollection, setActiveCollection] = useState<Collection | null>(collection || null);
 
-  // Use context collection if available, otherwise use prop
-  const activeCollection = collectionContext?.collection || collection;
+  // Phase 2a - Lux: Connect to ProjectionManager for live projection control
+  const projectionManager = useProjectionManager();
+
+  // Helper: Trigger projection recalculation by firing a minimal scroll event
+  const triggerProjectionUpdate = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('scroll'));
+    }
+  };
+
+  // Wrapper setters that trigger immediate update (Phase 2 - Lux: Instant preview)
+  const setFadeDistanceWithUpdate = (value: number) => {
+    projectionManager.setFadeDistance(value);
+    triggerProjectionUpdate();
+  };
+  const setMaxBlurWithUpdate = (value: number) => {
+    projectionManager.setMaxBlur(value);
+    triggerProjectionUpdate();
+  };
+  const setProjectionScaleXWithUpdate = (value: number) => {
+    projectionManager.setProjectionScaleX(value);
+    triggerProjectionUpdate();
+  };
+  const setProjectionScaleYWithUpdate = (value: number) => {
+    projectionManager.setProjectionScaleY(value);
+    triggerProjectionUpdate();
+  };
+  const setBlendModeWithUpdate = (value: string) => {
+    projectionManager.setBlendMode(value);
+    triggerProjectionUpdate();
+  };
+  const setVignetteWidthWithUpdate = (value: number) => {
+    projectionManager.setVignetteWidth(value);
+    triggerProjectionUpdate();
+  };
+  const setVignetteStrengthWithUpdate = (value: number) => {
+    projectionManager.setVignetteStrength(value);
+    triggerProjectionUpdate();
+  };
+  const setCheckerboardEnabledWithUpdate = (value: boolean) => {
+    projectionManager.setCheckerboardEnabled(value);
+    triggerProjectionUpdate();
+  };
+  const setCheckerboardTileSizeWithUpdate = (value: number) => {
+    projectionManager.setCheckerboardTileSize(value);
+    triggerProjectionUpdate();
+  };
+  const setCheckerboardScatterSpeedWithUpdate = (value: number) => {
+    projectionManager.setCheckerboardScatterSpeed(value);
+    triggerProjectionUpdate();
+  };
+  const setCheckerboardBlurWithUpdate = (value: number) => {
+    projectionManager.setCheckerboardBlur(value);
+    triggerProjectionUpdate();
+  };
+
+  // Detect current page URL and fetch collection (runs on mount AND navigation)
+  useEffect(() => {
+    console.log('[Lightboard] Pathname changed:', pathname);
+
+    // Check if we're on a collection page (/collections/:slug or /home)
+    const collectionMatch = pathname.match(/^\/collections\/([^\/]+)/);
+    const isHomePage = pathname === '/' || pathname === '/home';
+
+    let slugToFetch: string | null = null;
+
+    if (collectionMatch) {
+      slugToFetch = collectionMatch[1];
+    } else if (isHomePage) {
+      slugToFetch = 'home';
+    }
+
+    if (slugToFetch) {
+      console.log('[Lightboard] Fetching collection:', slugToFetch);
+      // Import and fetch collection data
+      import('@/lib/api-client').then(({ getCollection }) => {
+        getCollection(slugToFetch).then(fetchedCollection => {
+          if (fetchedCollection) {
+            setActiveCollection(fetchedCollection);
+            console.log('[Lightboard] Successfully fetched collection:', fetchedCollection.slug);
+          }
+        }).catch(err => {
+          console.error('[Lightboard] Error fetching collection:', err);
+        });
+      });
+    } else {
+      // Not on a collection page
+      setActiveCollection(null);
+      console.log('[Lightboard] Not on a collection page, clearing collection');
+    }
+  }, [pathname]); // Re-run when pathname changes (navigation!)
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('site');
@@ -518,7 +610,7 @@ export default function Lightboard({ collection }: LightboardProps) {
     };
   }, [isResizingHeight, panelHeight]);
 
-  // Load collection config when collection changes
+  // Load collection config when collection changes (Phase 1a - Lux: Fixed dependency)
   useEffect(() => {
     if (activeCollection) {
       setCurrentCollectionName(activeCollection.name);
@@ -526,9 +618,10 @@ export default function Lightboard({ collection }: LightboardProps) {
       // If collection has a config, load it into the editor
       if (activeCollection.config) {
         setConfigJson(JSON.stringify(activeCollection.config, null, 2));
+        console.log('[Lightboard] Collection config loaded:', activeCollection.slug, '- Config keys:', Object.keys(activeCollection.config));
       } else {
         // Set default template if no config
-        setConfigJson(JSON.stringify({
+        const defaultConfig = {
           layoutType: 'dynamic',
           title: activeCollection.name,
           subtitle: `${activeCollection.imageCount} images`,
@@ -540,73 +633,89 @@ export default function Lightboard({ collection }: LightboardProps) {
               reservedSpace: { bottom: 80 },
             },
           },
-        }, null, 2));
+        };
+        setConfigJson(JSON.stringify(defaultConfig, null, 2));
+        console.log('[Lightboard] No config found for collection:', activeCollection.slug, '- Using default template');
       }
 
       // Log collection change for debugging
       console.log('[Lightboard] Collection changed:', activeCollection.slug);
     }
-  }, [activeCollection]);
+  }, [activeCollection?.slug, activeCollection?.config]); // Fixed: Watch slug and config, not whole object
 
-  // Load navigation settings from API on mount
+  // Load site settings AND navigation settings from API on mount
   useEffect(() => {
-    const loadNavigationSettings = async () => {
+    const loadSiteAndNavigationSettings = async () => {
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
         const response = await fetch(`${API_BASE_URL}/api/site/config`);
 
         if (!response.ok) {
-          console.warn('Failed to load navigation settings from API');
+          console.warn('[Lightboard] Failed to load site settings from API');
           return;
         }
 
         const result = await response.json();
-        if (result.success && result.data?.navigation) {
-          const nav = result.data.navigation;
+        if (result.success && result.data) {
+          const data = result.data;
 
-          // Populate timing settings
-          if (nav.timing) {
-            if (nav.timing.rollbackDelay !== undefined) setNavRollbackDelay(nav.timing.rollbackDelay);
-            if (nav.timing.rollbackSpeed !== undefined) setNavRollbackSpeed(nav.timing.rollbackSpeed);
+          // Load site branding settings (Phase 0.5a - Lux)
+          if (data.siteName !== undefined) setSiteTitle(data.siteName);
+          if (data.tagline !== undefined) setSiteTagline(data.tagline);
+          if (data.branding) {
+            if (data.branding.favicon !== undefined) setFaviconUrl(data.branding.favicon);
+            if (data.branding.logo !== undefined) setLogoUrl(data.branding.logo);
+            if (data.branding.primaryColor !== undefined) setBackgroundColor(data.branding.primaryColor);
           }
 
-          // Populate spacing settings
-          if (nav.spacing) {
-            if (nav.spacing.indent !== undefined) setNavIndentSpacing(nav.spacing.indent);
-            if (nav.spacing.vertical !== undefined) setNavVerticalSpacing(nav.spacing.vertical);
+          // Load navigation settings
+          if (data.navigation) {
+            const nav = data.navigation;
+
+            // Populate timing settings
+            if (nav.timing) {
+              if (nav.timing.rollbackDelay !== undefined) setNavRollbackDelay(nav.timing.rollbackDelay);
+              if (nav.timing.rollbackSpeed !== undefined) setNavRollbackSpeed(nav.timing.rollbackSpeed);
+            }
+
+            // Populate spacing settings
+            if (nav.spacing) {
+              if (nav.spacing.indent !== undefined) setNavIndentSpacing(nav.spacing.indent);
+              if (nav.spacing.vertical !== undefined) setNavVerticalSpacing(nav.spacing.vertical);
+            }
+
+            // Populate typography settings
+            if (nav.typography) {
+              if (nav.typography.fontFamily !== undefined) setNavFontFamily(nav.typography.fontFamily);
+              if (nav.typography.fontSize !== undefined) setNavFontSize(nav.typography.fontSize);
+            }
+
+            // Populate color settings
+            if (nav.colors) {
+              if (nav.colors.activeText !== undefined) setNavActiveTextColor(nav.colors.activeText);
+              if (nav.colors.hoverText !== undefined) setNavHoverTextColor(nav.colors.hoverText);
+              if (nav.colors.activeBackground !== undefined) setNavActiveBackgroundColor(nav.colors.activeBackground);
+              if (nav.colors.hoverBackground !== undefined) setNavHoverBackgroundColor(nav.colors.hoverBackground);
+              if (nav.colors.drawerBackground !== undefined) setNavDrawerBackgroundColor(nav.colors.drawerBackground);
+              if (nav.colors.border !== undefined) setNavBorderColor(nav.colors.border);
+            }
+
+            // Populate visual settings
+            if (nav.visual) {
+              if (nav.visual.showHomeIcon !== undefined) setNavShowHomeIcon(nav.visual.showHomeIcon);
+              if (nav.visual.highlightStyle !== undefined) setNavHighlightStyle(nav.visual.highlightStyle);
+            }
           }
 
-          // Populate typography settings
-          if (nav.typography) {
-            if (nav.typography.fontFamily !== undefined) setNavFontFamily(nav.typography.fontFamily);
-            if (nav.typography.fontSize !== undefined) setNavFontSize(nav.typography.fontSize);
-          }
-
-          // Populate color settings
-          if (nav.colors) {
-            if (nav.colors.activeText !== undefined) setNavActiveTextColor(nav.colors.activeText);
-            if (nav.colors.hoverText !== undefined) setNavHoverTextColor(nav.colors.hoverText);
-            if (nav.colors.activeBackground !== undefined) setNavActiveBackgroundColor(nav.colors.activeBackground);
-            if (nav.colors.hoverBackground !== undefined) setNavHoverBackgroundColor(nav.colors.hoverBackground);
-            if (nav.colors.drawerBackground !== undefined) setNavDrawerBackgroundColor(nav.colors.drawerBackground);
-            if (nav.colors.border !== undefined) setNavBorderColor(nav.colors.border);
-          }
-
-          // Populate visual settings
-          if (nav.visual) {
-            if (nav.visual.showHomeIcon !== undefined) setNavShowHomeIcon(nav.visual.showHomeIcon);
-            if (nav.visual.highlightStyle !== undefined) setNavHighlightStyle(nav.visual.highlightStyle);
-          }
-
-          console.log('Navigation settings loaded successfully from API');
+          console.log('[Lightboard] Site and navigation settings loaded successfully from API');
         }
       } catch (error) {
-        console.error('Error loading navigation settings:', error);
+        console.error('[Lightboard] Error loading site settings:', error);
         // Silently fail and use defaults
       }
     };
 
-    loadNavigationSettings();
+    loadSiteAndNavigationSettings();
   }, []); // Run once on mount
 
   // Take initial snapshot when Lightboard opens
@@ -662,11 +771,29 @@ export default function Lightboard({ collection }: LightboardProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, undo, redo]);
 
-  // Site Settings Callbacks
+  // Site Settings Callbacks (Phase 0.5b - Lux: Save BOTH site branding AND navigation)
   const handleSaveSiteSettings = async () => {
     setIsSavingSite(true);
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+      // Prepare navigation config
+      const navConfig = {
+        timing: { rollbackDelay: navRollbackDelay, rollbackSpeed: navRollbackSpeed },
+        spacing: { indent: navIndentSpacing, vertical: navVerticalSpacing },
+        typography: { fontFamily: navFontFamily, fontSize: navFontSize },
+        colors: {
+          activeText: navActiveTextColor,
+          hoverText: navHoverTextColor,
+          activeBackground: navActiveBackgroundColor,
+          hoverBackground: navHoverBackgroundColor,
+          drawerBackground: navDrawerBackgroundColor,
+          border: navBorderColor,
+        },
+        visual: { showHomeIcon: navShowHomeIcon, highlightStyle: navHighlightStyle },
+      };
+
+      // Send both site branding AND navigation settings
       const response = await fetch(`${API_BASE_URL}/api/site/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -678,6 +805,7 @@ export default function Lightboard({ collection }: LightboardProps) {
             logo: logoUrl,
             primaryColor: backgroundColor,
           },
+          navigation: navConfig,
         }),
       });
 
@@ -689,10 +817,11 @@ export default function Lightboard({ collection }: LightboardProps) {
       const result = await response.json();
       if (result.success) {
         clearDirty('site'); // Clear dirty state on successful save
+        console.log('[Lightboard] Site settings (branding + navigation) saved successfully');
         alert('Site settings saved successfully!');
       }
     } catch (error) {
-      console.error('Error saving site settings:', error);
+      console.error('[Lightboard] Error saving site settings:', error);
       alert(`Error saving settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSavingSite(false);
@@ -811,31 +940,37 @@ export default function Lightboard({ collection }: LightboardProps) {
     console.log('JSON copied to clipboard');
   };
 
-  // Projection Settings Callbacks
+  // Projection Settings Callbacks (Phase 2d - Lux: Read from ProjectionManager)
   const handleSyncToConfig = async () => {
     try {
+      const settings = projectionManager.globalSettings;
       const projectionConfig = {
-        fadeDistance,
-        maxBlur,
-        projectionScaleX,
-        projectionScaleY,
-        blendMode,
-        vignetteWidth,
-        vignetteStrength,
-        checkerboardEnabled,
-        checkerboardTileSize,
-        checkerboardScatterSpeed,
-        checkerboardBlur,
+        fadeDistance: settings.fadeDistance,
+        maxBlur: settings.maxBlur,
+        scaleX: settings.scaleX,
+        scaleY: settings.scaleY,
+        blendMode: settings.blendMode,
+        vignette: {
+          width: settings.vignette.width,
+          strength: settings.vignette.strength,
+        },
+        checkerboard: {
+          enabled: settings.checkerboard.enabled,
+          tileSize: settings.checkerboard.tileSize,
+          scatterSpeed: settings.checkerboard.scatterSpeed,
+          blur: settings.checkerboard.blur,
+        },
       };
 
       // Parse existing config and merge projection settings
       const config = JSON.parse(configJson);
       config.projection = projectionConfig;
       setConfigJson(JSON.stringify(config, null, 2));
+      markDirty('page'); // Mark page as dirty so Save Page button enables
 
-      console.log('Projection settings synced to config');
+      console.log('[Lightboard] Projection settings synced to config');
     } catch (error) {
-      console.error('Error syncing projection settings:', error);
+      console.error('[Lightboard] Error syncing projection settings:', error);
     }
   };
 
@@ -999,36 +1134,38 @@ export default function Lightboard({ collection }: LightboardProps) {
             onShowHomeIconChange={setNavShowHomeIconDirty}
             onHighlightStyleChange={setNavHighlightStyleDirty}
 
-            // Actions
-            onSave={handleSaveNavSettings}
+            // Actions (Phase 0.5b - Lux: Use unified save handler)
+            onSave={handleSaveSiteSettings}
             onReset={handleResetNavSettings}
           />
         );
       case 'projection':
+        // Phase 2a/2b - Lux: Wire directly to ProjectionManager for instant live preview
+        // Projection settings bypass local state/undo/redo - they're live controls
         return (
           <ProjectionSettingsWidget
-            fadeDistance={fadeDistance}
-            maxBlur={maxBlur}
-            projectionScaleX={projectionScaleX}
-            projectionScaleY={projectionScaleY}
-            blendMode={blendMode}
-            vignetteWidth={vignetteWidth}
-            vignetteStrength={vignetteStrength}
-            checkerboardEnabled={checkerboardEnabled}
-            checkerboardTileSize={checkerboardTileSize}
-            checkerboardScatterSpeed={checkerboardScatterSpeed}
-            checkerboardBlur={checkerboardBlur}
-            setFadeDistance={setFadeDistanceDirty}
-            setMaxBlur={setMaxBlurDirty}
-            setProjectionScaleX={setProjectionScaleXDirty}
-            setProjectionScaleY={setProjectionScaleYDirty}
-            setBlendMode={setBlendModeDirty}
-            setVignetteWidth={setVignetteWidthDirty}
-            setVignetteStrength={setVignetteStrengthDirty}
-            setCheckerboardEnabled={setCheckerboardEnabledDirty}
-            setCheckerboardTileSize={setCheckerboardTileSizeDirty}
-            setCheckerboardScatterSpeed={setCheckerboardScatterSpeedDirty}
-            setCheckerboardBlur={setCheckerboardBlurDirty}
+            fadeDistance={projectionManager.globalSettings.fadeDistance}
+            maxBlur={projectionManager.globalSettings.maxBlur}
+            projectionScaleX={projectionManager.globalSettings.scaleX}
+            projectionScaleY={projectionManager.globalSettings.scaleY}
+            blendMode={projectionManager.globalSettings.blendMode}
+            vignetteWidth={projectionManager.globalSettings.vignette.width}
+            vignetteStrength={projectionManager.globalSettings.vignette.strength}
+            checkerboardEnabled={projectionManager.globalSettings.checkerboard.enabled}
+            checkerboardTileSize={projectionManager.globalSettings.checkerboard.tileSize}
+            checkerboardScatterSpeed={projectionManager.globalSettings.checkerboard.scatterSpeed}
+            checkerboardBlur={projectionManager.globalSettings.checkerboard.blur}
+            setFadeDistance={setFadeDistanceWithUpdate}
+            setMaxBlur={setMaxBlurWithUpdate}
+            setProjectionScaleX={setProjectionScaleXWithUpdate}
+            setProjectionScaleY={setProjectionScaleYWithUpdate}
+            setBlendMode={setBlendModeWithUpdate}
+            setVignetteWidth={setVignetteWidthWithUpdate}
+            setVignetteStrength={setVignetteStrengthWithUpdate}
+            setCheckerboardEnabled={setCheckerboardEnabledWithUpdate}
+            setCheckerboardTileSize={setCheckerboardTileSizeWithUpdate}
+            setCheckerboardScatterSpeed={setCheckerboardScatterSpeedWithUpdate}
+            setCheckerboardBlur={setCheckerboardBlurWithUpdate}
             onSyncToConfig={handleSyncToConfig}
           />
         );
