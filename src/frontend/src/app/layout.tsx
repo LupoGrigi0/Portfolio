@@ -55,29 +55,20 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ProjectionManagerProvider>
-          {isDevelopment ? (
-            // Development: Include Lightboard for live editing
-            <LightboardProvider>
-              <Navigation
-                config={siteConfig?.navigation}
-                collections={collections}
-                siteConfig={siteConfig}
-              />
-              {children}
-              {/* Lightboard design panel - DEVELOPMENT ONLY */}
-              <Lightboard />
-            </LightboardProvider>
-          ) : (
-            // Production: No Lightboard (security)
-            <>
-              <Navigation
-                config={siteConfig?.navigation}
-                collections={collections}
-                siteConfig={siteConfig}
-              />
-              {children}
-            </>
-          )}
+          <LightboardProvider>
+            {/* Navigation (includes hamburger, drawer, and breadcrumbs) */}
+            <Navigation
+              config={siteConfig?.navigation}
+              collections={collections}
+              siteConfig={siteConfig}
+            />
+
+            {/* Main content */}
+            {children}
+
+            {/* Lightboard design panel - DEVELOPMENT ONLY */}
+            {isDevelopment && <Lightboard />}
+          </LightboardProvider>
         </ProjectionManagerProvider>
       </body>
     </html>
