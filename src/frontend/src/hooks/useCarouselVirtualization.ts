@@ -37,10 +37,10 @@ export interface CarouselVirtualizationResult {
   visibleRange: { start: number; end: number };
 
   /** Ref for sentinel element (triggers progressive load) */
-  sentinelRef: React.RefObject<HTMLDivElement>;
+  sentinelRef: React.RefObject<HTMLDivElement | null>;
 
   /** Ref for container element (for scroll calculations) */
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 /**

@@ -27,6 +27,9 @@ export default function RootLayout({
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
 
+  // SECURITY: Lightboard only enabled in development
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   // Fetch site config and collections on mount
   useEffect(() => {
     // Fetch site config
@@ -52,20 +55,29 @@ export default function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ProjectionManagerProvider>
-          <LightboardProvider>
-            {/* Navigation (includes hamburger, drawer, and breadcrumbs) */}
-            <Navigation
-              config={siteConfig?.navigation}
-              collections={collections}
-              siteConfig={siteConfig}
-            />
-
-            {/* Main content */}
-            {children}
-
-            {/* Lightboard design panel */}
-            <Lightboard />
-          </LightboardProvider>
+          {isDevelopment ? (
+            // Development: Include Lightboard for live editing
+            <LightboardProvider>
+              <Navigation
+                config={siteConfig?.navigation}
+                collections={collections}
+                siteConfig={siteConfig}
+              />
+              {children}
+              {/* Lightboard design panel - DEVELOPMENT ONLY */}
+              <Lightboard />
+            </LightboardProvider>
+          ) : (
+            // Production: No Lightboard (security)
+            <>
+              <Navigation
+                config={siteConfig?.navigation}
+                collections={collections}
+                siteConfig={siteConfig}
+              />
+              {children}
+            </>
+          )}
         </ProjectionManagerProvider>
       </body>
     </html>

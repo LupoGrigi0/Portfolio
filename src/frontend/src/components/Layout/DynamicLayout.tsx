@@ -36,6 +36,15 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
   const projectionPattern = config.projection?.pattern ?? 'none';
   const projectionOffset = config.projection?.patternOffset ?? 0;
 
+  // Virtualization hooks - MUST be before any conditional returns
+  const INITIAL_LOAD = 4;
+  const LOAD_INCREMENT = 4;
+  const MAX_ACTIVE_CAROUSELS = 10;
+
+  const [visibleRange, setVisibleRange] = useState({ start: 0, end: INITIAL_LOAD });
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   /**
    * Determine if a carousel at given index should have projection enabled
    */
@@ -116,19 +125,10 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
 
   const carouselGroups = groupImages();
 
-  /**
-   * Progressive Rendering + Bidirectional Virtualization
-   *
-   * Phase 1: Load 4 carousels initially, 4 more as user scrolls
-   * Phase 2: Keep max 10 carousels in DOM (unload ones far offscreen)
-   */
-  const INITIAL_LOAD = 4;
-  const LOAD_INCREMENT = 4;
-  const MAX_ACTIVE_CAROUSELS = 10; // Keep at most 10 in DOM for performance
-
-  const [visibleRange, setVisibleRange] = useState({ start: 0, end: Math.min(INITIAL_LOAD, carouselGroups.length) });
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  // Update visible range when carouselGroups changes
+  useEffect(() => {
+    setVisibleRange({ start: 0, end: Math.min(INITIAL_LOAD, carouselGroups.length) });
+  }, [carouselGroups.length]);
 
   // Intersection Observer to load more when scrolling down
   useEffect(() => {

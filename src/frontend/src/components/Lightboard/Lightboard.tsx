@@ -1483,7 +1483,7 @@ function LightboardContent({ collection }: LightboardProps) {
       // Predict the carousel name based on conversion type
       let predictedCarouselName = selectedCarouselId; // Default to current name
 
-      if (carouselData.isDynamicFill) {
+      if (carouselData.isDynamicFill && carouselData.sectionIndex !== null && activeCollection) {
         // DYNAMIC-FILL EXTRACTION: Predict future name after reload
         // Count STANDALONE carousel sections BEFORE the dynamic-fill section being split
         // (Rows have separate counter, so don't count them!)
@@ -1541,6 +1541,11 @@ function LightboardContent({ collection }: LightboardProps) {
       if (isPureDynamic && !carouselData.isDynamicFill) {
         // FUKIT: Convert entire dynamic page to explicit curated carousels
         console.log('[Lightboard] FukIt mode: Converting entire page to curated layout');
+
+        if (!activeCollection || !activeCollection.gallery) {
+          showToast('No collection loaded. Cannot convert page.', 'error');
+          return;
+        }
 
         const imagesPerCarousel = config.dynamicSettings?.imagesPerCarousel || 20;
         const carouselDefaults = config.dynamicSettings?.carouselDefaults || {};
