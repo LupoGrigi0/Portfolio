@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useProjectionManager } from '@/components/Layout';
 import { useLightboard } from './LightboardContext';
+import { useToast, ToastProvider } from './ToastContext';
+import { ToastContainer } from './Toast';
 import {
   SiteSettingsWidget,
   PageSettingsWidget,
@@ -81,7 +83,7 @@ interface StateSnapshot {
   };
 }
 
-export default function Lightboard({ collection }: LightboardProps) {
+function LightboardContent({ collection }: LightboardProps) {
   // Phase 1a - Lux: Fetch collection based on current URL instead of relying on context
   // (Lightboard is rendered in layout.tsx, outside of CollectionConfigProvider)
   const pathname = usePathname(); // Next.js hook that updates on navigation
@@ -92,6 +94,9 @@ export default function Lightboard({ collection }: LightboardProps) {
 
   // Phase 3 - Lux: Connect to LightboardContext for carousel selection
   const { selectedCarouselId, selectCarousel } = useLightboard();
+
+  // Toast notifications for better UX
+  const { showToast } = useToast();
 
   // Clear carousel selection when navigating to a new page
   useEffect(() => {
@@ -933,11 +938,11 @@ export default function Lightboard({ collection }: LightboardProps) {
       if (result.success) {
         clearDirty('site'); // Clear dirty state on successful save
         console.log('[Lightboard] Site settings (branding + navigation) saved successfully');
-        alert('Site settings saved successfully!');
+        showToast('Site settings saved successfully!', 'success');
       }
     } catch (error) {
       console.error('[Lightboard] Error saving site settings:', error);
-      alert(`Error saving settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast(`Error saving settings: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     } finally {
       setIsSavingSite(false);
     }
@@ -965,7 +970,7 @@ export default function Lightboard({ collection }: LightboardProps) {
       }
     } catch (error) {
       console.error('Error loading site settings:', error);
-      alert(`Error loading settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast(`Error loading settings: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     }
   };
 
@@ -975,11 +980,11 @@ export default function Lightboard({ collection }: LightboardProps) {
       // Parse and validate JSON
       const parsed = JSON.parse(configJson);
       console.log('Preview applied (local state updated):', parsed);
-      alert('Preview applied! Configuration is valid.\n\nNote: Live preview updates will be implemented in the next phase.');
+      showToast('Preview applied! Configuration is valid.', 'success', 4000);
       // TODO: Trigger LivePreview component re-render with new config
     } catch (error) {
       console.error('Invalid JSON configuration:', error);
-      alert(`Invalid JSON: ${error instanceof Error ? error.message : 'Parse error'}`);
+      showToast(`Invalid JSON: ${error instanceof Error ? error.message : 'Parse error'}`, 'error');
     }
   };
 
@@ -1023,11 +1028,11 @@ export default function Lightboard({ collection }: LightboardProps) {
       const result = await response.json();
       if (result.success) {
         clearDirty('page'); // Clear dirty state on successful save
-        alert(`Configuration saved successfully!\n\nCollection: ${slug}`);
+        showToast(`Configuration saved successfully! Collection: ${slug}`, 'success');
       }
     } catch (error) {
       console.error('Error saving page configuration:', error);
-      alert(`Error saving configuration: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast(`Error saving configuration: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     } finally {
       setIsSavingPage(false);
     }
@@ -1086,10 +1091,10 @@ export default function Lightboard({ collection }: LightboardProps) {
         markDirty('page');
 
         console.log('[Lightboard] Page-level settings written to config');
-        alert('Page settings applied to config!\n\nClick "Save Page" to persist changes.');
+        showToast('Page settings applied to config! Click "Save Page" to persist changes.', 'success', 4000);
       } catch (error) {
         console.error('[Lightboard] Error applying page settings:', error);
-        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        showToast(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
       }
     } else {
       // CAROUSEL MODE: Write carousel-specific settings (with conversion if needed)
@@ -1194,7 +1199,7 @@ export default function Lightboard({ collection }: LightboardProps) {
     // GUARD: Require imagesPerCarousel in config ONLY for dynamic layouts (user must do Page Apply first)
     // Curated layouts don't need this (they have explicit sections)
     if (isPureDynamic && !config.dynamicSettings?.imagesPerCarousel) {
-      alert('⚠️ Missing Configuration\n\nPlease apply page settings first to set images per carousel.\n\n1. Clear carousel selection (or go to Page tab)\n2. Click "Apply Page"\n3. Click "Save Page"\n4. Then try carousel conversion again');
+      showToast('⚠️ Missing Configuration - Please apply page settings first to set images per carousel.', 'warning', 5000);
       console.error('[Lightboard] Cannot convert without imagesPerCarousel in config');
       return null;
     }
@@ -1367,7 +1372,7 @@ export default function Lightboard({ collection }: LightboardProps) {
   // Phase 4: Save carousel settings (converts dynamic to curated)
   const handleSaveCarouselSettings = async () => {
     if (!selectedCarouselId) {
-      alert('No carousel selected. Click a carousel on the page first.');
+      showToast('No carousel selected. Click a carousel on the page first.', 'warning');
       return;
     }
 
@@ -1456,7 +1461,7 @@ export default function Lightboard({ collection }: LightboardProps) {
           setConfigJson(JSON.stringify(config, null, 2));
           markDirty('page');
 
-          alert(`✅ Carousel Updated!\n\nSettings applied to existing carousel:\n- ${selectedCarouselId}\n\nClick "Save Page" to persist changes.`);
+          showToast(`✅ Carousel Updated! Settings applied to: ${selectedCarouselId}. Click "Save Page" to persist.`, 'success', 4000);
           return; // Done! Don't do conversion
         } else {
           console.log('[Lightboard] Carousel not found in curated config, proceeding with conversion');
@@ -1466,7 +1471,7 @@ export default function Lightboard({ collection }: LightboardProps) {
       // If we get here, it's a dynamic carousel that needs conversion
       const carouselData = convertDynamicCarouselToCurated(selectedCarouselId);
       if (!carouselData) {
-        alert('Could not identify carousel images. Make sure you selected a carousel from the page.');
+        showToast('Could not identify carousel images. Make sure you selected a carousel from the page.', 'error');
         return;
       }
 
@@ -1619,7 +1624,7 @@ export default function Lightboard({ collection }: LightboardProps) {
         markDirty('page');
 
         console.log(`[Lightboard] FukIt complete: Created ${sections.length} explicit carousels`);
-        alert(`🎉 Carousel Settings Saved!\n\nConverted entire page to curated layout:\n- ${sections.length} explicit carousels created\n- Carousel ${carouselData.carouselIndex} has your custom settings\n- Other carousels use default settings\n- All images explicitly defined (no more guessing!)\n\nClick "Save Page" to persist.`);
+        showToast(`🎉 Carousel Settings Saved! Converted entire page to curated layout with ${sections.length} explicit carousels. Click "Save Page" to persist.`, 'success', 5000);
 
       } else if (carouselData.isDynamicFill) {
         // EXTRACTING FROM DYNAMIC-FILL: Surgically replace the dynamic-fill section with before-curated-after
@@ -1627,13 +1632,13 @@ export default function Lightboard({ collection }: LightboardProps) {
 
         if (carouselData.sectionIndex === null || carouselData.sectionIndex === undefined) {
           console.error('[Lightboard] Missing section index for dynamic-fill extraction');
-          alert('Error: Could not locate dynamic-fill section');
+          showToast('Error: Could not locate dynamic-fill section', 'error');
           return;
         }
 
         if (!config.sections || !Array.isArray(config.sections)) {
           console.error('[Lightboard] Config sections missing or invalid');
-          alert('Error: Config sections array is missing');
+          showToast('Error: Config sections array is missing', 'error');
           return;
         }
 
@@ -1641,7 +1646,7 @@ export default function Lightboard({ collection }: LightboardProps) {
 
         if (sectionIndex >= config.sections.length) {
           console.error('[Lightboard] Section index out of bounds:', sectionIndex, 'max:', config.sections.length - 1);
-          alert('Error: Section index out of bounds');
+          showToast('Error: Section index out of bounds', 'error');
           return;
         }
 
@@ -1649,7 +1654,7 @@ export default function Lightboard({ collection }: LightboardProps) {
 
         if (!dynamicFillSection || dynamicFillSection.type !== 'dynamic-fill') {
           console.error('[Lightboard] Expected dynamic-fill section at index', sectionIndex, 'but found:', dynamicFillSection);
-          alert('Error: Could not find dynamic-fill section at expected position');
+          showToast('Error: Could not find dynamic-fill section at expected position', 'error');
           return;
         }
 
@@ -1699,7 +1704,7 @@ export default function Lightboard({ collection }: LightboardProps) {
         markDirty('page');
 
         console.log(`[Lightboard] Replaced dynamic-fill section with ${replacementSections.length} sections (before: ${carouselData.carouselIndex > 0 ? 'yes' : 'no'}, curated, after: yes)`);
-        alert(`Carousel settings saved!\n\nExtracted carousel ${carouselData.carouselIndex} from dynamic-fill:\n- ${carouselData.imageCount} images now curated\n- ${replacementSections.length} sections created\n- All carousels maintain original positions\n\nClick "Save Page" to persist.`);
+        showToast(`Carousel settings saved! Extracted carousel ${carouselData.carouselIndex} from dynamic-fill. Click "Save Page" to persist.`, 'success', 4000);
 
       } else {
         // EXISTING CURATED CAROUSEL: This would be editing an already-curated carousel
@@ -1713,11 +1718,11 @@ export default function Lightboard({ collection }: LightboardProps) {
         markDirty('page');
 
         console.log(`[Lightboard] Appended curated carousel to sections array`);
-        alert(`Carousel settings saved!\n\nAdded new curated carousel (${carouselData.imageCount} images)\n\nClick "Save Page" to persist.`);
+        showToast(`Carousel settings saved! Added new curated carousel (${carouselData.imageCount} images). Click "Save Page" to persist.`, 'success', 4000);
       }
     } catch (error) {
       console.error('[Lightboard] Error saving carousel settings:', error);
-      alert(`Error saving carousel settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showToast(`Error saving carousel settings: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     }
   };
 
@@ -1775,10 +1780,10 @@ export default function Lightboard({ collection }: LightboardProps) {
 
       if (!response.ok) throw new Error('Failed to save navigation settings');
       clearDirty('site'); // Clear dirty state on successful save
-      alert('Navigation settings saved successfully!');
+      showToast('Navigation settings saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving navigation settings:', error);
-      alert('Failed to save navigation settings');
+      showToast('Failed to save navigation settings', 'error');
     }
   };
 
@@ -2220,9 +2225,9 @@ export default function Lightboard({ collection }: LightboardProps) {
                         const config = JSON.parse(content);
                         setConfigJson(JSON.stringify(config, null, 2));
                         markDirty('page');
-                        alert('Config loaded successfully!');
+                        showToast('Config loaded successfully!', 'success');
                       } catch (error) {
-                        alert('Invalid JSON file');
+                        showToast('Invalid JSON file', 'error');
                       }
                     };
                     reader.readAsText(file);
@@ -2317,5 +2322,15 @@ export default function Lightboard({ collection }: LightboardProps) {
         }
       `}</style>
     </>
+  );
+}
+
+// Wrapper component that provides toast context
+export default function Lightboard(props: LightboardProps) {
+  return (
+    <ToastProvider>
+      <LightboardContent {...props} />
+      <ToastContainer />
+    </ToastProvider>
   );
 }
