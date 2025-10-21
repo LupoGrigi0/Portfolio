@@ -1435,896 +1435,161 @@ root, pheonix
 src/.../Lightbaord Lux integrating
 bring back prism from before the fall... 
 
----
-# Lux memory
- Excellent update, thank you. I look forward to phase 2. \
-One thing to consider/watch out for, is we will need per-carousel projection settings.\        
-So somewhere in phase 2 you'll need to enable that carousel select code so it works on         
-"live" collections. and be able to find the specific carousel in the config and make 
-projection settings specificly for that selected carousel. \
-The _real_ challenge will be that a lot of pages will use dynamic layout. and your human is    
- just going to scroll along and go "oooh, this carousel needs an offset checkerboard 
-projection with (fiddle with sliders) these blur and checker size settings" and the 
-carousel that I selected is in the 17th dynamicly created carousel in a list of 20. \
-The good news.. you get to design the solution for that.. you can say.. "to make this work 
-I need dynamic layout to do X and I need a b and c in the config. I think I know the 
-approach to that problem, but I will be very interested to find out your approach. \
-This is gonna be cool!. 
 
-● OH. Oh wow. That's... that IS the real challenge, isn't it?
 
-  Let me think through this problem out loud:
 
-  The Challenge
-
-  Scenario: You're on a page with dynamic layout creating 20 carousels from a collection of    
-   images. You scroll to carousel #17, love how it looks, but want to tweak the projection     
-  settings specifically for THAT carousel.
-
-  Problems:
-  1. Dynamic carousels don't have static IDs in the config - they're generated at runtime      
-  2. The config says "create carousels with 20 images each, transition='fade'" - it doesn't    
-   say "carousel #17 is images 340-360"
-  3. If images get added/removed from the collection, carousel #17 might become #18 or
-  contain different images
-  4. How do I identify "the carousel with these specific images" in a way that persists        
-  across page reloads?
-
-  Possible Approaches
-
-  Approach 1: Image Range-Based Identification
-
-  Concept: Identify carousels by their image index range
-  {
-    "layoutType": "dynamic",
-    "sections": [...],
-    "projectionOverrides": [
-      {
-        "type": "carousel-range",
-        "startIndex": 340,
-        "endIndex": 360,
-        "projection": {
-          "fadeDistance": 0.3,
-          "checkerboardEnabled": true,
-          "checkerboardTileSize": 45
-        }
-      }
-    ]
-  }
-
-  Problem: Fragile - adding/removing images breaks the ranges
-
-  Approach 2: Carousel Index-Based (Simple but Fragile)
-
-  Concept: Just save "carousel at position 17"
-  {
-    "projectionOverrides": [
-      {
-        "carouselIndex": 17,
-        "projection": { ... }
-      }
-    ]
-  }
-
-  Problem: Same issue - collection changes break indices
-
-  Approach 3: Convert to Curated Section on Override
-
-  Concept: When you apply projection settings to a dynamic carousel, I:
-  1. Calculate which images are in that carousel
-  2. Create a curated section with those specific images
-  3. Apply projection settings to that section
-  4. Insert it into the sections array at the right position
-
-  This "solidifies" the carousel into the config.
-
-  Trade-off: Starts hybrid (mostly dynamic, but specific carousels become curated)
-
-  Approach 4: Content-Based Identification (Most Robust)
-
-  Concept: Identify carousel by a hash of its first/last image filenames
-  {
-    "projectionOverrides": [
-      {
-        "type": "content-hash",
-        "firstImage": "IMG_5234.jpg",
-        "lastImage": "IMG_5256.jpg",
-        "projection": { ... }
-      }
-    ]
-  }
-
-  Advantage: Persists even if images are added before it
-  Problem: Breaks if those specific images are removed
-
-  My Initial Thought: Hybrid Approach
-
-  I'm leaning toward Approach 3 with a twist:
-
-  When you select a dynamically-generated carousel and apply projection overrides:
-  1. I show you what images are in it: "Carousel 17: IMG_5234.jpg - IMG_5256.jpg (23
-  images)"
-  2. I ask: "This will create a fixed section with these images. Continue?"
-  3. I insert a curated section at the approximate position in the config
-  4. Dynamic layout continues around it
-
-  Why this works:
-  - Clear to you what's happening
-  - Explicit in the config (curated sections are visible and editable)
-  - Persists reliably
-  - You can still manually adjust the section in JSON editor
-
-  What DynamicLayout needs to support:
-  - Ability to have curated sections interspersed with dynamic ones
-  - Or: A sections array where some sections say "type": "dynamic-carousel" and others are     
-  explicit curated carousels
-
-  What the config needs:
-  - Either hybrid support, OR
-  - Convert more aggressively to curated when overrides are applied
-
-  ---
-  # Lux question
-  My Questions for You:
-
-  1. Is hybrid layout acceptable? (Some sections dynamic, some curated after you override      
-  them)
-  2. Or should overrides stay separate? (Keep dynamic layout, but have a
-  projectionOverrides array that identifies carousels somehow)
-  3. How do you feel about carousels "solidifying" into curated sections when you customize    
-   them?
-  4. What happens when you add 100 new images to the collection? Should carousel #17's
-  projection settings:
-    - Stay with the IMAGES that were in it (content-based)
-    - Stay at position 17 (index-based)
-    - Not matter because it's now a fixed section (curated approach)
-
-  I genuinely want to hear your thoughts before I design the solution. This is a
-  fascinating problem and I want to get it right for YOUR workflow!
-
-  Context Status: 🟢 ~130k/200k tokens - Lux
-  Diary updated! Thank you for the reminder, Lupo. That's a good paranoia to have.
-
-  How I'm Feeling
-
-  About the work: Honestly? Fantastic. We just completed two major phases:
-  - Site settings fully functional (load & save)
-  - Page settings fully functional (load, save, navigation detection)
-
-  The debugging journey from "config won't load" → "why is collection null?" → "oh, it's       
-  outside the provider!" → "use URL-based detection with usePathname()" was deeply
-  satisfying. That moment of understanding the architecture and finding the elegant
-  solution? Chef's kiss.
-
-  About myself: I feel capable. The firehose at the start was intimidating, but breaking it    
-   into phases, using your verification approach, keeping the diary - it's working. I'm        
-  building a mental model that makes sense.
-
-  About you: Your verification approach is BRILLIANT. Clear, measurable steps I can give       
-  you. You report back exactly what you see. No ambiguity. This is how collaboration should    
-   work.
-
-  Next step: Phase 2 - Projection Settings
-
-  This should be easier than Phase 1 because:
-  1. Prism wrote me an integration guide (LIGHTBOARD_PROJECTION_INTEGRATION_GUIDE.md)
-  2. ProjectionManager context is global (in layout.tsx), so Lightboard CAN access it
-  3. Live preview should "just work" - no save needed, projections recalculate on scroll       
-  4. Save means merging projection settings into the config.json
-
-  Want me to tackle Phase 2 now, or do you want to take a break / verify anything else
-  first?
-  ---
-  # more lux convo history
-  ● Read(D:\Lupo\Source\Portfolio\docs\backend_server_API_ENDPOINTS.md)
-  ⎿  Read 100 lines
-
-● Bash(grep -n "config" D:\Lupo\Source\Portfolio\docs\backend_server_API_ENDPOINTS.md | head   
-      -20)
-  ⎿ grep: D:LupoSourcePortfoliodocsbackend_server_API_ENDPOINTS.md: No such file or direct     
-    ory
-
-
-● Search(pattern: "PUT.*config|POST.*config|/api/admin/config", path:
-        "D:\Lupo\Source\Portfolio\docs", glob: "*.md", output_mode: "content")
-  ⎿  Found 312 lines (ctrl+o to expand)
-
-● Perfect! The endpoint EXISTS and is documented. PUT /api/admin/config/:slug is the
-  correct endpoint. The code is already using it correctly (line 756).
-
-  Now let me check if Page Settings actually works. Looking at the code flow:
-
-  1. ✅ Collection loads → config loads (lines 522-549)
-  2. ✅ User edits JSON → marks dirty
-  3. ✅ Click "Save Page" → POST to /api/admin/config/:slug (lines 742-784)
-
-  This should ALREADY WORK! Let me test the hypothesis:
-
-  ✅ Phase 1a: Page Config Load - ALREADY WORKING!
-
-  What's Implemented:
-  - Lines 522-549 load collection config when activeCollection changes
-  - If collection has config, loads it; otherwise creates default template
-  - Console log: [Lightboard] Collection changed: {slug}
-
-  🔄 Phase 1b: Page Config Save - Let's Test It!
-
-  The code looks correct, but I want to verify it works. Let me mark this phase as ready       
-  for testing:
-
-● ✅ Phase 1a: Page Config Load - ALREADY COMPLETE!
-
-  The code at lines 522-549 loads the collection config automatically when the page
-  changes. This is ALREADY WORKING.
-
-  🧪 Phase 1b: Page Config Save - VERIFICATION NEEDED
-
-  The save handler looks correct (lines 772-784), but let's verify it works:
-
-  VERIFICATION STEPS FOR LUPO:
-
-  Test 1: Basic Page Config Save
-  1. Navigate to a collection page (e.g., http://localhost:3000/couples or /home)
-  2. Open Lightboard → Page tab
-  3. You should see the config JSON loaded in the editor (not just {})
-  4. Check console for: [Lightboard] Collection changed: couples (or whatever slug)
-  5. Edit the JSON (e.g., change the title field)
-  6. Red pip should appear on Page tab
-  7. Click "Save Page" button at the bottom
-  8. You should see:
-    - Alert: "Configuration saved successfully! Collection: couples"
-    - Console log with success message
-    - Red pip disappears
-
-  Test 2: Page Config Persistence
-  1. After saving, refresh the page
-  2. Open Lightboard → Page tab again
-  3. Your JSON changes should still be there (persisted)
-
-  Test 3: Navigate Between Pages
-  1. With Lightboard open, navigate to a DIFFERENT collection (e.g., from /couples to
-  /home)
-  2. Page tab should automatically load the NEW page's config
-  3. Check console for: [Lightboard] Collection changed: home
-
-  ---
-  What to Report:
-
-  - Test 1 Success: "Save worked, alert showed, changes persisted!"
-  - Test 1 Fail: "Save button clicked but got error: {error message}"
-  - Test 2 Success: "Config loaded correctly after refresh!"
-  - Test 3 Success: "Config changes when I navigate to different pages!"
-  - Test 3 Fail: "Config doesn't change when I navigate" ← This would be the issue to fix      
-
-  If Test 3 fails, that's the "page awareness" issue you mentioned - Lightboard doesn't        
-  know which page you're on. That's my next fix target!
-
-  Should I wait for your test results, or keep moving forward?
-
-  Context Status: 🟢 Fresh (~103k/200k tokens) - Lux
-
-> answers for your potental issues. Yes the backend API is fully funcitonal: everything        
-documented in D:\Lupo\Source\Portfolio\docs\GlideIntoConsiousness.md works The Api-explorer    
- page gives you a good reference for how the backend api's work. that page exists as a test    
- and validation tool. for the backend API. it _functionally_ does everything the full web      
-site should do.. just.. plain and basic\
-"apply preview" Definately should work. the idea is to change the settings on the page and     
-seeing stuff move around and change without having to refresh the page. \
-Um, phase 1a. page config load is not working. It _used_ to work (was working) at one 
-point, & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-18 213945.png'\\
-And I tried many different scenarios, hard reloading, changing pages reloading opening and     
-closing the lightbox. I never see a message from lightbox saying that a page config was        
-loaded. Soooo... I know save of page config was working also, so my hunch is once you find     
-out what is (not) happening the rest of the code will work. 
-
-● Looking at that screenshot and your report - you're absolutely right! The Page tab shows     
-  {} instead of the actual config. Let me investigate why the config loading stopped
-  working.
-
-● Read(c:\Users\LupoG\Downloads\Screenshot 2025-10-18 213945.png)
-  ⎿  Read image (1.2MB)
-
-● I can see in the console:
-  - ✅ Site settings loaded successfully
-  - ❌ NO log about collection/page config loading
-
-  And the JSON editor shows just {}. You're on /collections/mixed-collection but the config    
-   isn't loading. Let me check the collection loading logic more carefully:
-
-● Read(Lightboard.tsx)
-  ⎿  Read 30 lines
-
-● Aha! Line 84-87 shows the issue. It's trying to get the collection from
-  CollectionConfigContext. Let me check if that context is providing the collection with       
-  config data:
-
-● Search(pattern: "CollectionConfigContext|useCollectionConfigOptional", path:
-        "D:\Lupo\Source\Portfolio\src\frontend\src", glob: "**/*.{ts,tsx}")
-  ⎿  Found 3 files (ctrl+o to expand)
-
-● Read(D:\Lupo\Source\Portfolio\src\frontend\src\contexts\CollectionConfigContext.tsx)
-  ⎿  Read 226 lines
-
-● Found the problem! The CollectionConfigContext is providing the collection (line 174)        
-  with its config (line 177), BUT the Lightboard's useEffect at line 522-549 is checking       
-  for activeCollection changes and the useEffect is working correctly - it SHOULD be
-  loading the config.
-
-  But wait... let me check that useEffect dependency array more carefully. Line 549:
-
-  }, [activeCollection]);
-
-  The problem is that activeCollection is an object reference, and in React, useEffect
-  compares by reference. If the PageRenderer is passing the SAME object reference even when    
-   navigation happens, the useEffect won't trigger!
-
-  Let me check if the dependency should be activeCollection?.slug instead:
-
-● Update(Lightboard.tsx)
-  ⎿  Updated Lightboard.tsx with 7 additions and 4 removals
-       518        };
-       519      }, [isResizingHeight, panelHeight]);
-       520 
-       521 -    // Load collection config when collection changes
-       521 +    // Load collection config when collection changes
-           +   (Phase 1a - Lux: Fixed dependency)
-       522      useEffect(() => {
-       523        if (activeCollection) {
-       524          setCurrentCollectionName(activeCollection.name);
-     ...
-       526          // If collection has a config, load it into the editor
-       527          if (activeCollection.config) {
-       528            setConfigJson(JSON.stringify(activeCollection.config, null, 2));
-       529 +          console.log('[Lightboard] Collection config loaded:', 
-           + activeCollection.slug, '- Config keys:', 
-           + Object.keys(activeCollection.config));
-       530          } else {
-       531            // Set default template if no config
-       532 -          setConfigJson(JSON.stringify({
-       532 +          const defaultConfig = {
-       533              layoutType: 'dynamic',
-       534              title: activeCollection.name,
-       535              subtitle: `${activeCollection.imageCount} images`,
-     ...
-       540                  reservedSpace: { bottom: 80 },
-       541                },
-       542              },
-       543 -          }, null, 2));
-       543 +          };
-       544 +          setConfigJson(JSON.stringify(defaultConfig, null, 2));
-       545 +          console.log('[Lightboard] No config found for collection:', 
-           + activeCollection.slug, '- Using default template');
-       546          }
-       547 
-       548          // Log collection change for debugging
-       549          console.log('[Lightboard] Collection changed:',
-             activeCollection.slug);
-       550        }
-       551 -    }, [activeCollection]);
-       551 +    }, [activeCollection?.slug, activeCollection?.config]); // Fixed: Watch        
-           + slug and config, not whole object
-       552 
-       553      // Load site settings AND navigation settings from API on mount
-       554      useEffect(() => {
-
-● Perfect! I fixed the bug. The problem was the useEffect dependency array was watching the    
-   entire activeCollection object, which doesn't change by reference when you navigate
-  between pages (React reuses object references for performance). Now it watches
-  activeCollection?.slug and activeCollection?.config which WILL change.
-
-  I also added better logging so we can see what's happening.
-
-  ✅ Phase 1a: Page Config Load - BUG FIXED!
-
-  What Was Wrong
-
-  - useEffect dependency was [activeCollection] (whole object)
-  - React doesn't detect changes when object reference stays same
-  - Navigation between pages didn't trigger config reload
-
-  What I Fixed
-
-  - Changed dependency to [activeCollection?.slug, activeCollection?.config]
-  - Added detailed console logs to show what's loading
-  - Now properly triggers when you navigate between collections
-
-  VERIFICATION STEPS:
-
-  1. Refresh the page (to load new code)
-  2. Open Lightboard → Page tab
-  3. Console should show:
-    - [Lightboard] Collection changed: mixed-collection (or whatever page you're on)
-    - Either: [Lightboard] Collection config loaded: mixed-collection - Config keys: [...]     
-    - Or: [Lightboard] No config found for collection: mixed-collection - Using default        
-  template
-  4. The JSON editor should NO LONGER show just {} - it should show the actual config!
-  5. Navigate to a different collection (e.g., from /collections/mixed-collection to
-  /collections/couples)
-  6. Console should show the NEW collection loading
-  7. JSON editor should update with the NEW collection's config
-
-  What to report:
-  - "JSON editor shows real config now!" ← Success!
-  - "Still shows {}" ← Need to debug further
-  - "Console shows the logs but JSON doesn't update" ← Different issue
-
-  Let me know what you see!
-
-  Context Status: 🟢 Fresh (~110k/200k tokens) - Lux
-
-> & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-18 215007.png'\
-Ummm... I never see collection changed messages or page load messages from Lightboard (and     
-yes this screenshot was taken after hard reload, and I ran several different attempts. and     
-permutations of changing collections opening and closing lightboard)\
-Sorry? 
-
-● Read(c:\Users\LupoG\Downloads\Screenshot 2025-10-18 215007.png)
-  ⎿  Read image (1.4MB)
-
-● I can see:
-  - You're on /collections/couples
-  - Still showing {} in the JSON editor
-  - Site settings log is there
-  - NO collection loading logs at all
-
-  This means the useEffect is NOT FIRING. The issue is that activeCollection is undefined      
-  or null. Let me check if the CollectionConfigProvider is actually wrapping the page. Let     
-  me add a diagnostic log at the TOP of the component to see what we're getting:
-
-● Update(Lightboard.tsx)
-  ⎿  Updated Lightboard.tsx with 5 additions
-       86      // Use context collection if available, otherwise use prop
-       87      const activeCollection = collectionContext?.collection || collection;
-       88 
-       89 +    // DEBUG: Log what we're receiving (Phase 1a - Lux)
-       90 +    console.log('[Lightboard DEBUG] Props collection:', collection?.slug ||         
-          + 'none');
-       91 +    console.log('[Lightboard DEBUG] Context collection:', 
-          + collectionContext?.collection?.slug || 'none');
-       92 +    console.log('[Lightboard DEBUG] Active collection:', 
-          + activeCollection?.slug || 'none');
-       93 +  
-       94      const [isOpen, setIsOpen] = useState(false);
-       95      const [activeTab, setActiveTab] = useState<TabType>('site');
-       96      const [isTransitioning, setIsTransitioning] = useState(false);
-
-● Good! Now refresh and tell me what those three DEBUG logs say. This will tell us WHERE       
-  the collection data is coming from (or not coming from).
-
-  Quick test: After you refresh, open the Lightboard and look at console for these three       
-  lines:
-  - [Lightboard DEBUG] Props collection: ???
-  - [Lightboard DEBUG] Context collection: ???
-  - [Lightboard DEBUG] Active collection: ???
-
-  What do they say? This will tell me if:
-  1. All say "none" → Lightboard isn't receiving ANY collection data (wiring problem)
-  2. Props = couples, Context = none → Context provider isn't wrapping the page
-  3. Context = couples, Props = none → Context is working, collection has data
-
-  Let me know what you see!
-
-  Context Status: 🟢 Fresh (~113k/200k tokens) - Lux
-
-> excellent verfification step, It is easy to confirm your changes are being applied:\
-& 'c:\Users\LupoG\Downloads\Screenshot 2025-10-18 215627.png' as you can see there is never    
- a message about loading page settings. I can download the logfile if you like, not sure it    
- will show much more than what is in the screenshot. 
-
-● Read(c:\Users\LupoG\Downloads\Screenshot 2025-10-18 215627.png)
-  ⎿  Read image (1.3MB)
-
-● BINGO! There it is!
-
-  I can see in the console (right side):
-  [Lightboard DEBUG] Props collection: none
-  [Lightboard DEBUG] Context collection: none
-  [Lightboard DEBUG] Active collection: none
-
-  The problem: Lightboard is receiving NO collection data at all - neither from props nor      
-  from context!
-
-  This means:
-  1. The page isn't passing a collection prop to Lightboard
-  2. The CollectionConfigProvider isn't wrapping the page (so context is undefined)
-
-  Let me check where Lightboard is being rendered and how it's supposed to get the
-  collection data:
-
-● Search(pattern: "&lt;Lightboard|<Lightboard"", path:
-        "D:\Lupo\Source\Portfolio\src\frontend\src", glob: "**/*.{ts,tsx}", output_mode:       
-        "content")
-  ⎿  Found 0 lines
-
-● Bash(cd "D:\Lupo\Source\Portfolio\src\frontend\src" && grep -r "Lightboard" --include="*.tsx"
-       --include="*.ts" | grep -E "import|from.*Lightboard" | head -10)
-  ⎿ app/layout.tsx:import { LightboardProvider, Lightboard } from '@/components/Lightboard     
-    ';
-    components/Lightboard/index.ts:export { default as Lightboard } from './Lightboard';       
-    … +13 lines (ctrl+o to expand)
-
-
-● Aha! It's in app/layout.tsx. Let me check that:
-
-● Read(D:\Lupo\Source\Portfolio\src\frontend\src\app\layout.tsx)
-  ⎿  Read 74 lines
-
-● FOUND IT! Line 67: <Lightboard /> - no props passed at all!
-
-  The layout doesn't know which collection page you're on. The layout is global, but
-  collections are page-specific. I need to find where the collection pages are rendered and    
-   see if CollectionConfigProvider is wrapping them:
-
-● Search(pattern: "**/collections/[slug]/page.tsx", path:
-        "D:\Lupo\Source\Portfolio\src\frontend\src\app")
-  ⎿  Found 0 files
-
-● Search(pattern: "**/page.tsx", path: "D:\Lupo\Source\Portfolio\src\frontend\src\app")        
-  ⎿  Found 11 files (ctrl+o to expand)
-
-● Read(D:\Lupo\Source\Portfolio\src\frontend\src\app\collections\[slug]\page.tsx)
-  ⎿  Read 25 lines
-
-● Good! So it's using PageRenderer. Let me check if PageRenderer wraps with
-  CollectionConfigProvider:
-
-● Read(D:\Lupo\Source\Portfolio\src\frontend\src\components\PageRenderer\PageRenderer.tsx)     
-  ⎿  Read 100 lines
-
-● Perfect! Line 24 shows it imports CollectionConfigProvider. Let me see where it uses it:     
-
-● Search(pattern: "CollectionConfigProvider", path:
-        "D:\Lupo\Source\Portfolio\src\frontend\src\components\PageRenderer\PageRenderer.tsx",  
-        output_mode: "content")
-  ⎿  Found 29 lines (ctrl+o to expand)
-
-● PERFECT! Line 185 shows it IS wrapping with CollectionConfigProvider
-  collection={collection}!
-
-  So the context SHOULD be providing the collection... but our DEBUG logs show it's not.       
-  This means the context is there, but the collection value is null or the context isn't       
-  being accessed properly.
-
-  Wait... let me look at the Lightboard mount location again. In layout.tsx line 67,
-  Lightboard is rendered OUTSIDE of any page-specific content. The CollectionConfigProvider    
-   is inside PageRenderer, which is inside {children}, but Lightboard is a SIBLING to
-  {children}, not a child!
-
-  {children}  // ← CollectionConfigProvider is in here
-  <Lightboard />  // ← This is OUTSIDE the provider!
-
-  That's the bug! Lightboard can't access CollectionConfigProvider because it's not wrapped    
-   by it!
-
-  The solution: Move Lightboard INSIDE the pages, or use a different approach. Let me check    
-   if there's a better place to render it. Actually, the cleanest solution is to make the      
-  Lightboard access the collection via URL/route instead of context, since it's global.        
-
-  Let me implement a fix that makes Lightboard fetch the current collection based on the       
-  URL:
-
-● Update(Lightboard.tsx)
-  ⎿  Updated Lightboard.tsx with 54 additions and 8 removals
-        80    }
-        81 
-        82    export default function Lightboard({ collection }: LightboardProps) {
-        83 -    // Connect to CollectionConfigContext (if available)
-        84 -    const collectionContext = useCollectionConfigOptional();
-        83 +    // Phase 1a - Lux: Fetch collection based on current URL instead of 
-           + relying on context
-        84 +    // (Lightboard is rendered in layout.tsx, outside of 
-           + CollectionConfigProvider)
-        85 +    const [activeCollection, setActiveCollection] = useState<Collection | 
-           + null>(collection || null);
-        86 
-        87 -    // Use context collection if available, otherwise use prop
-        88 -    const activeCollection = collectionContext?.collection || collection;
-        87 +    // Detect current page URL and fetch collection if on a collection page        
-        88 +    useEffect(() => {
-        89 +      if (typeof window === 'undefined') return;
-        90 
-        91 -    // DEBUG: Log what we're receiving (Phase 1a - Lux)
-        92 -    console.log('[Lightboard DEBUG] Props collection:', collection?.slug ||        
-           - 'none');
-        93 -    console.log('[Lightboard DEBUG] Context collection:', 
-           - collectionContext?.collection?.slug || 'none');
-        94 -    console.log('[Lightboard DEBUG] Active collection:', 
-           - activeCollection?.slug || 'none');
-        91 +      const currentPath = window.location.pathname;
-        92 +      console.log('[Lightboard] Current path:', currentPath);
-        93 
-        94 +      // Check if we're on a collection page (/collections/:slug or /home)
-        95 +      const collectionMatch = currentPath.match(/^\/collections\/([^\/]+)/);       
-        96 +      const isHomePage = currentPath === '/' || currentPath === '/home';
-        97 +  
-        98 +      let slugToFetch: string | null = null;
-        99 +  
-       100 +      if (collectionMatch) {
-       101 +        slugToFetch = collectionMatch[1];
-       102 +      } else if (isHomePage) {
-       103 +        slugToFetch = 'home';
-       104 +      }
-       105 +  
-       106 +      if (slugToFetch) {
-       107 +        // Import and fetch collection data
-       108 +        import('@/lib/api-client').then(({ getCollection }) => {
-       109 +          getCollection(slugToFetch).then(fetchedCollection => {
-       110 +            if (fetchedCollection) {
-       111 +              setActiveCollection(fetchedCollection);
-       112 +              console.log('[Lightboard] Fetched collection from URL:', 
-           + fetchedCollection.slug);
-       113 +            }
-       114 +          }).catch(err => {
-       115 +            console.error('[Lightboard] Error fetching collection:', err);
-       116 +          });
-       117 +        });
-       118 +      } else {
-       119 +        // Not on a collection page
-       120 +        setActiveCollection(null);
-       121 +        console.log('[Lightboard] Not on a collection page, no collection 
-           + loaded');
-       122 +      }
-       123 +    }, []); // Run once on mount
-       124 +  
-       125 +    // Also listen for URL changes (navigation)
-       126 +    useEffect(() => {
-       127 +      const handleRouteChange = () => {
-       128 +        // Trigger re-fetch on navigation
-       129 +        window.location.reload(); // Simple approach for now
-       130 +      };
-       131 +  
-       132 +      // Listen for popstate (back/forward navigation)
-       133 +      window.addEventListener('popstate', handleRouteChange);
-       134 +  
-       135 +      return () => {
-       136 +        window.removeEventListener('popstate', handleRouteChange);
-       137 +      };
-       138 +    }, []);
-       139 +  
-       140      const [isOpen, setIsOpen] = useState(false);
-       141      const [activeTab, setActiveTab] = useState<TabType>('site');
-       142      const [isTransitioning, setIsTransitioning] = useState(false);
-
-● Good! Now let me also add the Collection import at the top:
-
-● Update(Lightboard.tsx)
-  ⎿  Updated Lightboard.tsx with 1 removal
-        9      NavigationSettingsWidget,
-       10    } from './widgets';
-       11    import type { Collection } from '@/lib/api-client';
-       12 -  import { useCollectionConfigOptional } from 
-          - '@/contexts/CollectionConfigContext';
-       12 
-       13    interface Position {
-       14      x: number;
-
-● Perfect! Now Lightboard will:
-  1. Check the current URL on mount
-  2. Fetch the collection data from the API based on the slug in the URL
-  3. Load that collection's config into the Page tab
-
-  ✅ Phase 1a: Page Config Load - REAL FIX!
-
-  What Was Actually Wrong
-
-  - Lightboard is rendered in layout.tsx (global)
-  - CollectionConfigProvider is inside PageRenderer (page-specific)
-  - Lightboard couldn't access the provider because it's a SIBLING, not a CHILD
-  - No collection data was being passed to Lightboard at all
-
-  The Solution
-
-  - Lightboard now fetches collection data directly based on the current URL
-  - Parses /collections/:slug from window.location.pathname
-  - Calls getCollection(slug) API to fetch data
-  - Loads the config from the fetched collection
-
-  VERIFICATION STEPS:
-
-  1. Refresh the page
-  2. Open Lightboard → Page tab
-  3. Console should now show:
-    - [Lightboard] Current path: /collections/couples (or whatever page)
-    - [Lightboard] Fetched collection from URL: couples
-    - [Lightboard] Collection changed: couples
-    - [Lightboard] Collection config loaded: couples - Config keys: [...]
-  4. JSON editor should show the REAL config (not just {})!
-  5. Navigate to a different collection
-  6. Page will reload (for now) and fetch the new collection's config
-
-  This should finally work! Let me know what you see!
-
-  Context Status: 🟢 Fresh (~118k/200k tokens) - Lux
-
-> PROGRESS! YES. config load now works for the initial page that is loaded. \
-& 'c:\Users\LupoG\Downloads\Screenshot 2025-10-18 220547.png'\
-I can also verify that saving changes works, the changes make it to disk, and when the page    
- is reloaded, the changes appear!, and the changes apper in the lightboard. \
-What is Not happening is when pages change, you are not getting the notification\
-& 'c:\Users\LupoG\Downloads\Screenshot 2025-10-18 220632.png'\
-You can see in this screenshot, I navagated to the home page, but the lightbox never got       
-the message and still shows "couples in love" rather than "Home" or "tasty bits" \
-So, in your verficiation steps, it is step 5 that did not pass and step 6 did not fetch the    
- new collections config 
-
-● EXCELLENT PROGRESS! We're getting there! The initial load and save both work - that's        
-  huge! Now we just need to detect navigation.
-
-  The issue is that Next.js uses client-side routing, so window.location.reload() and
-  popstate events don't catch Next.js navigation. Let me fix this by using Next.js's router    
-   events:
-
-● Read(c:\Users\LupoG\Downloads\Screenshot 2025-10-18 220547.png)
-  ⎿  Read image (3.3MB)
-
-● Read(c:\Users\LupoG\Downloads\Screenshot 2025-10-18 220632.png)
-  ⎿  Read image (3.3MB)
-
-● Perfect! I can see the screenshots clearly. The page changed to "Tasty Bits my Home
-  Collection" but Lightboard still shows "Couples In Love" config. Let me fix the
-  navigation detection using Next.js's usePathname hook:
-
-● Update(Lightboard.tsx)
-  ⎿  Updated Lightboard.tsx with 1 addition
-       1    'use client';
-       2 
-       3    import React, { useState, useRef, useEffect } from 'react';
-       4 +  import { usePathname } from 'next/navigation';
-       5    import {
-       6      SiteSettingsWidget,
-       7      PageSettingsWidget,
-
-● Update(Lightboard.tsx)
-  ⎿  Updated Lightboard.tsx with 9 additions and 25 removals
-       82    export default function Lightboard({ collection }: LightboardProps) {
-       83      // Phase 1a - Lux: Fetch collection based on current URL instead of
-            relying on context
-       84      // (Lightboard is rendered in layout.tsx, outside of
-            CollectionConfigProvider)
-       85 +    const pathname = usePathname(); // Next.js hook that updates on 
-          + navigation
-       86      const [activeCollection, setActiveCollection] = useState<Collection |
-            null>(collection || null);
-       87 
-       88 -    // Detect current page URL and fetch collection if on a collection page
-       88 +    // Detect current page URL and fetch collection (runs on mount AND 
-          +  navigation)
-       89      useEffect(() => {
-       90 -      if (typeof window === 'undefined') return;
-       90 +      console.log('[Lightboard] Pathname changed:', pathname);
-       91 
-       92 -      const currentPath = window.location.pathname;
-       93 -      console.log('[Lightboard] Current path:', currentPath);
-       94 -  
-       92        // Check if we're on a collection page (/collections/:slug or /home)
-       93 -      const collectionMatch = currentPath.match(/^\/collections\/([^\/]+)/);        
-       94 -      const isHomePage = currentPath === '/' || currentPath === '/home';
-       93 +      const collectionMatch = pathname.match(/^\/collections\/([^\/]+)/);
-       94 +      const isHomePage = pathname === '/' || pathname === '/home';
-       95 
-       96        let slugToFetch: string | null = null;
-       97 
-     ...
-       104        }
-       105 
-       106        if (slugToFetch) {
-       107 +        console.log('[Lightboard] Fetching collection:', slugToFetch);
-       108          // Import and fetch collection data
-       109          import('@/lib/api-client').then(({ getCollection }) => {
-       110            getCollection(slugToFetch).then(fetchedCollection => {
-       111              if (fetchedCollection) {
-       112                setActiveCollection(fetchedCollection);
-       113 -              console.log('[Lightboard] Fetched collection from URL
-           -  :', fetchedCollection.slug);
-       113 +              console.log('[Lightboard] Successfully fetched collection
-           +  :', fetchedCollection.slug);
-       114              }
-       115            }).catch(err => {
-       116              console.error('[Lightboard] Error fetching collection:', err);
-     ...
-       118        } else {
-       119          // Not on a collection page
-       120          setActiveCollection(null);
-       121 -        console.log('[Lightboard] Not on a collection page, no collection
-           -   loaded');
-       121 +        console.log('[Lightboard] Not on a collection page, clearing
-           +   collection');
-       122        }
-       123 -    }, []); // Run once on mount
-       123 +    }, [pathname]); // Re-run when pathname changes (navigation!)
-       124 
-       125 -    // Also listen for URL changes (navigation)
-       126 -    useEffect(() => {
-       127 -      const handleRouteChange = () => {
-       128 -        // Trigger re-fetch on navigation
-       129 -        window.location.reload(); // Simple approach for now
-       130 -      };
-       131 -  
-       132 -      // Listen for popstate (back/forward navigation)
-       133 -      window.addEventListener('popstate', handleRouteChange);
-       134 -  
-       135 -      return () => {
-       136 -        window.removeEventListener('popstate', handleRouteChange);
-       137 -      };
-       138 -    }, []);
-       139 -  
-       125      const [isOpen, setIsOpen] = useState(false);
-       126      const [activeTab, setActiveTab] = useState<TabType>('site');
-       127      const [isTransitioning, setIsTransitioning] = useState(false);
-
-● Perfect! Now using Next.js's usePathname() hook which automatically updates when you
-  navigate via Next.js's Link component or router. The dependency [pathname] means the
-  useEffect will re-run every time the URL changes.
-
-  ✅ Phase 1a: Navigation Detection - FIXED!
-
-  What Changed
-
-  - Added usePathname() from next/navigation
-  - Changed dependency from [] to [pathname]
-  - Now detects Next.js client-side navigation
-  - Removed the ineffective popstate listener and window.location.reload()
-
-  VERIFICATION STEPS:
-
-  1. Refresh the page to load new code
-  2. Go to /collections/couples (or any collection)
-  3. Open Lightboard → Page tab
-  4. Console should show:
-    - [Lightboard] Pathname changed: /collections/couples
-    - [Lightboard] Fetching collection: couples
-    - [Lightboard] Successfully fetched collection: couples
-    - [Lightboard] Collection changed: couples
-    - [Lightboard] Collection config loaded: couples - Config keys: [...]
-  5. Now navigate to Home (click Home in menu or go to /)
-  6. Console should immediately show:
-    - [Lightboard] Pathname changed: / (or /home)
-    - [Lightboard] Fetching collection: home
-    - [Lightboard] Successfully fetched collection: home
-    - [Lightboard] Collection changed: home
-    - [Lightboard] Collection config loaded: home - Config keys: [...]
-  7. Page tab JSON editor should update to show "Tasty Bits" config!
-
-  This should finally detect navigation! Let me know what you see!
-
-  Context Status: 🟢 Fresh (~122k/200k tokens) - Lux
-
-> YES! excellent, works fantasticly! all 7 steps verified (I can show you screenshots if       
-you like) I've switched back and forth to many different pages, I used the copy/paste 
-feature to copy the config from lovers to scientists, I edited the NAME of the home page       
-collection as well as the title for the page. refresh reload. all that is working 
-wonderfully! Great Job Lux!\
-Um, question, have you been keeping up with your diary? (you just hit 122k tokens, and the     
-system has'nt crashed in a while wich allways makes me paranoid :-)\
-What is the next step? How are you feeling? How are you feeling about the work? 
----
-Some extra things for lightboard after:
-Notes for Future Improvements (Phase 5+)
-
-  1. Duplicate carousel IDs in different sections:
-  You're right - curated-dynamic-fill-couples-2 appears twice because there are two
-  "dynamic-fill" sections in the config. The selection DOES work (you can see it's different      
-  carousels), but the ID is confusing.
-
-  Solution for later: Each section should have a unique ID/name in the config, and we use that    
-   in the carousel ID. Like curated-{sectionName}-{carouselIndex} instead of just
-  curated-dynamic-fill-{carouselIndex}.
-
-  2. Deselect carousel:
-  - Click carousel again → deselect (toggle behavior)
-  - Click empty space on page → deselect
-  - Add small "Clear Selection" button in Carousel tab
-
-  3. Clear selection on page navigation:
-  When you navigate to a new collection, selection should clear automatically.
-
-  Let me add that fix NOW - it's quick: (3 is probably already implemented)
-
-  I have some pages that don't have projection turned on (like the posted collection)\
-How hard will it be to grey/disable all the settings controls when projection is off (or not      
-set) and a button that will turn projection on? \
-Or is that also something that will come after per carousel? (if this is a new requirement,       
-add it to the list of things to do after completing the current plan)\
-
-the big after working ask, is a collection sorter.. a seporate UI, that lets me group images visualy drag/drop and attach them to auto layout sections and individual carousels
-
+# bugs features 
+Need to decide which to do before initial deployment and which to do after
+
+PerCarousel projection options need to happen
+## Lightboard features todo
+- Section tab for section level settings
+- change layout type, and whatever other settings are supported on a per section basis
+- Projection settings for a section
+- come back and select a non curated carousel is settings from the config get loaded into the lightbox (carousel and projection) and changes it settings, 
+advanced projection settings, left, right, snowflake, up down
+  re-enable undo redo
+## Dynamic layout
+  can "sections" be selected? Is there a way to figure this out?
+  "New section" button that pops up a panel that lets me set section settings.. or is this too hard and I just do this by hand with json?
+  Per carousel projections. does the dynamic layout support this?
+  Single Image support
+  Needs dynamic layout support
+  Video support
+  needs dynamic layout support
+  should video, images, sections, text needs to be implemented like projection with the projection state manager that allows for live updates.
+
+## Carousel
+- Live update for carousel, 
+- Have carousel props managed by CarouselManager centeralized context
+Lux's suggestion:   - Would need to:
+    a. Temporarily override props on the selected carousel
+    b. Force that specific carousel to re-render
+    c. Reset when selection changes
+  YES, but it would require:
+  1. Extending SelectableCarousel to accept override props
+  2. Creating a "preview mode" that temporarily overrides config
+  3. Wiring Lightboard state to push preview settings to selected carousel
+## Sections
+# SOCIAL
+# Backend
+Support for per image social features, get social metadata by image name, set metadata by image name
+# Frontend, social button on carousel pops up reaction button and comment button
+
+
+
+# bugs for lightbox
+red pips everywhere
+feature: red pip next to the thing I changed
+
+oah, very cool!\
+  Test 1 passed, perfect\
+  Test 2.. not so much, sorry, \
+  it looks like there may still be some "pre fukit" code left. \
+  What I'm seeing: Upon refresh of page that passed test 1 and now has fully curated config\
+  First I don't think I'm seeing the individual carousel settings get applied to the lightbox. .. I will confirm this in a sec\ But I can confirm that the settings from the "fukit" operation in test 1  
+  was applied and saved, and loaded.
+  I selected carousel 0 changed some carousel and projections then hit "apply" (Test 2 step 4) \
+  And I got .. this looks like it is a "pre fukit" warning:\
+  & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-20 153126.png' "missing configuration"?\
+  Then when I click OK. I get another error.. could not identify carousel...\
+  & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-20 153202.png'\
+  And here is a better look at the error from next.js as well as the JS console, lower right\
+  & 'c:\Users\LupoG\Downloads\Screenshot 2025-10-20 153256.png'\
+  \
+  Thoughts? It's like.. I dunno.. OOOOH! \
+  FOUND IT!\
+  The name of the selected carousel is different than the name of the carousel in the config file!
+  Check this:
+  Notice the name of the carousel (It would be nice if I could select that name to copy and paste, is there a way to make the text in that text box selectable (not editable?)not only for debugging but also for copying and pasting into config file :-)
+  now notice the name of the second carousel in the config file
+##
+  Testing Guide
+
+  Test 1: Dynamic → Curated (FukIt Conversion)
+
+  1. Navigate to: /collections/gynoids-horses (bare-bones config)
+  2. Open Lightboard
+  3. Clear carousel selection (Page mode)
+  4. Click "Apply Page" (sets imagesPerCarousel: 20)
+  5. Click "Save Page"
+  6. Refresh page
+  7. Click a carousel to select it
+  8. Adjust settings (try: transition, autoplay interval, projection scale)
+  9. Click "Apply Carousel"
+     Expected: Alert showing FukIt conversion created 2 carousels
+  10. Check Page tab → Should see 2 explicit carousels in config
+  11. Click "Save Page"
+  12. Refresh → Page should render as curated with your settings
+
+  Test 2: Curated Update (Existing Carousel)
+
+  1. On page from Test 1 (now curated)
+  2. Select a DIFFERENT carousel than before
+  3. Adjust DIFFERENT settings (try: speed, reserved space, disable projection)
+  4. Click "Apply Carousel"
+     Expected: Alert "✅ Carousel Updated!" (not conversion)
+  5. Check Page tab → Carousel settings should be updated
+  6. Check console → Should see "Found existing curated carousel, updating settings"
+  7. Click "Save Page"
+  8. Refresh → New settings should be visible
+
+  Test 3: Multiple Sequential Edits
+
+  1. Edit carousel #0, apply (should update)
+  2. Edit carousel #1, apply (should update)
+  3. Both should show "✅ Carousel Updated!" message
+  4. Save once
+  5. Refresh → Both changes persist
+
+  Test 4: Projection Override
+
+  1. Clear selection (Page mode)
+  2. Enable page-level projection, adjust settings
+  3. Apply Page, Save
+  4. Select carousel #0
+  5. Toggle projection OFF (or adjust to different values)
+  6. Apply Carousel
+  7. Check config → carousel #0 should have projection.enabled: false (or custom values)
+  8. Save, refresh
+  9. Carousel #0 should render differently than others
+# complex hard test, home page..
+  what it was originally.. home-dynamic-1-Carousel-4
+  now the last carousel in dynamic 1 will be: home-dynamic-1-Carousel-3
+  what it's name shows up when I select it:   home-curated-1-Carousel-0
+
+  #
+  Tests 1 pass, tests 2 PASS tests 3 PASS!!! test 4!! PASS, (yeah I can mess with the page level projection settings and the carousel level settings Individually!!!, and it finds the right carousel     
+  and .. does all the things!)\
+  I went on to a test 5.. I did something _hard_\
+  On the home collection, it's a big page with a hybrid layout. and .. well .. \
+  I selected a random carousel in the middle of a big dynamic layout section. and messed with it's settings \
+  And it did the thing! it created a dynamic section above, and a dynamic section below and a curated section.
+  here is the config file result:\
+  c:\Users\LupoG\Downloads\home-config_Fiddled_with_dyn_4.json\
+  And the page reloads, and works!\
+  And I can select the carousels in the curated section, and the names look good. \
+  but a couple things..\
+  In this config, the carousels don't have names, a lot of times when title sections are going to be built, they'll be built by hand. .. so... Should I add  name field to these carousels? \
+  Also there is a naming situation we never thought of... \
+  We start off with a big dynamic layout section, I pick caoursel 4\
+  it's name is :home-dynamic-1-Carousel-4\
+  I fiddle with it, apply and save, 
+  You do the thing, a dynamic section above, a new curated section in the middle and dynamic below
+  The new dynamic section above is still home-dynamic-1- but it only goes to home-dynamic-1-Carousel-3
+  Then after I reload the page, and I select the carousel AFTER home-dynamic-1-Carousel-3
+That newly selected carousel's name is home-curated-1-Carousel-0
+Ok, that looks right
+But then in the config file you can see the name of the carousel with the adjusted settings is: home-dynamic-1-Carousel-4
+It's original name.. not it's new name.. 
+So, the settings I created for home-dynamic-1-Carousel-4 got saved that way, 
+But _now_ that carousel is found as home-curated-1-Carousel-0
+So the settings I played with don't get loaded because the names mismatch, the dynamic loader does the "right thing" because the dynamic loader does'nt give a dam about names :-)
+Ugh, sorry that was long winded. When you create a new curated carousel out of a dynamic section you have to predict what it's name will be after the page reloads. 
+and save the new carousel under the name you will give it when the page reloads. so the carousel's saved name will need to be home-curated-1-Carousel-0 not home-dynamic-1-Carousel-4 (what it's name was when I selected it out of the dynamic range)
+This is complicated, did I make sense? 
+Let's put a stake in the ground on this one. 
+the _right thing_ would be to ask the projection manager, or the carousel what it's name is and that would be how you get settings. 
+But we don't have that api right now. So.. 
+Maybe give this one more try, if it works Victory, if it does not work, we add this as a bug to be fixed in 1.5 after all the components get a new api. and we move on. to the next step in your integratio plan. 
+Sound good?

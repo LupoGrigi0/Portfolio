@@ -24,6 +24,9 @@ import { useLightboard } from '../LightboardContext';
 
 export interface ProjectionSettingsProps {
   // Projection settings
+  projectionEnabled: boolean;
+  projectionPattern: 'all' | 'every-2nd' | 'every-3rd' | 'none';
+  projectionPatternOffset: number;
   fadeDistance: number;
   maxBlur: number;
   projectionScaleX: number;
@@ -37,6 +40,9 @@ export interface ProjectionSettingsProps {
   checkerboardBlur: number;
 
   // Setter functions
+  setProjectionEnabled: (value: boolean) => void;
+  setProjectionPattern: (value: 'all' | 'every-2nd' | 'every-3rd' | 'none') => void;
+  setProjectionPatternOffset: (value: number) => void;
   setFadeDistance: (value: number) => void;
   setMaxBlur: (value: number) => void;
   setProjectionScaleX: (value: number) => void;
@@ -55,6 +61,9 @@ export interface ProjectionSettingsProps {
 }
 
 export function ProjectionSettingsWidget({
+  projectionEnabled,
+  projectionPattern,
+  projectionPatternOffset,
   fadeDistance,
   maxBlur,
   projectionScaleX,
@@ -66,6 +75,9 @@ export function ProjectionSettingsWidget({
   checkerboardTileSize,
   checkerboardScatterSpeed,
   checkerboardBlur,
+  setProjectionEnabled,
+  setProjectionPattern,
+  setProjectionPatternOffset,
   setFadeDistance,
   setMaxBlur,
   setProjectionScaleX,
@@ -115,6 +127,64 @@ export function ProjectionSettingsWidget({
           </div>
         )}
       </div>
+
+      {/* Projection Enable Toggle */}
+      <div className="mb-6 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={projectionEnabled}
+            onChange={(e) => setProjectionEnabled(e.target.checked)}
+            className="w-5 h-5 rounded bg-zinc-700 border-zinc-600 text-cyan-500 focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0 cursor-pointer"
+          />
+          <div className="flex-1">
+            <span className="text-white font-semibold text-sm">Enable Projections</span>
+            <p className="text-zinc-400 text-xs mt-0.5">
+              {selectedCarouselId
+                ? 'Turn on 3D projection effects for this carousel only'
+                : 'Turn on 3D projection effects for all carousels on this page'}
+            </p>
+          </div>
+        </label>
+      </div>
+
+      {/* Projection Pattern */}
+      {projectionEnabled && !selectedCarouselId && (
+        <div className="mb-6 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+          <label className="block mb-2">
+            <span className="text-white font-semibold text-sm">Projection Pattern</span>
+            <p className="text-zinc-400 text-xs mt-0.5">Which carousels have projection enabled</p>
+          </label>
+          <select
+            value={projectionPattern}
+            onChange={(e) => setProjectionPattern(e.target.value as 'all' | 'every-2nd' | 'every-3rd' | 'none')}
+            className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0"
+          >
+            <option value="all">All Carousels</option>
+            <option value="every-2nd">Every 2nd Carousel</option>
+            <option value="every-3rd">Every 3rd Carousel</option>
+            <option value="none">None</option>
+          </select>
+
+          {/* Pattern Offset */}
+          {(projectionPattern === 'every-2nd' || projectionPattern === 'every-3rd') && (
+            <div className="mt-3">
+              <label className="block mb-1">
+                <span className="text-white font-semibold text-sm">Pattern Offset</span>
+                <p className="text-zinc-400 text-xs">Start pattern at carousel number (0-indexed)</p>
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="10"
+                value={projectionPatternOffset}
+                onChange={(e) => setProjectionPatternOffset(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 bg-zinc-700 border border-zinc-600 rounded text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:ring-offset-0"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Fade Distance */}
       <div className="mb-6">

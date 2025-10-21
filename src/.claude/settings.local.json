@@ -12,7 +12,10 @@
       "Read(//d/Lupo/Source/Portfolio/docs/**)",
       "Bash(curl:*)",
       "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/**)",
-      "Read(//d/Lupo/Source/Portfolio/**)"
+      "Read(//d/Lupo/Source/Portfolio/**)",
+      "Bash(git rm:*)",
+      "Bash(git rebase:*)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

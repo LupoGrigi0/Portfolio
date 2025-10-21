@@ -245,8 +245,15 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
     }
   };
 
-  // Track carousel index across sections
+  // Track carousel index across sections (for projection pattern)
   let carouselIndex = 0;
+
+  // Track section numbers by type (for human-readable IDs)
+  const sectionCounters = {
+    'dynamic-fill': 0,
+    'curated': 0,
+    'row': 0,
+  };
 
   return (
     <div className="space-y-8 sm:space-y-12">
@@ -298,18 +305,22 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
               section.images.forEach(filename => usedImageFilenames.add(filename));
             }
 
+            // Increment curated section counter and create human-readable ID
+            const curatedSectionNumber = ++sectionCounters['curated'];
+            const carouselId = `${collection.slug}-curated-${curatedSectionNumber}-Carousel-0`;
+
             // Determine projection for this carousel
             const currentCarouselIndex = carouselIndex++;
             const enableProjection = shouldEnableProjection(currentCarouselIndex, section.enableProjection);
 
             return (
               <div key={key} className={getWidthClass(section.width)}>
-                <SelectableCarousel carouselId={`curated-carousel-${collection.slug}-${currentCarouselIndex}`}>
+                <SelectableCarousel carouselId={carouselId}>
                   <Carousel
                     images={images}
                     {...mapCarouselOptions(section.carouselOptions)}
                     enableProjection={enableProjection}
-                    projectionId={`curated-carousel-${collection.slug}-${currentCarouselIndex}`}
+                    projectionId={carouselId}
                   />
                 </SelectableCarousel>
               </div>
@@ -353,6 +364,9 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             );
 
           case 'row': {
+            // Increment row section counter
+            const rowSectionNumber = ++sectionCounters['row'];
+
             // Render multiple sections in a flex row (for side-by-side layouts)
             return (
               <div key={key} className="flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 items-stretch">
@@ -363,18 +377,21 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                     const images = resolveSectionImages(subsection);
                     if (images.length === 0) return null;
 
+                    // Create human-readable ID for row carousel
+                    const carouselId = `${collection.slug}-row-${rowSectionNumber}-Carousel-${subIndex}`;
+
                     // Determine projection for this carousel
                     const currentCarouselIndex = carouselIndex++;
                     const enableProjection = shouldEnableProjection(currentCarouselIndex, subsection.enableProjection);
 
                     return (
                       <div key={subKey} className={getWidthClass(subsection.width)}>
-                        <SelectableCarousel carouselId={`curated-row-carousel-${collection.slug}-${currentCarouselIndex}`}>
+                        <SelectableCarousel carouselId={carouselId}>
                           <Carousel
                             images={images}
                             {...mapCarouselOptions(subsection.carouselOptions)}
                             enableProjection={enableProjection}
-                            projectionId={`curated-row-carousel-${collection.slug}-${currentCarouselIndex}`}
+                            projectionId={carouselId}
                           />
                         </SelectableCarousel>
                       </div>
@@ -399,6 +416,9 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
           }
 
           case 'dynamic-fill': {
+            // Increment dynamic-fill section counter
+            const dynamicSectionNumber = ++sectionCounters['dynamic-fill'];
+
             // Get all remaining unused images (excluding hero images)
             const allImages = collection.gallery?.filter(item => {
               if (item.type !== 'image') return false;
@@ -420,7 +440,7 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
             imagesToUse.forEach(img => usedImageFilenames.add(img.filename));
 
             // Group into carousels
-            const perCarousel = section.imagesPerCarousel === 'all' ? imagesToUse.length : (section.imagesPerCarousel || 5);
+            const perCarousel = section.imagesPerCarousel === 'all' ? imagesToUse.length : (section.imagesPerCarousel || 20);
             const carouselGroups: CarouselImage[][] = [];
 
             for (let i = 0; i < imagesToUse.length; i += perCarousel) {
@@ -481,18 +501,21 @@ export default function CuratedLayout({ collection, config }: CuratedLayoutProps
                   const currentCarouselIndex = carouselIndex + idx;
                   const enableProjection = shouldEnableProjection(currentCarouselIndex);
 
+                  // Create human-readable ID for dynamic-fill carousel
+                  const carouselId = `${collection.slug}-dynamic-${dynamicSectionNumber}-Carousel-${idx}`;
+
                   return (
                     <div
                       key={`dynamic-carousel-${idx}`}
                       data-carousel-index={idx}
                       className="w-full"
                     >
-                      <SelectableCarousel carouselId={`curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`}>
+                      <SelectableCarousel carouselId={carouselId}>
                         <Carousel
                           images={group}
                           {...carouselOptions}
                           enableProjection={enableProjection}
-                          projectionId={`curated-dynamic-fill-${collection.slug}-${currentCarouselIndex}`}
+                          projectionId={carouselId}
                         />
                       </SelectableCarousel>
                     </div>

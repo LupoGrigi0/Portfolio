@@ -104,7 +104,7 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
       return [images];
     }
 
-    const perCarousel = settings.imagesPerCarousel || 5;
+    const perCarousel = settings.imagesPerCarousel || 20;
     const groups: CarouselImage[][] = [];
 
     for (let i = 0; i < images.length; i += perCarousel) {
@@ -311,12 +311,12 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
                   maxWidth: '800px'
                 }}
               >
-                <SelectableCarousel carouselId={`dynamic-zipper-${collection.slug}-${index}`}>
+                <SelectableCarousel carouselId={`${collection.slug}-dynamic-1-Carousel-${index}`}>
                   <Carousel
                     images={group}
                     {...mapCarouselOptions()}
                     enableProjection={enableProjection}
-                    projectionId={`dynamic-zipper-${collection.slug}-${index}`}
+                    projectionId={`${collection.slug}-dynamic-1-Carousel-${index}`}
                   />
                 </SelectableCarousel>
               </div>
@@ -340,12 +340,12 @@ export default function DynamicLayout({ collection, config }: DynamicLayoutProps
 
         return (
           <div key={`carousel-${index}`} data-carousel-index={index} className="w-full">
-            <SelectableCarousel carouselId={`dynamic-${collection.slug}-${index}`}>
+            <SelectableCarousel carouselId={`${collection.slug}-dynamic-1-Carousel-${index}`}>
               <Carousel
                 images={group}
                 {...mapCarouselOptions()}
                 enableProjection={enableProjection}
-                projectionId={`dynamic-${collection.slug}-${index}`}
+                projectionId={`${collection.slug}-dynamic-1-Carousel-${index}`}
               />
             </SelectableCarousel>
           </div>
