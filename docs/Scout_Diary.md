@@ -179,3 +179,21 @@ User requested help deploying to droplet. Build was failing with type errors.
 - Commit f13d775: Production build SUCCESSFUL ✅
 - 15 pages generated, middleware 33.9kB
 - Ready for droplet deployment!
+
+### Smoke Test Failure - The Magic Smoke! 💨
+
+**Problem:** User ran smoke test, production crashed immediately:
+```
+Uncaught Error: useLightboard must be used within a LightboardProvider
+    at SelectableCarousel.tsx:34:50
+```
+
+**Root Cause:** My security fix removed LightboardProvider in production, but SelectableCarousel (used in DynamicLayout/CuratedLayout) still calls `useLightboard` hook!
+
+**The Fix (Commit a876dc8):**
+- Keep LightboardProvider ALWAYS rendered (provides context)
+- Only hide Lightboard UI component in production
+- `{isDevelopment && <Lightboard />}` instead of removing provider
+- SelectableCarousel works in both dev and production ✅
+
+**Lesson:** Don't remove React Context providers if child components depend on them! Hide the UI, keep the context.
