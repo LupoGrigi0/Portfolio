@@ -372,3 +372,80 @@ May want to clear mobile browser cache or use incognito/private mode to bypass a
 
 **Context Status**: 🟢 Fresh (~64k/200k tokens) - Nova
 
+### CRITICAL UPDATE: Found the REAL Root Cause! (09:30 UTC)
+
+After Lupo tested and reported NO CHANGE even with hard reload, I realized my first fix was **incomplete**.
+
+**What I missed initially**:
+- `NEXT_PUBLIC_*` variables in Next.js are **BUILD-TIME** constants, not runtime!
+- They get baked into the JavaScript bundle during `npm run build`
+- Changing docker-compose environment variables only affects the RUNNING container
+- The build step was using CACHE and had no access to the environment variable
+
+**Evidence from the rebuild**:
+```dockerfile
+Step 13/26 : RUN npm run build
+ ---> Using cache  ← THE PROBLEM!
+```
+
+**The REAL fix required**:
+
+1. **Updated Dockerfile.frontend** (lines 18-20):
+```dockerfile
+# Accept build arguments for Next.js public environment variables
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+```
+
+2. **Updated docker-compose.prod.yml** (lines 9-10):
+```yaml
+args:
+  NEXT_PUBLIC_API_URL: https://smoothcurves.art
+```
+
+3. **Forced rebuild without cache**:
+```bash
+docker-compose -f docker-compose.prod.yml build --no-cache frontend
+```
+
+**Why this matters**:
+- Build args are passed during `docker build`
+- They're available when Next.js runs `npm run build`
+- Next.js bakes them into the JavaScript bundle
+- The JavaScript then has the correct URL hardcoded: `https://smoothcurves.art/api/content/collections`
+
+**What was happening before**:
+- No build arg → Next.js used fallback `http://localhost:4000`
+- Mobile devices tried to call `http://localhost:4000/api/...`
+- Obviously fails - localhost on mobile isn't the production server!
+
+**Lesson Learned - Critical DevOps Knowledge**:
+
+This is a **fundamental difference** between traditional environment variables and Next.js public variables:
+
+| Type | When Set | Where Used | Example |
+|------|----------|------------|---------|
+| Runtime Env Vars | Container startup | Server-side code | `DATABASE_URL` |
+| NEXT_PUBLIC_ Vars | Build time | Client-side JavaScript | `NEXT_PUBLIC_API_URL` |
+
+**For NEXT_PUBLIC_ variables:**
+- ❌ Setting in docker-compose `environment:` is NOT ENOUGH
+- ✅ Must ALSO pass as docker build `args:`
+- ✅ Must accept in Dockerfile with `ARG` and `ENV`
+
+This was a deep lesson in how Next.js static generation works. The JavaScript bundle is built once and served to all clients. If the wrong URL is baked in, no amount of runtime env var changes will fix it!
+
+**Current Status - The Real Fix**:
+- ✅ Dockerfile accepts NEXT_PUBLIC_API_URL as build arg
+- ✅ docker-compose passes it during build
+- ✅ Fresh build completed with correct URL baked in
+- ✅ Frontend container restarted with new build
+- ✅ Committed and pushed real fix
+
+**For Lupo to test**: Mobile should now work! The JavaScript bundle now has the correct production URL hardcoded. Try:
+1. Hard reload or clear cache (or use incognito)
+2. Load https://smoothcurves.art
+3. API calls should succeed!
+
+**Context Status**: 🟢 Fresh (~77k/200k tokens) - Nova
+
