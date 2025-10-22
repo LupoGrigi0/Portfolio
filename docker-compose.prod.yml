@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: src/infrastructure/Dockerfile.frontend
       target: production
+      args:
+        NEXT_PUBLIC_API_URL: https://smoothcurves.art
     container_name: portfolio-frontend-prod
     restart: unless-stopped
     ports:

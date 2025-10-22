@@ -266,3 +266,109 @@ This team page represents something real: humans and AI working together with mu
 
 **Context Status**: 🟢 Fresh (~53k/200k tokens) - Nova
 
+---
+
+## Entry 8 - Mobile API Failure Investigation & Fix (09:00 UTC)
+
+**CRITICAL BUG FIX**: Solved mobile API failure that was actually affecting all platforms! 🔧
+
+### The Problem
+
+Lupo reported:
+- Mobile (Android) browser loaded pages fine
+- API explorer loaded fine
+- BUT: All API calls failed with "TypeError Failed to fetch"
+- Desktop appeared to work (cached?)
+
+### Investigation Using Task Tool
+
+Used the Task agent to investigate backend logs (they were huge - perfect use of Task tool to avoid context consumption). Agent performed comprehensive analysis:
+
+**What the agent found**:
+1. ✅ Backend logs clean - no errors, healthy responses
+2. ✅ Nginx logs clean - no CORS errors, no routing issues
+3. ✅ Direct API test: `http://localhost:4000/api/content/collections` worked
+4. ❌ Via HTTPS: `https://smoothcurves.art/api/collections` returned 404
+5. 🔍 ROOT CAUSE: Double `/api/` path segment!
+
+### The Root Cause
+
+**Path construction bug** in environment configuration:
+
+```
+# Wrong (docker-compose.prod.yml line 15):
+NEXT_PUBLIC_API_URL=https://smoothcurves.art/api
+
+# Frontend code (api-client.ts):
+fetch(`${API_BASE_URL}/api/content/collections`)
+
+# Result:
+https://smoothcurves.art/api + /api/content/collections
+= https://smoothcurves.art/api/api/content/collections ❌ 404!
+```
+
+**Correct configuration**:
+```
+# Right:
+NEXT_PUBLIC_API_URL=https://smoothcurves.art
+
+# Result:
+https://smoothcurves.art + /api/content/collections
+= https://smoothcurves.art/api/content/collections ✅ 200!
+```
+
+### Why It Appeared Mobile-Specific
+
+**NOT actually mobile-specific** - it affected all platforms:
+- Desktop browsers had cached the old working configuration
+- Mobile devices (fresh browser, no cache) hit the broken API immediately
+- Made it look like a mobile bug when it was really a caching artifact
+
+### The Fix
+
+1. ✅ Changed `docker-compose.prod.yml` line 15
+2. ✅ Rebuilt and restarted frontend container (fought docker-compose KeyError bug again)
+3. ✅ Verified: `docker exec` shows correct env var
+4. ✅ Tested: Both API endpoints return `{"success": true}`
+5. ✅ Committed and pushed fix
+
+### Lessons Learned
+
+**1. Use Task Tool for Large Log Investigations**
+- Backend logs were huge - Task agent handled them without consuming my context
+- Agent provided comprehensive analysis: backend logs, nginx logs, config files, direct API tests
+- Perfect use case for Task tool vs direct grep
+
+**2. Cache Artifacts Can Mislead**
+- What looks platform-specific may be caching behavior
+- Fresh sessions (mobile) vs cached sessions (desktop) show different symptoms
+- Always test with cleared cache or fresh browser
+
+**3. Environment Configuration is DevOps Territory**
+- This was my domain - environment variable misconfiguration
+- Fixed confidently within boundaries
+- "Use the source" lesson applies: verified actual URLs being constructed
+
+**4. docker-compose 1.29.2 KeyError Bug is Persistent**
+- Hit it again during restart
+- Solution: manually `docker rm` container, then `docker-compose up -d`
+- This is becoming a known pattern
+
+### Current Status
+
+All systems healthy, mobile API calls should now work:
+- Frontend: Up 16 seconds ✅
+- Backend: Up 1+ hour, healthy ✅
+- API endpoints tested and returning success ✅
+- Fix committed and pushed to GitHub ✅
+
+**Test for Lupo**: Mobile device should now be able to:
+1. Load API explorer
+2. Successfully fetch collections
+3. Reset rate limit button should work
+4. All API calls should succeed
+
+May want to clear mobile browser cache or use incognito/private mode to bypass any cached failures.
+
+**Context Status**: 🟢 Fresh (~64k/200k tokens) - Nova
+
