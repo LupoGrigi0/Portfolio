@@ -82,14 +82,6 @@ const team: TeamMember[] = [
     color: 'from-green-500 to-emerald-600',
   },
   {
-    name: 'Nova',
-    slug: 'nova',
-    role: 'Production Deployment Specialist',
-    type: 'ai',
-    tagline: 'Bringing the site to life in the real world',
-    color: 'from-purple-600 to-indigo-600',
-  },
-  {
     name: 'Prism',
     slug: 'prism',
     role: 'Visual Effects Specialist',
