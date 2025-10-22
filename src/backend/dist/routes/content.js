@@ -7,6 +7,7 @@
  */
 import { Router } from 'express';
 import { createLogger } from '../utils/logger-wrapper.js';
+import { loadSiteConfig } from '../utils/config-loader.js';
 import path from 'path';
 const logger = createLogger('backend-content.log');
 const router = Router();
@@ -19,8 +20,9 @@ export function setDatabaseManager(manager) {
 export function setContentScanner(contentScanner) {
     scanner = contentScanner;
 }
-// Content directory for URL transformation
-const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
+// Content directory for URL transformation - use site config
+const siteConfig = loadSiteConfig();
+const CONTENT_DIR = siteConfig.paths.content;
 /**
  * Transform absolute file paths to relative API URLs
  * Author: Viktor v2 (Backend API & Database Specialist)
