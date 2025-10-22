@@ -10,10 +10,12 @@ import { Router } from 'express';
 import { promises as fs, createReadStream } from 'fs';
 import path from 'path';
 import { createLogger } from '../utils/logger-wrapper.js';
+import { loadSiteConfig } from '../utils/config-loader.js';
 const logger = createLogger('backend-media.log');
 const router = Router();
-// Content directory (from environment or default)
-const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
+// Content directory from site configuration (production vs development paths)
+const siteConfig = loadSiteConfig();
+const CONTENT_DIR = siteConfig.paths.content;
 /**
  * Size mappings for thumbnail generation
  * Maps query param 'size' to actual thumbnail filename suffixes
@@ -51,6 +53,22 @@ const ICONS = {
   </svg>`,
 };
 /**
+ * Find actual directory name with correct case (case-insensitive search)
+ * Linux filesystems are case-sensitive, but slugs are lowercase
+ * Maps: "home" -> "Home", "branding" -> "Branding"
+ */
+async function findActualDirectoryName(slug) {
+    try {
+        const entries = await fs.readdir(CONTENT_DIR, { withFileTypes: true });
+        const match = entries.find(entry => entry.isDirectory() && entry.name.toLowerCase() === slug.toLowerCase());
+        return match ? match.name : null;
+    }
+    catch (error) {
+        await logger.error('MediaRoutes', 'Failed to list content directory', { error });
+        return null;
+    }
+}
+/**
  * GET /api/media/icons/:type
  * Serves generic SVG icons for file types without thumbnails
  */
@@ -86,6 +104,15 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
         const filename = req.params[1]; // Second capture group: full path including subdirs
         const size = req.query.size || 'original';
         await logger.info('MediaRoutes', 'GET /media/:slug/...', { slug, filename, size });
+        // Find actual directory name (case-insensitive) for Linux filesystem
+        const actualDirName = await findActualDirectoryName(slug);
+        if (!actualDirName) {
+            return res.status(404).json({
+                success: false,
+                message: `Collection '${slug}' not found`,
+                code: 'COLLECTION_NOT_FOUND'
+            });
+        }
         // Validate size parameter
         if (!(size in SIZE_MAPPINGS)) {
             return res.status(400).json({
@@ -104,7 +131,7 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
         let filePath;
         if (size === 'original') {
             // Original file requested
-            filePath = path.join(CONTENT_DIR, slug, filename);
+            filePath = path.join(CONTENT_DIR, actualDirName, filename);
         }
         else if (mimeType.startsWith('video/')) {
             // Video thumbnail requested - videos use .jpg thumbnails, not .webp
@@ -112,10 +139,10 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
             const thumbnailFilename = `${baseName}${sizeSuffix}.jpg`;
             // Thumbnails are stored in .thumbnails within the same directory as the original
             if (dirName && dirName !== '.') {
-                filePath = path.join(CONTENT_DIR, slug, dirName, '.thumbnails', thumbnailFilename);
+                filePath = path.join(CONTENT_DIR, actualDirName, dirName, '.thumbnails', thumbnailFilename);
             }
             else {
-                filePath = path.join(CONTENT_DIR, slug, '.thumbnails', thumbnailFilename);
+                filePath = path.join(CONTENT_DIR, actualDirName, '.thumbnails', thumbnailFilename);
             }
             // If thumbnail doesn't exist, fall back to original video
             try {
@@ -128,7 +155,7 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
                     filename,
                     dirName
                 });
-                filePath = path.join(CONTENT_DIR, slug, filename);
+                filePath = path.join(CONTENT_DIR, actualDirName, filename);
             }
         }
         else if (mimeType.startsWith('image/')) {
@@ -138,10 +165,10 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
             // Thumbnails are stored in .thumbnails within the same directory as the original
             // E.g., couples/gallery/image.jpg → couples/gallery/.thumbnails/image_640w.webp
             if (dirName && dirName !== '.') {
-                filePath = path.join(CONTENT_DIR, slug, dirName, '.thumbnails', thumbnailFilename);
+                filePath = path.join(CONTENT_DIR, actualDirName, dirName, '.thumbnails', thumbnailFilename);
             }
             else {
-                filePath = path.join(CONTENT_DIR, slug, '.thumbnails', thumbnailFilename);
+                filePath = path.join(CONTENT_DIR, actualDirName, '.thumbnails', thumbnailFilename);
             }
             // If thumbnail doesn't exist, fall back to original
             try {
@@ -154,12 +181,12 @@ router.get(/^\/([^\/]+)\/(.+)$/, async (req, res, next) => {
                     filename,
                     dirName
                 });
-                filePath = path.join(CONTENT_DIR, slug, filename);
+                filePath = path.join(CONTENT_DIR, actualDirName, filename);
             }
         }
         else {
             // For any other file type, serve the original
-            filePath = path.join(CONTENT_DIR, slug, filename);
+            filePath = path.join(CONTENT_DIR, actualDirName, filename);
         }
         // Security: Prevent directory traversal
         const resolvedPath = path.resolve(filePath);
@@ -250,6 +277,15 @@ router.get('/:slug/:filename', async (req, res, next) => {
         const { slug, filename } = req.params;
         const size = req.query.size || 'original';
         await logger.info('MediaRoutes', 'GET /media/:slug/:filename', { slug, filename, size });
+        // Find actual directory name (case-insensitive) for Linux filesystem
+        const actualDirName = await findActualDirectoryName(slug);
+        if (!actualDirName) {
+            return res.status(404).json({
+                success: false,
+                message: `Collection '${slug}' not found`,
+                code: 'COLLECTION_NOT_FOUND'
+            });
+        }
         // Validate size parameter
         if (!(size in SIZE_MAPPINGS)) {
             return res.status(400).json({
@@ -267,13 +303,13 @@ router.get('/:slug/:filename', async (req, res, next) => {
         let filePath;
         if (size === 'original') {
             // Original file - root level
-            filePath = path.join(CONTENT_DIR, slug, filename);
+            filePath = path.join(CONTENT_DIR, actualDirName, filename);
         }
         else if (mimeType.startsWith('video/')) {
             // Video thumbnail requested - videos use .jpg thumbnails
             const sizeSuffix = SIZE_MAPPINGS[size];
             const thumbnailFilename = `${baseName}${sizeSuffix}.jpg`;
-            filePath = path.join(CONTENT_DIR, slug, '.thumbnails', thumbnailFilename);
+            filePath = path.join(CONTENT_DIR, actualDirName, '.thumbnails', thumbnailFilename);
             // Fall back to original if thumbnail doesn't exist
             try {
                 await fs.access(filePath);
@@ -284,14 +320,14 @@ router.get('/:slug/:filename', async (req, res, next) => {
                     slug,
                     filename
                 });
-                filePath = path.join(CONTENT_DIR, slug, filename);
+                filePath = path.join(CONTENT_DIR, actualDirName, filename);
             }
         }
         else if (mimeType.startsWith('image/')) {
             // Image thumbnail requested - images use .webp thumbnails
             const sizeSuffix = SIZE_MAPPINGS[size];
             const thumbnailFilename = `${baseName}${sizeSuffix}.webp`;
-            filePath = path.join(CONTENT_DIR, slug, '.thumbnails', thumbnailFilename);
+            filePath = path.join(CONTENT_DIR, actualDirName, '.thumbnails', thumbnailFilename);
             // Fall back to original if thumbnail doesn't exist
             try {
                 await fs.access(filePath);
@@ -302,12 +338,12 @@ router.get('/:slug/:filename', async (req, res, next) => {
                     slug,
                     filename
                 });
-                filePath = path.join(CONTENT_DIR, slug, filename);
+                filePath = path.join(CONTENT_DIR, actualDirName, filename);
             }
         }
         else {
             // For any other file type, serve the original
-            filePath = path.join(CONTENT_DIR, slug, filename);
+            filePath = path.join(CONTENT_DIR, actualDirName, filename);
         }
         // Security: Prevent directory traversal
         const resolvedPath = path.resolve(filePath);
@@ -384,6 +420,15 @@ router.get('/:slug/gallery/:filename', async (req, res, next) => {
         const { slug, filename } = req.params;
         const size = req.query.size || 'original';
         await logger.info('MediaRoutes', 'GET /media/:slug/gallery/:filename', { slug, filename, size });
+        // Find actual directory name (case-insensitive) for Linux filesystem
+        const actualDirName = await findActualDirectoryName(slug);
+        if (!actualDirName) {
+            return res.status(404).json({
+                success: false,
+                message: `Collection '${slug}' not found`,
+                code: 'COLLECTION_NOT_FOUND'
+            });
+        }
         // Validate size parameter
         if (!(size in SIZE_MAPPINGS)) {
             return res.status(400).json({
@@ -401,37 +446,37 @@ router.get('/:slug/gallery/:filename', async (req, res, next) => {
         let filePath;
         if (size === 'original') {
             // Original file in gallery subdirectory
-            filePath = path.join(CONTENT_DIR, slug, 'gallery', filename);
+            filePath = path.join(CONTENT_DIR, actualDirName, 'gallery', filename);
         }
         else if (mimeType.startsWith('video/')) {
             // Video thumbnail requested - videos use .jpg thumbnails
             const sizeSuffix = SIZE_MAPPINGS[size];
             const thumbnailFilename = `${baseName}${sizeSuffix}.jpg`;
-            filePath = path.join(CONTENT_DIR, slug, 'gallery', '.thumbnails', thumbnailFilename);
+            filePath = path.join(CONTENT_DIR, actualDirName, 'gallery', '.thumbnails', thumbnailFilename);
             // Fall back to original if thumbnail doesn't exist
             try {
                 await fs.access(filePath);
             }
             catch {
-                filePath = path.join(CONTENT_DIR, slug, 'gallery', filename);
+                filePath = path.join(CONTENT_DIR, actualDirName, 'gallery', filename);
             }
         }
         else if (mimeType.startsWith('image/')) {
             // Image thumbnail requested - images use .webp thumbnails
             const sizeSuffix = SIZE_MAPPINGS[size];
             const thumbnailFilename = `${baseName}${sizeSuffix}.webp`;
-            filePath = path.join(CONTENT_DIR, slug, 'gallery', '.thumbnails', thumbnailFilename);
+            filePath = path.join(CONTENT_DIR, actualDirName, 'gallery', '.thumbnails', thumbnailFilename);
             // Fall back to original if thumbnail doesn't exist
             try {
                 await fs.access(filePath);
             }
             catch {
-                filePath = path.join(CONTENT_DIR, slug, 'gallery', filename);
+                filePath = path.join(CONTENT_DIR, actualDirName, 'gallery', filename);
             }
         }
         else {
             // For any other file type, serve the original
-            filePath = path.join(CONTENT_DIR, slug, 'gallery', filename);
+            filePath = path.join(CONTENT_DIR, actualDirName, 'gallery', filename);
         }
         // Security: Prevent directory traversal
         const resolvedPath = path.resolve(filePath);
