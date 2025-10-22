@@ -11,12 +11,14 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { promises as fs, createReadStream } from 'fs';
 import path from 'path';
 import { createLogger } from '../utils/logger-wrapper.js';
+import { loadSiteConfig } from '../utils/config-loader.js';
 
 const logger = createLogger('backend-media.log');
 const router = Router();
 
-// Content directory (from environment or default)
-const CONTENT_DIR = process.env.CONTENT_DIRECTORY || 'E:/mnt/lupoportfolio/content';
+// Content directory from site configuration (production vs development paths)
+const siteConfig = loadSiteConfig();
+const CONTENT_DIR = siteConfig.paths.content;
 
 /**
  * Size mappings for thumbnail generation
