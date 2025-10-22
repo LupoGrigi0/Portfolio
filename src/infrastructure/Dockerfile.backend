@@ -42,18 +42,30 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # Install production dependencies and native modules
-RUN apk add --no-cache sqlite
+# ffmpeg needed for video processing (metadata extraction and thumbnail generation)
+RUN apk add --no-cache sqlite ffmpeg
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S backend -u 1001
 
+# Maintain same directory structure as dev for path resolution compatibility
 # Copy package files and install production dependencies only
-COPY src/backend/package*.json ./
+COPY src/backend/package*.json ./src/backend/
+WORKDIR /app/src/backend
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built application
+# Copy built application maintaining structure: /app/src/backend/dist/
 COPY --from=build /app/dist ./dist
+# Copy database schema files (not included in TypeScript build)
+COPY src/backend/src/database ./dist/database
+
+# Copy shared logger.js maintaining structure: /app/src/logger.js
+WORKDIR /app
+COPY src/logger.js ./src/logger.js
+
+# Copy deployments directory for site-config files
+COPY deployments ./deployments
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data && chown -R backend:nodejs /app
@@ -67,4 +79,6 @@ ENV NODE_ENV=production
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:4000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
+# Run from backend directory
+WORKDIR /app/src/backend
 CMD ["node", "dist/index.js"]

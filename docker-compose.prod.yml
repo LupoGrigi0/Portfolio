@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: src/infrastructure/Dockerfile.frontend
+      target: production
+    container_name: portfolio-frontend-prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://smoothcurves.art/api
+    depends_on:
+      - backend
+    networks:
+      - portfolio-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: .
+      dockerfile: src/infrastructure/Dockerfile.backend
+      target: production
+    container_name: portfolio-backend-prod
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    volumes:
+      # Mount existing production directories from host
+      - /mnt/lupoportfolio/content:/mnt/lupoportfolio/content:ro
+      - /mnt/lupoportfolio/database:/mnt/lupoportfolio/database
+      - /mnt/lupoportfolio/logs:/mnt/lupoportfolio/logs
+      # Mount site config
+      - ./deployments/site-config.production.json:/app/site-config.json:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_PATH=/mnt/lupoportfolio/database/portfolio.sqlite
+      - RATE_LIMIT_MAX=15000
+      - RATE_LIMIT_WINDOW=2
+    networks:
+      - portfolio-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  portfolio-network:
+    driver: bridge

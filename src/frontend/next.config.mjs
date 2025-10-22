@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Standalone output for Docker deployment
+  output: 'standalone',
+
   // Enable experimental features for performance monitoring
   experimental: {
     // Enable Server Actions for analytics
@@ -31,6 +34,20 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
         port: '4000',
+        pathname: '/api/media/**',
+      },
+      // Production domain
+      {
+        protocol: 'https',
+        hostname: 'smoothcurves.art',
+        port: '',
+        pathname: '/api/media/**',
+      },
+      // Dev subdomain
+      {
+        protocol: 'https',
+        hostname: 'dev.smoothcurves.art',
+        port: '',
         pathname: '/api/media/**',
       },
     ],

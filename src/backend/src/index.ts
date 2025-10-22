@@ -68,19 +68,31 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
 
-// CORS configuration - allow all localhost origins for development
+// CORS configuration - allow localhost + production domains
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
 
-    // Allow all localhost origins (any port)
+    // Production domains
+    const productionDomains = [
+      'https://smoothcurves.art',
+      'https://www.smoothcurves.art',
+      'https://smoothcurves.love',
+      'https://www.smoothcurves.love',
+      'https://dev.smoothcurves.art',
+    ];
+
+    // Allow all localhost origins (any port) for development
     if (origin.startsWith('http://localhost:') ||
         origin.startsWith('http://127.0.0.1:') ||
         origin.startsWith('http://0.0.0.0:')) {
       callback(null, true);
+    } else if (productionDomains.includes(origin)) {
+      // Allow production domains
+      callback(null, true);
     } else {
-      // In development, allow everything. In production, would need stricter rules
+      // Block unknown origins in production, allow in development
       const isDev = process.env.NODE_ENV !== 'production';
       if (isDev) {
         callback(null, true);

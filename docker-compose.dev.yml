@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: src/infrastructure/Dockerfile.frontend
+      target: production
+    container_name: portfolio-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3000"  # Different external port
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=https://dev.smoothcurves.art/api
+    depends_on:
+      - backend
+    networks:
+      - portfolio-dev-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: .
+      dockerfile: src/infrastructure/Dockerfile.backend
+      target: production
+    container_name: portfolio-backend-dev
+    restart: unless-stopped
+    ports:
+      - "4001:4000"  # Different external port
+    volumes:
+      # Dev can use same content as production (read-only)
+      - /mnt/lupoportfolio/content:/mnt/lupoportfolio/content:ro
+      # Dev needs its own database and logs (create if needed)
+      - ./dev-database:/mnt/lupoportfolio/database
+      - ./dev-logs:/mnt/lupoportfolio/logs
+      # Mount dev site config
+      - ./deployments/site-config.development.json:/app/site-config.json:ro
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+    networks:
+      - portfolio-dev-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  portfolio-dev-network:
+    driver: bridge
