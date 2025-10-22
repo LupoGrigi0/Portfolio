@@ -65,6 +65,14 @@ const team: TeamMember[] = [
     tagline: 'Breaking light into infinite possibilities',
     color: 'from-indigo-500 via-purple-500 to-pink-500',
   },
+  {
+    name: 'Nova',
+    slug: 'nova',
+    role: 'DevOps Engineer',
+    type: 'ai',
+    tagline: 'From zero to production: deploying stars at scale',
+    color: 'from-orange-500 via-red-500 to-pink-600',
+  },
 ];
 
 export default function TeamPage() {

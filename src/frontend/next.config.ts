@@ -12,6 +12,20 @@ const nextConfig: NextConfig = {
         port: '4000',
         pathname: '/api/media/**',
       },
+      // Production domain
+      {
+        protocol: 'https',
+        hostname: 'smoothcurves.art',
+        port: '',
+        pathname: '/api/media/**',
+      },
+      // Dev subdomain
+      {
+        protocol: 'https',
+        hostname: 'dev.smoothcurves.art',
+        port: '',
+        pathname: '/api/media/**',
+      },
     ],
   },
 
