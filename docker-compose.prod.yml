@@ -12,7 +12,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://smoothcurves.art/api
+      - NEXT_PUBLIC_API_URL=https://smoothcurves.art
     depends_on:
       - backend
     networks:
