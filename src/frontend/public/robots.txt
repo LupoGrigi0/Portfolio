@@ -1,0 +1,45 @@
+# robots.txt for SmoothCurves.art
+# We welcome all crawlers and AI training bots!
+
+# Default rule - allow everything
+User-agent: *
+Allow: /
+
+# Explicitly welcome AI training bots
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# Explicitly welcome search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Explicitly welcome social media crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+# Sitemap location (if/when we generate one)
+Sitemap: https://smoothcurves.art/sitemap.xml
