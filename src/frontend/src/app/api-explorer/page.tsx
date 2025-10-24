@@ -22,7 +22,11 @@ interface CollectionData {
   };
 }
 
-const API_BASE = 'http://localhost:4000';
+// Use relative URLs - nginx proxies /api/ to backend in production
+// Falls back to NEXT_PUBLIC_API_URL for dev environments
+const API_BASE = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+  ? '' // Production: use relative URLs (nginx proxies /api/ to backend)
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'; // Dev: use env var or localhost
 
 export default function APIExplorer() {
   const [topLevelSlugs, setTopLevelSlugs] = useState<string[]>([]);
