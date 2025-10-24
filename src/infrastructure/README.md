@@ -35,6 +35,26 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
+- **`nginx-smoothcurves-nexus.conf`** - MCP Coordination System nginx configuration
+  - Routes MCP coordination endpoints (separate system/repository)
+  - Production: smoothcurves.nexus/mcp → port 3444
+  - Dev: smoothcurves.nexus/mcp/dev → port 3446
+  - OAuth 2.1 endpoints: /authorize, /token, /register
+  - Privacy policy: /privacy-policy → static HTML file
+  - Web UI dashboard: /web-ui/ → static files
+  - Health check: /health
+  - openapi.json served on HTTP for MCP discovery
+
+**Installation:**
+```bash
+sudo cp src/infrastructure/nginx-smoothcurves-nexus.conf /etc/nginx/sites-available/smoothcurves-nexus
+sudo ln -sf /etc/nginx/sites-available/smoothcurves-nexus /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Note:** MCP Coordination System lives in separate repository at `/mnt/coordinaton_mcp_data/production`
+
 ## Docker Compose Files (Project Root)
 
 - **`docker-compose.prod.yml`** - Production deployment

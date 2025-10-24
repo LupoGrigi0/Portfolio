@@ -13,7 +13,7 @@ The production server uses the following directory structure:
 ├── luminous-canvas/          # Source code (git repo)
 ├── content/                  # Media files (images, videos)
 ├── database/                 # SQLite database files
-└── logs/                     # Application logs
+└── logs/                     # Application logs 
 ```
 
 ## Configuration Files
