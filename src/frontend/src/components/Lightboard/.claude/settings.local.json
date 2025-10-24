@@ -6,7 +6,8 @@
       "Read(//d/Lupo/Source/Portfolio/HumanAdjacentAI-Protocol/**)",
       "Read(//c/Users/LupoG/Downloads/**)",
       "Read(//d/Lupo/Source/Portfolio/docs/**)",
-      "Read(//d/Lupo/Source/Portfolio/src/frontend/src/**)"
+      "Read(//d/Lupo/Source/Portfolio/src/frontend/src/**)",
+      "Read(//e/mnt/lupoportfolio/content/Home/**)"
     ],
     "deny": [],
     "ask": []

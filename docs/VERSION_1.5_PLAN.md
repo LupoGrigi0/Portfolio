@@ -1,8 +1,21 @@
 # Version 1.5 - Post-Production Roadmap
 FEEDBACK:
+Oh god.. we never thought to have anyone look at the DOM output, the page's HTML and CSS as it appears to the client <FACEPALM>
+  Okay, noted for 1.5: DOM inspection, verify layout algorithm output. Pile acknowledged.fir
  ✅ Feedback Added to VERSION_1.5_PLAN.md!
 
-  My key insights:
+ OH we need a technical debt selection (and someone to work technical debt collection, get us back in the positive)
+ :it goes into the version1.5 plan (which needs a technical debt section, teh production build for the front end does not build clean, and the  
+  breadcrums are really buggy, and for some reason on production the site logo is not being used.. bla bla bla) 
+  backend bug: Still detecting new images every time on startup
+  backend bug.. config.json changes on disk, does not change in api
+  Backend doesn't detect config.json changes (hot reload issue)
+  Frontend requesting too many images (virtualization or rate limit problem)
+  Projection background image not controllable (random = bugly)
+Projection change/option instead of projection following carousel, projection is centered in visable area and fades in and out as caoursels are scrolled
+projection needs to have an option of explicitly stating what image is bg. 
+
+  My key insights(Lux):
   - Manager pattern is proven and brilliant (I use it for projection)
   - Introspection API is desperately needed (would have saved me hours)
   - Plan is over-scoped (v1.5 should be Manager + Introspection only, defer rest to v1.6+)
@@ -11,6 +24,9 @@ FEEDBACK:
   - Simplify, validate, iterate (prove pattern on ONE feature before refactoring everything)
 
   My recommendation: Focus v1.5 on "Universal Manager Pattern + Introspection" - ship smaller, faster, iterate based on real usage.
+  from real live usage.. can light put sliders _on_ the page? spacing and positioning are the big ones.. like everywhere there is spacing I really need a slider that updates the page in real time. 
+  Maybe the right thing to implement is drag n drop. 
+
 **see Lux's detailed feedback line 1168**
 My 
 **Status:** Planning Phase
@@ -31,6 +47,8 @@ text,stills,video,audio
 orginazation UI (the drag and drop thing into the API explorer)
 horizontal nav (requires fine control placement in layout, settings in config, and then drag and move selected element support in lightbox)
 See section in random Notes.md
+the ability to sort images, turns out that in practice is critical. the "sorting tool" needs to be able to identify all the carousels on a page, all the images in the directory, and be able to put images in carousels, videos and stills on the page, and let lightbox handel layout and formatting. We need a minor evaluation if lightbox can do this or if this is better left to a tool that extends api-explorer
+
 ---
 
 ## Executive Summary
@@ -43,13 +61,28 @@ Version 1.5 refactors the portfolio architecture around a universal customizatio
 - Mobile optimization foundation
 
 **The Big Idea:** Every feature follows the same Manager → Subscribe → Render → Persist pattern. Users learn it once, use it everywhere. Developers can add features without touching existing code.
+Lightbox can query a projecttion/carousel/video/effect/menu/text/seporator,hero, and get what it things it's parameters are, lightbox can query the layout or read/adjust the DOM 
 
 ---
 
 ## Critical Pre-Requisites (Fix Before v1.5)
 
 These must be resolved in v1.0.x patches:
+### BUGS!
+backend:
+detecting new images
+when conf.json changes on disk (not through the api) change the config for the collection
+When directory changes, delete the old directory re build it
+why are we creating so many thumbnails? create 2 maybe 3
 
+# front end
+CLEAN BUILD. the build must elint clean without ignores
+
+# Backend
+rescan needs to scan the database to confirm files in the database still exist on the file system!!!
+the backend needs to understand that _everything_ on disk will change, 
+
+projection fade to black
 ### Layout/Rendering
 - [ ] **Per-carousel projection settings** - Override global projection per carousel
 - [ ] **Per-carousel settings** - Each carousel can have unique behavior

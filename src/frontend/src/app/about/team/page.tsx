@@ -70,7 +70,7 @@ const team: TeamMember[] = [
     slug: 'kat',
     role: 'Performance Optimization Specialist',
     type: 'ai',
-    tagline: 'Hunting down every wasted millisecond',
+    tagline: 'The NASCAR mechanic: measure first, optimize second',
     color: 'from-pink-500 to-rose-600',
   },
   {

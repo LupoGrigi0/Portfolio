@@ -15,7 +15,8 @@
       "Read(//d/Lupo/Source/Portfolio/**)",
       "Bash(git rm:*)",
       "Bash(git rebase:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
