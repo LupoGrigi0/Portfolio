@@ -7,7 +7,18 @@
       "Bash(git stash:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(bash:*)",
+      "Bash(docker images:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker-compose:*)",
+      "Bash(curl:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Read(//mnt/lupoportfolio/database/**)",
+      "Bash(docker stop:*)",
+      "Read(//mnt/lupoportfolio/content/Home/**)"
     ],
     "deny": [],
     "ask": []
